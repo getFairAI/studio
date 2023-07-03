@@ -1,10 +1,79 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App.tsx'
-import './index.css'
+/*
+ * Fair Protocol, open source decentralised inference marketplace for artificial intelligence.
+ * Copyright (C) 2023 Fair Protocol
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
+
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { createHashRouter, RouterProvider } from 'react-router-dom';
+import Root from '@/root';
+import '@/styles/main.css';
+import FundBundlr from '@/guards/fund-bundlr';
+import ErrorDisplay from '@/pages/error-display';
+import Operators from '@/pages/operators';
+import Register from '@/pages/script/register';
+import { getScriptAttachments } from '@/pages/script/script';
+import UploadCreator from '@/pages/upload-creator';
+import UploadCurator from '@/pages/upload-curator';
+import Registrations from '@/pages/registrations';
+
+const router = createHashRouter([
+  {
+    path: '/',
+    element: <Root />,
+    errorElement: <ErrorDisplay />,
+    children: [
+      {
+        path: '',
+        element: <Operators />,
+        children: [
+          {
+            path: 'register/:txid/',
+            id: 'register',
+            loader: getScriptAttachments,
+            element: <Register />,
+          },
+        ],
+      },
+      {
+        path: 'upload-creator',
+        element: (
+          <FundBundlr>
+            <UploadCreator />
+          </FundBundlr>
+        ),
+      },
+      {
+        path: 'upload-curator',
+        element: (
+          <FundBundlr>
+            <UploadCurator />
+          </FundBundlr>
+        ),
+      },
+      {
+        path: 'registrations',
+        element: <Registrations />,
+      },
+    ],
+  },
+]);
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <App />
+    <RouterProvider router={router} />
   </React.StrictMode>,
-)
+);
