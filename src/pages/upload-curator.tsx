@@ -956,7 +956,16 @@ const UploadCurator = () => {
                       }}
                       fontSize='large'
                     />
-                    <Typography sx={{}} onClick={handleSwitchModeUpdate}>
+                    <Typography
+                      sx={{
+                        fontStyle: 'normal',
+                        fontWeight: 600,
+                        fontSize: '30px',
+                        fontHeight: '41px',
+                        opacity: mode === 'update' ? 1 : '0.5',
+                      }}
+                      onClick={handleSwitchModeUpdate}
+                    >
                       Update Script
                     </Typography>
                   </Box>
