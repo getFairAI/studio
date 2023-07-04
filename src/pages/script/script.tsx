@@ -53,7 +53,7 @@ export const getScriptAttachments = async ({
     ...DEFAULT_TAGS_RETRO,
     { name: TAG_NAMES.operationName, values: [MODEL_ATTACHMENT] },
     { name: TAG_NAMES.attachmentRole, values: [AVATAR_ATTACHMENT] },
-    { name: TAG_NAMES.scriptTransaction, values: [firstScriptVersionTx] },
+    { name: TAG_NAMES.scriptTransaction, values: [firstScriptVersionTx, params.txid] },
   ];
   const avatarAttachmentsResult = await client.query({
     query: GET_LATEST_MODEL_ATTACHMENTS,

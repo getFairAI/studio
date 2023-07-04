@@ -75,6 +75,7 @@ import {
   VAULT_ADDRESS,
   MODEL_CREATION_PAYMENT_TAGS,
   SCRIPT_CREATION_PAYMENT_TAGS,
+  DEFAULT_TAGS_RETRO,
 } from '@/constants';
 import { BundlrContext } from '@/context/bundlr';
 import { useSnackbar } from 'notistack';
@@ -290,7 +291,9 @@ const GenericSelect = ({
     () => !error && !loading && (!data.transactions.edges || data.transactions.edges.length === 0),
     [error, loading, data],
   );
-  const scriptData = useMemo(() => {
+  const [scriptData, setScriptData] = useState<IContractEdge[]>([]);
+
+  useEffect(() => {
     if (isScript) {
       const filteredScritps = filterPreviousVersions<IContractEdge[]>(data.transactions.edges);
       const filtered: IContractEdge[] = [];
@@ -303,12 +306,14 @@ const GenericSelect = ({
             filtered.push(el);
           }
         }
+
+        setScriptData(filtered);
       })();
-      return filtered;
     } else {
-      return [] as IContractEdge[];
+      setScriptData([]);
     }
   }, [isScript, data]);
+
   const hasScriptData = useMemo(
     () => !error && !loading && scriptData.length > 0,
     [error, loading, scriptData],
@@ -486,6 +491,7 @@ const UploadCurator = () => {
   } = useQuery(FIND_BY_TAGS, {
     variables: {
       tags: [
+        ...DEFAULT_TAGS_RETRO,
         ...SCRIPT_CREATION_PAYMENT_TAGS,
         {
           name: TAG_NAMES.sequencerOwner,
@@ -505,7 +511,7 @@ const UploadCurator = () => {
     fetchMore: modelsFetchMore,
   } = useQuery(FIND_BY_TAGS, {
     variables: {
-      tags: [...MODEL_CREATION_PAYMENT_TAGS],
+      tags: [...DEFAULT_TAGS_RETRO, ...MODEL_CREATION_PAYMENT_TAGS],
       first: elementsPerPage,
     },
     notifyOnNetworkStatusChange: true,
@@ -597,18 +603,19 @@ const UploadCurator = () => {
     commonTags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
     commonTags.push({ name: TAG_NAMES.allowFiles, value: `${data.allow.allowFiles}` });
     commonTags.push({ name: TAG_NAMES.allowText, value: `${data.allow.allowText}` });
+    const currentScriptId = findTag(scriptData, 'scriptTransaction') as string;
     if (mode === 'update') {
-      commonTags.push({ name: TAG_NAMES.updateFor, value: scriptData.node.id });
+      commonTags.push({ name: TAG_NAMES.updateFor, value: currentScriptId });
       if (findTag(scriptData, 'previousVersions')) {
         const prevVersions: string[] = JSON.parse(
           findTag(scriptData, 'previousVersions') as string,
         );
-        prevVersions.push(scriptData.node.id);
+        prevVersions.push(currentScriptId);
         commonTags.push({ name: TAG_NAMES.previousVersions, value: JSON.stringify(prevVersions) });
       } else {
         commonTags.push({
           name: TAG_NAMES.previousVersions,
-          value: JSON.stringify([scriptData.node.id]),
+          value: JSON.stringify([currentScriptId]),
         });
       }
     }

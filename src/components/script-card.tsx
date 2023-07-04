@@ -233,6 +233,7 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
 
   useEffect(() => {
     (async () => {
+      const currentScriptTx = findTag(scriptTx, 'scriptTransaction');
       let firstScriptVersionTx;
       try {
         firstScriptVersionTx = (
@@ -245,7 +246,7 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
         ...DEFAULT_TAGS_RETRO, // filter from previous app versions as well
         { name: TAG_NAMES.operationName, values: [MODEL_ATTACHMENT] },
         { name: TAG_NAMES.attachmentRole, values: [AVATAR_ATTACHMENT] },
-        { name: TAG_NAMES.scriptTransaction, values: [firstScriptVersionTx] },
+        { name: TAG_NAMES.scriptTransaction, values: [firstScriptVersionTx, currentScriptTx] },
       ];
 
       await getAvatar({
