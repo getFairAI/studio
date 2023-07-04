@@ -24,3 +24,8 @@ dist-ssr
 *.sw?
 
 wallet.json
+
+# Build files
+*/dist-id.txt
+*/dist-manifest.csv
+*/dist-manifest.json
