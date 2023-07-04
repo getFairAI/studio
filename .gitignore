@@ -26,6 +26,6 @@ dist-ssr
 wallet.json
 
 # Build files
-*/dist-id.txt
-*/dist-manifest.csv
-*/dist-manifest.json
+dist-id.txt
+dist-manifest.csv
+dist-manifest.json
