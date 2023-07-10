@@ -220,9 +220,25 @@ const ScriptOption = ({
   );
 };
 
-const ModelOption = ({ el }: { el: IContractEdge }) => {
+const ModelOption = ({
+  el,
+  setValue,
+}: {
+  el: IContractEdge;
+  setValue?: UseFormSetValue<FieldValues>;
+}) => {
+  const handleModelChoice = useCallback(() => {
+    if (setValue) {
+      setValue('model', JSON.stringify(el), {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true,
+      });
+    }
+  }, [el, setValue]);
   return (
     <MenuItem
+      onClick={handleModelChoice}
       sx={{
         display: 'flex',
         gap: '16px',
@@ -261,8 +277,8 @@ const GenericSelect = ({
   loadMore: fetchMoreFn;
 }) => {
   const theme = useTheme();
-  const [scriptAnchorEl, setScriptAnchorEl] = useState<null | HTMLElement>(null);
-  const scriptOpen = useMemo(() => Boolean(scriptAnchorEl), [scriptAnchorEl]);
+  const [selectAnchorEl, setSelectAnchorEl] = useState<null | HTMLElement>(null);
+  const selectOpen = useMemo(() => Boolean(selectAnchorEl), [selectAnchorEl]);
 
   const selectLoadMore = (event: UIEvent<HTMLDivElement>) => {
     const bottomOffset = 100;
@@ -284,17 +300,17 @@ const GenericSelect = ({
   };
   const isScript = useMemo(() => name === 'script', [name]);
   const hasModelData = useMemo(
-    () => !isScript && !error && !loading && data?.transactions.edges.length > 0,
+    () => !isScript && !error && !loading && data?.transactions?.edges?.length > 0,
     [isScript, error, loading, data],
   );
   const hasNoData = useMemo(
-    () => !error && !loading && (!data.transactions.edges || data.transactions.edges.length === 0),
+    () => !error && !loading && data?.transactions?.edges?.length === 0,
     [error, loading, data],
   );
   const [scriptData, setScriptData] = useState<IContractEdge[]>([]);
 
   useEffect(() => {
-    if (isScript) {
+    if (isScript && data?.transactions?.edges?.length > 0) {
       const filteredScritps = filterPreviousVersions<IContractEdge[]>(data.transactions.edges);
       const filtered: IContractEdge[] = [];
       (async () => {
@@ -318,15 +334,16 @@ const GenericSelect = ({
     () => !error && !loading && scriptData.length > 0,
     [error, loading, scriptData],
   );
-  const handleScriptSelectClick = useCallback(
+
+  const handleSelected = useCallback(
     (event: MouseEvent<HTMLElement>) => {
-      if (scriptAnchorEl) {
-        setScriptAnchorEl(null);
+      if (selectAnchorEl) {
+        setSelectAnchorEl(null);
       } else {
-        setScriptAnchorEl(event.currentTarget);
+        setSelectAnchorEl(event.currentTarget);
       }
     },
-    [scriptAnchorEl, setScriptAnchorEl],
+    [selectAnchorEl, setSelectAnchorEl],
   );
   const renderValueFn = useCallback(
     (selected: unknown) => {
@@ -370,7 +387,7 @@ const GenericSelect = ({
       control={control}
       rules={{ required: !disabled }}
       mat={{
-        ...(isScript && { onClick: handleScriptSelectClick }),
+        onClick: handleSelected,
         disabled,
         placeholder: 'Choose a Model',
         sx: {
@@ -380,7 +397,8 @@ const GenericSelect = ({
         },
         renderValue: renderValueFn,
         MenuProps: {
-          ...(isScript && { anchorEl: scriptAnchorEl, open: scriptOpen }),
+          anchorEl: selectAnchorEl,
+          open: selectOpen,
           PaperProps: {
             onScroll: selectLoadMore,
             sx: {
@@ -415,30 +433,12 @@ const GenericSelect = ({
 
       {hasModelData &&
         data.transactions.edges.map((el: IContractEdge) => (
-          <ModelOption key={el.node.id} el={el} />
+          <ModelOption key={el.node.id} el={el} setValue={setValue} />
         ))}
 
       {hasScriptData &&
         scriptData.map((el: IContractEdge) => (
           <ScriptOption key={el.node.id} el={el} setValue={setValue} modelsData={modelsData} />
-        ))}
-
-      {hasModelData &&
-        data.transactions.edges.map((el: IContractEdge) => (
-          <MenuItem
-            key={el.node.id}
-            value={JSON.stringify(el)}
-            sx={{
-              display: 'flex',
-              gap: '16px',
-            }}
-          >
-            <Typography>{findTag(el, 'modelName')}</Typography>
-            <Typography sx={{ opacity: '0.5' }}>
-              {findTag(el, 'modelTransaction')}
-              {` (Creator: ${displayShortTxOrAddr(findTag(el, 'sequencerOwner') as string)}`}
-            </Typography>
-          </MenuItem>
         ))}
 
       {hasNoData && (
@@ -785,6 +785,8 @@ const UploadCurator = () => {
                 loading={modelsLoading}
                 hasNextPage={hasModelsNextPage}
                 loadMore={modelsFetchMore}
+                disabled={false}
+                setValue={setValue}
               />
             </Box>
           </>
