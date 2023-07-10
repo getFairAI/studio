@@ -575,12 +575,7 @@ const UploadCurator = () => {
     }
   };
 
-  const getCommonTags = (
-    data: CreateForm,
-    modelData: IContractEdge,
-    scriptData: IContractEdge,
-    modelOwner: string,
-  ) => {
+  const getCommonTags = (data: CreateForm, modelData: IContractEdge, modelOwner: string) => {
     const file = data.file;
     const commonTags = [];
     commonTags.push({ name: TAG_NAMES.appName, value: APP_NAME });
@@ -603,8 +598,10 @@ const UploadCurator = () => {
     commonTags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
     commonTags.push({ name: TAG_NAMES.allowFiles, value: `${data.allow.allowFiles}` });
     commonTags.push({ name: TAG_NAMES.allowText, value: `${data.allow.allowText}` });
-    const currentScriptId = findTag(scriptData, 'scriptTransaction') as string;
+
     if (mode === 'update') {
+      const scriptData = JSON.parse(data.script) as IContractEdge;
+      const currentScriptId = findTag(scriptData, 'scriptTransaction') as string;
       commonTags.push({ name: TAG_NAMES.updateFor, value: currentScriptId });
       if (findTag(scriptData, 'previousVersions')) {
         const prevVersions: string[] = JSON.parse(
@@ -637,7 +634,6 @@ const UploadCurator = () => {
 
     // upload the file
     const modelData = JSON.parse(data.model) as IContractEdge;
-    const scriptData = JSON.parse(data.script) as IContractEdge;
     const uFee = parseFloat(SCRIPT_CREATION_FEE) * U_DIVIDER;
 
     if (currentBalance < parseFloat(SCRIPT_CREATION_FEE)) {
@@ -649,7 +645,7 @@ const UploadCurator = () => {
     }
 
     const modelOwner = findTag(modelData, 'sequencerOwner') as string;
-    const commonTags = getCommonTags(data, modelData, scriptData, modelOwner);
+    const commonTags = getCommonTags(data, modelData, modelOwner);
     // add extra tags for payment save
     const uploadTags = [...commonTags];
     uploadTags.push({ name: TAG_NAMES.paymentQuantity, value: uFee.toString() });
