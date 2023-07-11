@@ -20,9 +20,12 @@ import {
   APP_NAME,
   APP_VERSION,
   AVATAR_ATTACHMENT,
+  MARKETPLACE_ADDRESS,
   MODEL_ATTACHMENT,
+  MODEL_DELETION,
   NET_ARWEAVE_URL,
   NOTES_ATTACHMENT,
+  SCRIPT_DELETION,
   TAG_NAMES,
   defaultDecimalPlaces,
   secondInMS,
@@ -30,10 +33,12 @@ import {
 } from '@/constants';
 import { IContractEdge, IEdge, ITag, ITransactions } from '@/interfaces/arweave';
 import { ChunkError, ChunkInfo } from '@/interfaces/bundlr';
+import { QUERY_TX_WITH_OWNERS } from '@/queries/graphql';
 import { AxiosResponse } from 'axios';
 import BigNumber from 'bignumber.js';
 import { UploadResponse } from 'bundlr-custom/build/cjs/common/types';
 import { EnqueueSnackbar } from 'notistack';
+import { client } from './apollo';
 
 export const formatNumbers = (value: string) => {
   try {
@@ -343,4 +348,23 @@ export const uploadUsageNotes = async (
     fileToUpload: file,
     successMessage: 'Usage Notes Uploaded Successfully',
   });
+};
+
+export const isFakeDeleted = async (txid: string, owner: string, type: 'script' | 'model') => {
+  const deleteTags = [];
+
+  if (type === 'model') {
+    deleteTags.push({ name: TAG_NAMES.operationName, values: [MODEL_DELETION] });
+    deleteTags.push({ name: TAG_NAMES.modelTransaction, values: [txid] });
+  } else {
+    deleteTags.push({ name: TAG_NAMES.operationName, values: [SCRIPT_DELETION] });
+    deleteTags.push({ name: TAG_NAMES.scriptTransaction, values: [txid] });
+  }
+
+  const { data } = await client.query({
+    query: QUERY_TX_WITH_OWNERS,
+    variables: { tags: deleteTags, owners: [MARKETPLACE_ADDRESS, owner] },
+  });
+
+  return data.transactions.edges.length > 0;
 };

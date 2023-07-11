@@ -89,12 +89,13 @@ import {
   commonUpdateQuery,
   displayShortTxOrAddr,
   findTag,
+  isFakeDeleted,
   uploadAvatarImage,
   uploadUsageNotes,
 } from '@/utils/common';
 import DebounceButton from '@/components/debounce-button';
 import { sendU } from '@/utils/u';
-import { filterPreviousVersions, isFakeDeleted } from '@/utils/script';
+import { filterPreviousVersions } from '@/utils/script';
 import CachedIcon from '@mui/icons-material/Cached';
 import { fetchMoreFn } from '@/utils/apollo';
 
@@ -181,13 +182,13 @@ const ScriptOption = ({
 }: {
   el: IContractEdge;
   setValue?: UseFormSetValue<FieldValues>;
-  modelsData?: IContractQueryResult;
+  modelsData?: IContractEdge[];
 }) => {
   const handleScriptChoice = useCallback(() => {
     if (!setValue || !modelsData) {
       return;
     } else {
-      const scriptModel = modelsData.transactions.edges.find(
+      const scriptModel = modelsData.find(
         (model) => findTag(model, 'modelTransaction') === findTag(el, 'modelTransaction'),
       );
       setValue('model', JSON.stringify(scriptModel), {
@@ -261,7 +262,6 @@ const GenericSelect = ({
   loading,
   hasNextPage,
   disabled = false,
-  modelsData,
   setValue,
   loadMore,
 }: {
@@ -272,7 +272,6 @@ const GenericSelect = ({
   loading: boolean;
   hasNextPage: boolean;
   disabled?: boolean;
-  modelsData?: IContractQueryResult;
   setValue?: UseFormSetValue<FieldValues>;
   loadMore: fetchMoreFn;
 }) => {
@@ -299,15 +298,12 @@ const GenericSelect = ({
     }
   };
   const isScript = useMemo(() => name === 'script', [name]);
-  const hasModelData = useMemo(
-    () => !isScript && !error && !loading && data?.transactions?.edges?.length > 0,
-    [isScript, error, loading, data],
-  );
   const hasNoData = useMemo(
     () => !error && !loading && data?.transactions?.edges?.length === 0,
     [error, loading, data],
   );
   const [scriptData, setScriptData] = useState<IContractEdge[]>([]);
+  const [modelData, setModelData] = useState<IContractEdge[]>([]);
 
   useEffect(() => {
     if (isScript && data?.transactions?.edges?.length > 0) {
@@ -316,7 +312,8 @@ const GenericSelect = ({
       (async () => {
         for (const el of filteredScritps) {
           const scriptId = findTag(el, 'scriptTransaction') as string;
-          if (await isFakeDeleted(scriptId)) {
+          const scriptOwner = findTag(el, 'sequencerOwner') as string;
+          if (await isFakeDeleted(scriptId, scriptOwner, 'script')) {
             // if fake deleted ignore
           } else {
             filtered.push(el);
@@ -324,6 +321,21 @@ const GenericSelect = ({
         }
 
         setScriptData(filtered);
+      })();
+    } else if (data?.transactions?.edges?.length > 0) {
+      const filtered: IContractEdge[] = [];
+      (async () => {
+        for (const el of data.transactions.edges) {
+          const modelId = findTag(el, 'modelTransaction') as string;
+          const modelOwner = findTag(el, 'sequencerOwner') as string;
+          if (await isFakeDeleted(modelId, modelOwner, 'model')) {
+            // if fake deleted ignore
+          } else {
+            filtered.push(el);
+          }
+        }
+
+        setModelData(filtered);
       })();
     } else {
       setScriptData([]);
@@ -333,6 +345,11 @@ const GenericSelect = ({
   const hasScriptData = useMemo(
     () => !error && !loading && scriptData.length > 0,
     [error, loading, scriptData],
+  );
+
+  const hasModelData = useMemo(
+    () => !isScript && !error && !loading && modelData.length > 0,
+    [isScript, error, loading, modelData],
   );
 
   const handleSelected = useCallback(
@@ -432,13 +449,13 @@ const GenericSelect = ({
       )}
 
       {hasModelData &&
-        data.transactions.edges.map((el: IContractEdge) => (
+        modelData.map((el: IContractEdge) => (
           <ModelOption key={el.node.id} el={el} setValue={setValue} />
         ))}
 
       {hasScriptData &&
         scriptData.map((el: IContractEdge) => (
-          <ScriptOption key={el.node.id} el={el} setValue={setValue} modelsData={modelsData} />
+          <ScriptOption key={el.node.id} el={el} setValue={setValue} modelsData={modelData} />
         ))}
 
       {hasNoData && (
@@ -801,7 +818,6 @@ const UploadCurator = () => {
                 loading={scriptsLoading}
                 hasNextPage={hasScriptsNextPage}
                 disabled={false}
-                modelsData={modelsData}
                 loadMore={scriptsFetchMore}
                 setValue={setValue}
               />
