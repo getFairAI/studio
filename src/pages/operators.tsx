@@ -27,7 +27,7 @@ import {
 } from '@/constants';
 import { IContractEdge } from '@/interfaces/arweave';
 import { FIND_BY_TAGS } from '@/queries/graphql';
-import { commonUpdateQuery, findTag, genLoadingArray } from '@/utils/common';
+import { commonUpdateQuery, findTag, genLoadingArray, isFakeDeleted } from '@/utils/common';
 import { NetworkStatus, useQuery } from '@apollo/client';
 import {
   Container,
@@ -47,7 +47,7 @@ import ReplayIcon from '@mui/icons-material/Replay';
 import ScriptCard from '@/components/script-card';
 import useOnScreen from '@/hooks/useOnScreen';
 import { Outlet } from 'react-router-dom';
-import { filterPreviousVersions, isFakeDeleted } from '@/utils/script';
+import { filterPreviousVersions } from '@/utils/script';
 
 const Operators = () => {
   const [txs, setTxs] = useState<IContractEdge[]>([]);
@@ -113,7 +113,8 @@ const Operators = () => {
         const filtered: IContractEdge[] = [];
         for (const el of filteredScritps) {
           const scriptId = findTag(el, 'scriptTransaction') as string;
-          if (await isFakeDeleted(scriptId)) {
+          const scriptOwner = findTag(el, 'sequencerOwner') as string;
+          if (await isFakeDeleted(scriptId, scriptOwner, 'script')) {
             // if fake deleted ignore
           } else {
             filtered.push(el);
