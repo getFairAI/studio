@@ -4,7 +4,6 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "prepare": "npx husky install && npx husky add .husky/commit-msg  'npx --no -- commitlint --edit ${1}' && npx husky add .husky/pre-commit 'npx --no -- lint-staged'",
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
