@@ -44,6 +44,7 @@ const ChooseWallet = ({
   // components/layout.js
   const theme = useTheme();
   const { isArConnectAvailable, connectWallet } = useContext(WalletContext);
+  const forceDisable = true;
 
   const handleClose = useCallback(() => setOpen(false), [setOpen]);
 
@@ -112,7 +113,7 @@ const ChooseWallet = ({
                 aria-label='connect'
                 variant='contained'
                 onClick={handleArweaveApp}
-                disabled={localStorage.getItem('wallet') === 'arweave.app'}
+                disabled={forceDisable} // disable until we have a working version
                 endIcon={<PowerIcon />}
               >
                 <Typography fontStyle={'bold'}>Connect</Typography>
