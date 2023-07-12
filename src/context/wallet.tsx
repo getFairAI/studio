@@ -357,24 +357,18 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [window.arweaveWallet]);
 
-  const arweaveAppWalletSwitched = (event: string | undefined) => {
-    (async () => {
-      if (event) {
-        await actions.switchWallet(event);
-      }
-    })();
-  };
-
   useEffect(() => {
+    /*
+      disable arweave app support
+    */
     if (localStorage.getItem('wallet') === arweaveApp) {
-      (async () => {
-        await actions.arweaveAppConnect();
-      })();
-      wallet.on('change', arweaveAppWalletSwitched);
+      localStorage.removeItem('wallet');
+      try {
+        wallet.disconnect();
+      } catch (err) {
+        // already disconnected
+      }
     }
-    return () => {
-      wallet.off('change', arweaveAppWalletSwitched);
-    };
   }, []);
 
   const pollingTimeout = 10000;
