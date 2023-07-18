@@ -95,8 +95,8 @@ const sendToBundlr = async (
   logger.info(`node balance (converted) = ${convertedBalance}`);
 
   const tags = [
-    { name: APP_NAME_TAG, value: 'Fair Protocol' },
-    { name: APP_VERSION_TAG, value: appVersion },
+    { name: 'Custom-App-Name', value: 'Fair Protocol' },
+    { name: 'Custom-App-Version', value: appVersion },
     { name: SCRIPT_CURATOR_TAG, value: CONFIG.scriptCurator },
     { name: SCRIPT_NAME_TAG, value: CONFIG.scriptName },
     { name: SCRIPT_USER_TAG, value: userAddress },
@@ -106,10 +106,8 @@ const sendToBundlr = async (
     { name: CONTENT_TYPE_TAG, value: 'image/png' },
     { name: UNIX_TIME_TAG, value: (Date.now() / secondInMS).toString() },
     // add atomic token tags
-    /* 
-      { name: 'App-Name', value: 'SmartWeaveContract' },
-      { name: 'App-Version', value: '0.3.0' },
-     */
+    { name: APP_NAME_TAG, value: 'SmartWeaveContract' },
+    { name: APP_VERSION_TAG, value: '0.3.0' },
     { name: 'Contract-Src', value: ATOMIC_TOKEN_CONTRACT_ID }, // use contract source here
     {
       name: 'Init-State',
@@ -132,8 +130,12 @@ const sendToBundlr = async (
     for (const response of responses) {
       const transaction = await bundlr.uploadFile(response, { tags });
       logger.info(`Data uploaded ==> https://arweave.net/${transaction.id}`);
-      const { contractTxId } = await warp.register(transaction.id, 'node2'); // use node2 for dispatch
-      logger.info(`Token Registered ==> https://arweave.net/${contractTxId}`);
+      try {
+        const { contractTxId } = await warp.register(transaction.id, 'node1'); // must use same node as uploaded data
+        logger.info(`Token Registered ==> https://arweave.net/${contractTxId}`);
+      } catch (e) {
+        logger.error(`Could not register token: ${e}`); // just log error as tx can be registered after
+      }
     }
   } catch (e) {
     // throw error to be handled by caller
