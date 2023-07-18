@@ -18,6 +18,8 @@
 
 import CONFIG from '../config.json' assert { type: 'json' };
 import fs from 'fs';
+import { WarpFactory } from 'warp-contracts';
+import { DeployPlugin } from 'warp-contracts-plugin-deploy';
 import NodeBundlr from '@bundlr-network/client/build/esm/node/index';
 import Arweave from 'arweave';
 import { JWKInterface } from 'arweave/node/lib/wallet';
@@ -26,6 +28,7 @@ import { IEdge } from './interfaces';
 import {
   APP_NAME_TAG,
   APP_VERSION_TAG,
+  ATOMIC_TOKEN_CONTRACT_ID,
   CONTENT_TYPE_TAG,
   CONVERSATION_IDENTIFIER_TAG,
   CREATOR_PERCENTAGE_FEE,
@@ -73,9 +76,11 @@ const JWK: JWKInterface = JSON.parse(fs.readFileSync('wallet.json').toString());
 // initailze the bundlr SDK
 // const bundlr: Bundlr = new (Bundlr as any).default(
 const bundlr = new NodeBundlr('https://node1.bundlr.network', 'arweave', JWK);
+const warp = WarpFactory.forMainnet().use(new DeployPlugin());
 
 const sendToBundlr = async (
   responses: string[],
+  prompt: string,
   appVersion: string,
   userAddress: string,
   requestTransaction: string,
@@ -90,8 +95,8 @@ const sendToBundlr = async (
   logger.info(`node balance (converted) = ${convertedBalance}`);
 
   const tags = [
-    { name: APP_NAME_TAG, value: 'Fair Protocol' },
-    { name: APP_VERSION_TAG, value: appVersion },
+    { name: 'Custom-App-Name', value: 'Fair Protocol' },
+    { name: 'Custom-App-Version', value: appVersion },
     { name: SCRIPT_CURATOR_TAG, value: CONFIG.scriptCurator },
     { name: SCRIPT_NAME_TAG, value: CONFIG.scriptName },
     { name: SCRIPT_USER_TAG, value: userAddress },
@@ -100,12 +105,37 @@ const sendToBundlr = async (
     { name: CONVERSATION_IDENTIFIER_TAG, value: conversationIdentifier },
     { name: CONTENT_TYPE_TAG, value: 'image/png' },
     { name: UNIX_TIME_TAG, value: (Date.now() / secondInMS).toString() },
+    // add atomic token tags
+    { name: APP_NAME_TAG, value: 'SmartWeaveContract' },
+    { name: APP_VERSION_TAG, value: '0.3.0' },
+    { name: 'Contract-Src', value: ATOMIC_TOKEN_CONTRACT_ID }, // use contract source here
+    {
+      name: 'Init-State',
+      value: JSON.stringify({
+        owner: userAddress,
+        canEvolve: false,
+        balances: {
+          [userAddress]: 1,
+        },
+        name: 'Fair Protocol NFT',
+        ticker: 'FNFT',
+      }),
+    },
+    { name: 'Title', value: 'Fair Protocol NFT' },
+    { name: 'Description', value: prompt }, // use request prompt
+    { name: 'Type', value: 'Image' },
   ];
 
   try {
     for (const response of responses) {
       const transaction = await bundlr.uploadFile(response, { tags });
       logger.info(`Data uploaded ==> https://arweave.net/${transaction.id}`);
+      try {
+        const { contractTxId } = await warp.register(transaction.id, 'node1'); // must use same node as uploaded data
+        logger.info(`Token Registered ==> https://arweave.net/${contractTxId}`);
+      } catch (e) {
+        logger.error(`Could not register token: ${e}`); // just log error as tx can be registered after
+      }
     }
   } catch (e) {
     // throw error to be handled by caller
@@ -124,7 +154,7 @@ const inference = async function (requestTx: IEdge) {
   });
   const tempData: { imgPaths: string[] } = await res.json();
 
-  return tempData.imgPaths;
+  return { imgPaths: tempData.imgPaths, prompt: text };
 };
 
 const getOperatorFee = async (operatorAddress = address) => {
@@ -261,7 +291,8 @@ const processRequest = async (requestId: string, reqUserAddr: string) => {
   logger.info(`Inference Result: ${inferenceResult}`);
 
   await sendToBundlr(
-    inferenceResult,
+    inferenceResult.imgPaths,
+    inferenceResult.prompt,
     appVersion,
     requestTx.node.owner.address,
     requestTx.node.id,
