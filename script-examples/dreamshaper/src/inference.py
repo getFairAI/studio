@@ -40,10 +40,9 @@ def image_grid(imgs, rows=2, cols=2):
   
 def gen_img(prompt: str):
   images = pipe(**get_inputs(prompt,batch_size=4)).images
-  current_time = datetime.datetime.now().timestamp()
   paths = []
   for i, img in enumerate(images):
-    file_path = f"{curr_dir}/{prompt}-{i}-{current_time}.png"
+    file_path = f"{curr_dir}/result-{i}.png"
     img.save(file_path, 'png')
     paths.append(file_path)
 
