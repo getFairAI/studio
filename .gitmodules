@@ -1,0 +1,3 @@
+[submodule "script-examples"]
+	path = script-examples
+	url = git@github.com:FAIR-Protocol/script-examples.git
