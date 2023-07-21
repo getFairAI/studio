@@ -160,6 +160,12 @@ export const DEFAULT_TAGS_RETRO = [
   { name: TAG_NAMES.appVersion, values: [...PREVIOUS_VERSIONS, APP_VERSION] },
 ];
 
+// add smartWeaveContract tags so atomic tokens can be picked up
+export const DEFAULT_TAGS_FOR_TOKENS = [
+  { name: TAG_NAMES.appName, values: [APP_NAME, 'SmartWeaveContract'] },
+  { name: TAG_NAMES.appVersion, values: [APP_VERSION, '0.3.0'] },
+];
+
 export const GITHUB_LINK = 'https://github.com/FAIR-Protocol/decentralized-inference';
 export const DISCORD_LINK = 'https://discord.gg/GRf7CukfXf';
 export const WHITEPAPER_LINK =
