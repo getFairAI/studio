@@ -360,10 +360,11 @@ export const isFakeDeleted = async (txid: string, owner: string, type: 'script' 
     deleteTags.push({ name: TAG_NAMES.operationName, values: [SCRIPT_DELETION] });
     deleteTags.push({ name: TAG_NAMES.scriptTransaction, values: [txid] });
   }
+  const owners = owner ? [MARKETPLACE_ADDRESS, owner] : [MARKETPLACE_ADDRESS];
 
   const { data } = await client.query({
     query: QUERY_TX_WITH_OWNERS,
-    variables: { tags: deleteTags, owners: [MARKETPLACE_ADDRESS, owner] },
+    variables: { tags: deleteTags, owners },
   });
 
   return data.transactions.edges.length > 0;
