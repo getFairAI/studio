@@ -203,7 +203,10 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
   const elementsPerPage = 5;
   const theme = useTheme();
 
-  const owner = useMemo(() => findTag(scriptTx, 'sequencerOwner'), [scriptTx]);
+  const owner = useMemo(
+    () => findTag(scriptTx, 'sequencerOwner') ?? scriptTx.node.owner.address,
+    [scriptTx],
+  );
 
   const tags = [
     ...DEFAULT_TAGS,

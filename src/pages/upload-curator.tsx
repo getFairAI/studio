@@ -258,6 +258,7 @@ const GenericSelect = ({
   name,
   control,
   data,
+  extraData,
   error,
   loading,
   hasNextPage,
@@ -268,6 +269,7 @@ const GenericSelect = ({
   name: string;
   control: Control<FieldValues, unknown>;
   data: IContractQueryResult;
+  extraData?: IContractQueryResult;
   error?: ApolloError;
   loading: boolean;
   hasNextPage: boolean;
@@ -305,6 +307,22 @@ const GenericSelect = ({
   const [scriptData, setScriptData] = useState<IContractEdge[]>([]);
   const [modelData, setModelData] = useState<IContractEdge[]>([]);
 
+  const filterModels = (data: IContractQueryResult) => {
+    const filtered: IContractEdge[] = [];
+    (async () => {
+      for (const el of data.transactions.edges) {
+        const modelId = findTag(el, 'modelTransaction') as string;
+        const modelOwner = findTag(el, 'sequencerOwner') as string;
+        if (await isFakeDeleted(modelId, modelOwner, 'model')) {
+          // if fake deleted ignore
+        } else {
+          filtered.push(el);
+        }
+      }
+
+      setModelData(filtered);
+    })();
+  };
   useEffect(() => {
     if (isScript && data?.transactions?.edges?.length > 0) {
       const filteredScritps = filterPreviousVersions<IContractEdge[]>(data.transactions.edges);
@@ -323,24 +341,19 @@ const GenericSelect = ({
         setScriptData(filtered);
       })();
     } else if (data?.transactions?.edges?.length > 0) {
-      const filtered: IContractEdge[] = [];
-      (async () => {
-        for (const el of data.transactions.edges) {
-          const modelId = findTag(el, 'modelTransaction') as string;
-          const modelOwner = findTag(el, 'sequencerOwner') as string;
-          if (await isFakeDeleted(modelId, modelOwner, 'model')) {
-            // if fake deleted ignore
-          } else {
-            filtered.push(el);
-          }
-        }
-
-        setModelData(filtered);
-      })();
+      filterModels(data);
     } else {
       setScriptData([]);
     }
   }, [isScript, data]);
+
+  useEffect(() => {
+    if (extraData && extraData.transactions?.edges?.length > 0) {
+      filterModels(extraData);
+    } else {
+      setModelData([]);
+    }
+  }, [extraData]);
 
   const hasScriptData = useMemo(
     () => !error && !loading && scriptData.length > 0,
@@ -820,6 +833,7 @@ const UploadCurator = () => {
                 disabled={false}
                 loadMore={scriptsFetchMore}
                 setValue={setValue}
+                extraData={modelsData}
               />
               <GenericSelect
                 name='model'

@@ -82,6 +82,9 @@ export interface IContractEdge {
   node: {
     id: string;
     tags: ITag[];
+    owner: {
+      address: string;
+    };
   };
 }
 
