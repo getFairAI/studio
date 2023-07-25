@@ -53,7 +53,7 @@ const checkOpResponses = async (el: IEdge, filtered: IEdge[]) => {
   const opFee = findTag(el, 'operatorFee') as string;
   const scriptName = findTag(el, 'scriptName') as string;
   const scriptCurator = findTag(el, 'scriptCurator') as string;
-  const registrationOwner = findTag(el, 'sequencerOwner') as string;
+  const registrationOwner = (findTag(el, 'sequencerOwner') as string) ?? el.node.owner.address;
 
   if (
     !(await isValidRegistration(el.node.id, opFee, registrationOwner, scriptName, scriptCurator))
@@ -154,7 +154,9 @@ const parseScriptData = (
   // filter registratiosn for same model (only keep latest one per operator)
   registrations.forEach((op: IEdge) =>
     uniqueOperators.filter(
-      (unique) => findTag(op, 'sequencerOwner') === findTag(unique, 'sequencerOwner'),
+      (unique) =>
+        findTag(op, 'sequencerOwner') === findTag(unique, 'sequencerOwner') ||
+        op.node.owner.address === unique.node.owner.address,
     ).length > 0
       ? undefined
       : uniqueOperators.push(op),
