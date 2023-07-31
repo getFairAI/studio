@@ -509,7 +509,7 @@ const UploadCurator = () => {
   const { nodeBalance, getPrice, chunkUpload, updateBalance } = useContext(BundlrContext);
   const { enqueueSnackbar } = useSnackbar();
   const theme = useTheme();
-  const { currentAddress, currentBalance, updateUBalance } = useContext(WalletContext);
+  const { currentAddress, currentUBalance, updateUBalance } = useContext(WalletContext);
   const { setOpen: setFundOpen } = useContext(FundContext);
   const [mode, setMode] = useState<'upload' | 'update'>('upload');
 
@@ -666,7 +666,7 @@ const UploadCurator = () => {
     const modelData = JSON.parse(data.model) as IContractEdge;
     const uFee = parseFloat(SCRIPT_CREATION_FEE) * U_DIVIDER;
 
-    if (currentBalance < parseFloat(SCRIPT_CREATION_FEE)) {
+    if (currentUBalance < parseFloat(SCRIPT_CREATION_FEE)) {
       enqueueSnackbar(
         `Not Enough Balance in your Wallet to pay Script Creation Fee (${SCRIPT_CREATION_FEE} $U)`,
         { variant: 'error' },
