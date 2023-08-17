@@ -48,6 +48,7 @@ import ScriptCard from '@/components/script-card';
 import useOnScreen from '@/hooks/useOnScreen';
 import { Outlet } from 'react-router-dom';
 import { filterByUniqueScriptTxId, filterPreviousVersions } from '@/utils/script';
+import _ from 'lodash';
 
 const Operators = () => {
   const [txs, setTxs] = useState<IContractEdge[]>([]);
@@ -82,7 +83,7 @@ const Operators = () => {
     { name: TAG_NAMES.input, values: [scriptPaymentInputStr, scriptPaymentInputNumber] },
   ];
 
-  const { data, loading, error, networkStatus, refetch, fetchMore } = useQuery(FIND_BY_TAGS, {
+  const { data, previousData, loading, error, networkStatus, refetch, fetchMore } = useQuery(FIND_BY_TAGS, {
     variables: { tags, first: elementsPerPage },
     notifyOnNetworkStatusChange: true,
   });
@@ -90,10 +91,11 @@ const Operators = () => {
   useEffect(() => {
     if (isOnScreen && hasNextPage) {
       const allTxs = data.transactions.edges;
+      const fetchNextCursor = allTxs && allTxs.length > 0 ? allTxs[allTxs.length - 1].cursor : null;
       (async () =>
         fetchMore({
           variables: {
-            after: allTxs && allTxs.length > 0 ? allTxs[allTxs.length - 1].cursor : null,
+            after: fetchNextCursor,
           },
           updateQuery: commonUpdateQuery,
         }))();
@@ -106,7 +108,7 @@ const Operators = () => {
    * filtering correct payments
    */
   useEffect(() => {
-    if (data && networkStatus === NetworkStatus.ready) {
+    if (data && networkStatus === NetworkStatus.ready && !_.isEqual(data, previousData)) {
       setHasNextPage(data.transactions.pageInfo.hasNextPage);
       (async () => {
         const uniqueScriptIds = filterByUniqueScriptTxId<IContractEdge[]>(data.transactions.edges);
