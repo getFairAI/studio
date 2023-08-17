@@ -35,7 +35,7 @@ import {
 } from '@mui/material';
 import { ChangeEvent, Dispatch, SetStateAction, useContext, useEffect, useState } from 'react';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { NODE1_BUNDLR_URL, NODE2_BUNDLR_URL } from '@/constants';
+import { NODE2_BUNDLR_URL } from '@/constants';
 import { BundlrContext, bundlrNodeUrl } from '@/context/bundlr';
 import { useSnackbar } from 'notistack';
 import { WalletContext } from '@/context/wallet';
@@ -54,7 +54,7 @@ const FundDialog = ({
   setOpen: Dispatch<SetStateAction<boolean>>;
   handleFundFinished?: FundFinishedFn;
 }) => {
-  const [node, setNode] = useState<bundlrNodeUrl>(NODE1_BUNDLR_URL);
+  const [node, setNode] = useState<bundlrNodeUrl>(NODE2_BUNDLR_URL);
   const [amount, setAmount] = useState(0);
   const [loading, setLoading] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
@@ -166,7 +166,6 @@ const FundDialog = ({
                 disabled
               >
                 {/* <MenuItem value={DEV_BUNDLR_URL}>dev.bundlr.network</MenuItem> */}
-                <MenuItem value={NODE1_BUNDLR_URL}>node1.bundlr.network</MenuItem>
                 <MenuItem value={NODE2_BUNDLR_URL}>node2.bundlr.network</MenuItem>
               </Select>
             </FormControl>

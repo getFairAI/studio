@@ -175,7 +175,7 @@ export const BundlrProvider = ({ children }: { children: ReactNode }) => {
     if (currentAddress) {
       (async () => {
         actions.updateLoading(true);
-        await actions.changeNode(NODE1_BUNDLR_URL);
+        await actions.changeNode(NODE2_BUNDLR_URL);
       })();
     }
   }, [currentAddress]);

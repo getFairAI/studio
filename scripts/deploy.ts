@@ -18,6 +18,7 @@
 
 import Bundlr from 'bundlr-custom/build/esm/node/index';
 import fs from 'fs';
+import { NODE2_BUNDLR_URL } from '../src/constants';
 
 const main = async () => {
   const wallet = './wallet.json';
@@ -28,7 +29,7 @@ const main = async () => {
   // the commented out line below to create a new Bundlr object.
   // const bundlr = new Bundlr("http://node1.bundlr.network", "arweave", jwk);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const bundlr = new Bundlr('https://node1.bundlr.network', 'arweave', jwk );
+  const bundlr = new Bundlr(NODE2_BUNDLR_URL, 'arweave', jwk );
   
   // Get loaded balance in atomic units
   const atomicBalance = await bundlr.getLoadedBalance();
