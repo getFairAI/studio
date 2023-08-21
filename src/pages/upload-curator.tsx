@@ -324,10 +324,10 @@ const GenericSelect = ({
     }
   };
 
-  const filterModels = (data: IContractQueryResult) => {
+  const filterModels = (newData: IContractQueryResult) => {
     const filtered: IContractEdge[] = [];
     (async () => {
-      for (const el of data.transactions.edges) {
+      for (const el of newData.transactions.edges) {
         const modelId = findTag(el, 'modelTransaction') as string;
         const modelOwner = findTag(el, 'sequencerOwner') as string;
         if (await isFakeDeleted(modelId, modelOwner, 'model')) {
@@ -342,8 +342,8 @@ const GenericSelect = ({
     })();
   };
 
-  const filterScripts =  (data: IContractQueryResult) => {
-    const filteredScritps = filterPreviousVersions<IContractEdge[]>(data.transactions.edges);
+  const filterScripts =  (newData: IContractQueryResult) => {
+    const filteredScritps = filterPreviousVersions<IContractEdge[]>(newData.transactions.edges);
     const filtered: IContractEdge[] = [];
     (async () => {
       for (const el of filteredScritps) {
