@@ -307,10 +307,27 @@ const GenericSelect = ({
   const [scriptData, setScriptData] = useState<IContractEdge[]>([]);
   const [modelData, setModelData] = useState<IContractEdge[]>([]);
 
-  const filterModels = (data: IContractQueryResult) => {
+  const checkShouldLoadMore = (filtered: IContractEdge[]) => {
+    const selectRowHeight = 36;
+    const maxHeight = 144;
+    if ((filtered.length * selectRowHeight < maxHeight) && data.transactions.pageInfo.hasNextPage) {
+      // if there are not enough elements to show scroll & has next pºage, force load more
+      loadMore({
+        variables: {
+          after:
+            data && data.transactions.edges.length > 0
+              ? data.transactions.edges[data.transactions.edges.length - 1].cursor
+              : undefined,
+        },
+        updateQuery: commonUpdateQuery,
+      });
+    }
+  };
+
+  const filterModels = (newData: IContractQueryResult) => {
     const filtered: IContractEdge[] = [];
     (async () => {
-      for (const el of data.transactions.edges) {
+      for (const el of newData.transactions.edges) {
         const modelId = findTag(el, 'modelTransaction') as string;
         const modelOwner = findTag(el, 'sequencerOwner') as string;
         if (await isFakeDeleted(modelId, modelOwner, 'model')) {
@@ -321,25 +338,32 @@ const GenericSelect = ({
       }
 
       setModelData(filtered);
+      checkShouldLoadMore(filtered);
     })();
   };
+
+  const filterScripts =  (newData: IContractQueryResult) => {
+    const filteredScritps = filterPreviousVersions<IContractEdge[]>(newData.transactions.edges);
+    const filtered: IContractEdge[] = [];
+    (async () => {
+      for (const el of filteredScritps) {
+        const scriptId = findTag(el, 'scriptTransaction') as string;
+        const scriptOwner = findTag(el, 'sequencerOwner') as string;
+        if (await isFakeDeleted(scriptId, scriptOwner, 'script')) {
+          // if fake deleted ignore
+        } else {
+          filtered.push(el);
+        }
+      }
+
+      setScriptData(filtered);
+      checkShouldLoadMore(filtered);
+    })();
+  };
+
   useEffect(() => {
     if (isScript && data?.transactions?.edges?.length > 0) {
-      const filteredScritps = filterPreviousVersions<IContractEdge[]>(data.transactions.edges);
-      const filtered: IContractEdge[] = [];
-      (async () => {
-        for (const el of filteredScritps) {
-          const scriptId = findTag(el, 'scriptTransaction') as string;
-          const scriptOwner = findTag(el, 'sequencerOwner') as string;
-          if (await isFakeDeleted(scriptId, scriptOwner, 'script')) {
-            // if fake deleted ignore
-          } else {
-            filtered.push(el);
-          }
-        }
-
-        setScriptData(filtered);
-      })();
+      filterScripts(data);
     } else if (data?.transactions?.edges?.length > 0) {
       filterModels(data);
     } else {
@@ -419,7 +443,7 @@ const GenericSelect = ({
       mat={{
         onClick: handleSelected,
         disabled,
-        placeholder: 'Choose a Model',
+        placeholder: isScript ? 'Choose a Script' : 'Choose a Model',
         sx: {
           borderWidth: '1px',
           borderColor: theme.palette.text.primary,
@@ -457,7 +481,7 @@ const GenericSelect = ({
       )}
       {error && (
         <Box>
-          <Typography>Could Not Fetch Available Models</Typography>
+          <Typography>{isScript ? 'Could not fetch available scripts for the current address' : 'Could Not Fetch Available Models'}</Typography>
         </Box>
       )}
 
@@ -473,7 +497,7 @@ const GenericSelect = ({
 
       {hasNoData && (
         <Box>
-          <Typography>There Are no Available Models</Typography>
+          <Typography>{isScript ? 'There are no Scripts created with the current address' : 'There Are no Available Models'}</Typography>
         </Box>
       )}
     </SelectControl>
@@ -512,6 +536,7 @@ const UploadCurator = () => {
   const { currentAddress, currentUBalance, updateUBalance } = useContext(WalletContext);
   const { setOpen: setFundOpen } = useContext(FundContext);
   const [mode, setMode] = useState<'upload' | 'update'>('upload');
+  const [ isUploading, setIsUploading ] = useState(false);
 
   const {
     data: scriptsData,
@@ -601,7 +626,9 @@ const UploadCurator = () => {
     if (nodeBalance <= 0) {
       setFundOpen(true);
     } else {
+      setIsUploading(true);
       await handleFundFinished(data as CreateForm); // use default node
+      setIsUploading(false);
     }
   };
 
@@ -1037,7 +1064,7 @@ const UploadCurator = () => {
                 <DebounceButton
                   onClick={handleSubmit(onSubmit)}
                   disabled={
-                    (!control._formState.isValid && control._formState.isDirty) || !currentAddress
+                    (!control._formState.isValid && control._formState.isDirty) || !currentAddress || isUploading
                   }
                   sx={{
                     borderRadius: '7px',
