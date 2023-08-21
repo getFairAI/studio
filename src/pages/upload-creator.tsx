@@ -30,7 +30,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { useCallback, useContext, useRef, useState } from 'react';
+import { useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { FieldValues, useForm } from 'react-hook-form';
 import TextControl from '@/components/text-control';
 import MarkdownControl from '@/components/md-control';
@@ -88,6 +88,8 @@ const UploadCreator = () => {
   const theme = useTheme();
   const { currentAddress, currentUBalance, updateUBalance } = useContext(WalletContext);
   const { setOpen: setFundOpen } = useContext(FundContext);
+  const [ isUploading, setIsUploading ] = useState(false);
+  const disabled = useMemo(() => (!control._formState.isValid && control._formState.isDirty) || !currentAddress || isUploading, [control._formState.isValid, control._formState.isDirty, currentAddress, isUploading]);
 
   const onSubmit = async (data: FieldValues) => {
     await updateBalance();
@@ -96,7 +98,10 @@ const UploadCreator = () => {
     if (nodeBalance <= 0) {
       setFundOpen(true);
     } else {
+
+      setIsUploading(true);
       await handleFundFinished(data as CreateForm);
+      setIsUploading(false);
     }
   };
 
@@ -415,9 +420,7 @@ const UploadCreator = () => {
                 </Button>
                 <DebounceButton
                   onClick={handleSubmit(onSubmit)}
-                  disabled={
-                    (!control._formState.isValid && control._formState.isDirty) || !currentAddress
-                  }
+                  disabled={disabled}
                   sx={{
                     borderRadius: '7px',
                     height: '39px',

@@ -537,6 +537,7 @@ const UploadCurator = () => {
   const { setOpen: setFundOpen } = useContext(FundContext);
   const [mode, setMode] = useState<'upload' | 'update'>('upload');
   const [ isUploading, setIsUploading ] = useState(false);
+  const disabled = useMemo(() => (!control._formState.isValid && control._formState.isDirty) || !currentAddress || isUploading, [control._formState.isValid, control._formState.isDirty, currentAddress, isUploading]);
 
   const {
     data: scriptsData,
@@ -1063,9 +1064,7 @@ const UploadCurator = () => {
                 </Button>
                 <DebounceButton
                   onClick={handleSubmit(onSubmit)}
-                  disabled={
-                    (!control._formState.isValid && control._formState.isDirty) || !currentAddress || isUploading
-                  }
+                  disabled={disabled}
                   sx={{
                     borderRadius: '7px',
                     height: '39px',
