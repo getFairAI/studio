@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\" --config ./.prettierrc",
     "preview": "vite preview",
     "deploy": "ts-node --esm scripts/deploy.ts"
   },

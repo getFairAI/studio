@@ -83,10 +83,13 @@ const Operators = () => {
     { name: TAG_NAMES.input, values: [scriptPaymentInputStr, scriptPaymentInputNumber] },
   ];
 
-  const { data, previousData, loading, error, networkStatus, refetch, fetchMore } = useQuery(FIND_BY_TAGS, {
-    variables: { tags, first: elementsPerPage },
-    notifyOnNetworkStatusChange: true,
-  });
+  const { data, previousData, loading, error, networkStatus, refetch, fetchMore } = useQuery(
+    FIND_BY_TAGS,
+    {
+      variables: { tags, first: elementsPerPage },
+      notifyOnNetworkStatusChange: true,
+    },
+  );
 
   useEffect(() => {
     if (isOnScreen && hasNextPage) {

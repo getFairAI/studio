@@ -57,7 +57,7 @@ interface BundlrContext {
   retryConnection: () => Promise<void>;
   getPrice: (bytes: number, currency?: string) => Promise<BigNumber>;
   upload: (data: string, tags: ITag[]) => Promise<UploadResponse>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   chunkUpload: (
     file: File,
     tags: ITag[],
@@ -126,7 +126,6 @@ const bundlrReducer = (
 
   switch (action.type) {
     case 'node_changed':
-      // eslint-disable-next-line no-case-declarations
       return {
         ...state,
         bundlr: action.bundlr,
