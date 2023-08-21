@@ -228,7 +228,6 @@ const walletReducer = (state: WalletContext, action?: WalletAction) => {
     case 'arconnect_available':
       return { ...state, isArConnectAvailable: true };
     case 'wallet_address_updated':
-      // eslint-disable-next-line no-case-declarations
       return { ...state, currentAddress: action.address };
     case 'wallet_balance_updated':
       return { ...state, currentBalance: action.balance };

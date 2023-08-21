@@ -310,7 +310,7 @@ const GenericSelect = ({
   const checkShouldLoadMore = (filtered: IContractEdge[]) => {
     const selectRowHeight = 36;
     const maxHeight = 144;
-    if ((filtered.length * selectRowHeight < maxHeight) && data.transactions.pageInfo.hasNextPage) {
+    if (filtered.length * selectRowHeight < maxHeight && data.transactions.pageInfo.hasNextPage) {
       // if there are not enough elements to show scroll & has next pºage, force load more
       loadMore({
         variables: {
@@ -342,7 +342,7 @@ const GenericSelect = ({
     })();
   };
 
-  const filterScripts =  (newData: IContractQueryResult) => {
+  const filterScripts = (newData: IContractQueryResult) => {
     const filteredScritps = filterPreviousVersions<IContractEdge[]>(newData.transactions.edges);
     const filtered: IContractEdge[] = [];
     (async () => {
@@ -481,7 +481,11 @@ const GenericSelect = ({
       )}
       {error && (
         <Box>
-          <Typography>{isScript ? 'Could not fetch available scripts for the current address' : 'Could Not Fetch Available Models'}</Typography>
+          <Typography>
+            {isScript
+              ? 'Could not fetch available scripts for the current address'
+              : 'Could Not Fetch Available Models'}
+          </Typography>
         </Box>
       )}
 
@@ -497,7 +501,11 @@ const GenericSelect = ({
 
       {hasNoData && (
         <Box>
-          <Typography>{isScript ? 'There are no Scripts created with the current address' : 'There Are no Available Models'}</Typography>
+          <Typography>
+            {isScript
+              ? 'There are no Scripts created with the current address'
+              : 'There Are no Available Models'}
+          </Typography>
         </Box>
       )}
     </SelectControl>
@@ -536,8 +544,12 @@ const UploadCurator = () => {
   const { currentAddress, currentUBalance, updateUBalance } = useContext(WalletContext);
   const { setOpen: setFundOpen } = useContext(FundContext);
   const [mode, setMode] = useState<'upload' | 'update'>('upload');
-  const [ isUploading, setIsUploading ] = useState(false);
-  const disabled = useMemo(() => (!control._formState.isValid && control._formState.isDirty) || !currentAddress || isUploading, [control._formState.isValid, control._formState.isDirty, currentAddress, isUploading]);
+  const [isUploading, setIsUploading] = useState(false);
+  const disabled = useMemo(
+    () =>
+      (!control._formState.isValid && control._formState.isDirty) || !currentAddress || isUploading,
+    [control._formState.isValid, control._formState.isDirty, currentAddress, isUploading],
+  );
 
   const {
     data: scriptsData,

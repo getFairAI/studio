@@ -88,8 +88,12 @@ const UploadCreator = () => {
   const theme = useTheme();
   const { currentAddress, currentUBalance, updateUBalance } = useContext(WalletContext);
   const { setOpen: setFundOpen } = useContext(FundContext);
-  const [ isUploading, setIsUploading ] = useState(false);
-  const disabled = useMemo(() => (!control._formState.isValid && control._formState.isDirty) || !currentAddress || isUploading, [control._formState.isValid, control._formState.isDirty, currentAddress, isUploading]);
+  const [isUploading, setIsUploading] = useState(false);
+  const disabled = useMemo(
+    () =>
+      (!control._formState.isValid && control._formState.isDirty) || !currentAddress || isUploading,
+    [control._formState.isValid, control._formState.isDirty, currentAddress, isUploading],
+  );
 
   const onSubmit = async (data: FieldValues) => {
     await updateBalance();
@@ -98,7 +102,6 @@ const UploadCreator = () => {
     if (nodeBalance <= 0) {
       setFundOpen(true);
     } else {
-
       setIsUploading(true);
       await handleFundFinished(data as CreateForm);
       setIsUploading(false);
