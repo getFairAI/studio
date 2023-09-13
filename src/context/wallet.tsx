@@ -327,7 +327,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         (async () => arConnectLoaded())();
       });
       connectWalletSubscriptionRef.current = true;
-    } else if (window.arweaveWallet && localStorage.getItem('wallet') === arConnect) {
+    } else if (window.arweaveWallet) {
       (async () => arConnectLoaded())();
     } else {
       // ignore
