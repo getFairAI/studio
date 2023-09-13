@@ -56,6 +56,7 @@ import {
   UseFormSetValue,
   useController,
   useForm,
+  useWatch,
 } from 'react-hook-form';
 import TextControl from '@/components/text-control';
 import SelectControl from '@/components/select-control';
@@ -102,7 +103,8 @@ import { fetchMoreFn } from '@/utils/apollo';
 export interface CreateForm extends FieldValues {
   name: string;
   fee: number;
-  category: string;
+  output: string;
+  outputConfiguration: string;
   notes: string;
   file: File;
   model: string;
@@ -145,7 +147,7 @@ const AllowGroupControl = (props: UseControllerProps) => {
 
   return (
     <FormControl required error={error} variant='outlined'>
-      <FormLabel>Choose the available Input/Output of promts in Application chat</FormLabel>
+      <FormLabel>Choose Input configurations:</FormLabel>
       <FormGroup>
         <FormControlLabel
           control={
@@ -512,13 +514,59 @@ const GenericSelect = ({
   );
 };
 
+const OutputFields = ({ control }: { control: Control<FieldValues, unknown> }) => {
+  const theme = useTheme();
+  const outputValue = useWatch({ name: 'output', control });
+  const outputConfigurationDisabled = useMemo(() => outputValue !== 'image', [outputValue]);
+
+  return <>
+    <SelectControl
+      name='output'
+      control={control}
+      rules={{ required: true }}
+      defaultValue={'text'}
+      mat={{
+        sx: {
+          borderWidth: '1px',
+          borderColor: theme.palette.text.primary,
+          borderRadius: '16px',
+        },
+        placeholder: 'Select The Output Type',
+      }}
+    >
+      <MenuItem value={'text'}>Text</MenuItem>
+      <MenuItem value={'audio'}>Audio</MenuItem>
+      <MenuItem value={'image'}>Image</MenuItem>
+    </SelectControl>
+    <SelectControl
+      name='outputConfiguration'
+      control={control}
+      disabled={outputConfigurationDisabled}
+      rules={{ required: true }}
+      defaultValue={'none'}
+      mat={{
+        sx: {
+          borderWidth: '1px',
+          borderColor: theme.palette.text.primary,
+          borderRadius: '16px',
+        },
+        placeholder: 'Select The Output Configuration',
+      }}
+    >
+      <MenuItem value={'none'}>None</MenuItem>
+      <MenuItem value={'audio'}>Stable Diffusion</MenuItem>
+    </SelectControl>
+  </>; 
+};
+
 const UploadCurator = () => {
   const elementsPerPage = 5;
   const { handleSubmit, reset, control, setValue } = useForm({
     defaultValues: {
       name: '',
       fee: 0,
-      category: 'text',
+      output: 'text',
+      outputConfiguration: 'none',
       description: '',
       notes: '',
       avatar: '',
@@ -652,7 +700,10 @@ const UploadCurator = () => {
     commonTags.push({ name: TAG_NAMES.appVersion, value: APP_VERSION });
     commonTags.push({ name: TAG_NAMES.contentType, value: file.type });
     commonTags.push({ name: TAG_NAMES.scriptName, value: `${data.name}` });
-    commonTags.push({ name: TAG_NAMES.category, value: data.category });
+    commonTags.push({ name: TAG_NAMES.output, value: data.output });
+    if (data.outputConfiguration !== 'none') {
+      commonTags.push({ name: TAG_NAMES.outputConfiguration, value: data.outputConfiguration });
+    }
     commonTags.push({
       name: TAG_NAMES.modelName,
       value: findTag(modelData, 'modelName') as string,
@@ -807,23 +858,7 @@ const UploadCurator = () => {
                   }}
                   style={{ width: '100%' }}
                 />
-                <SelectControl
-                  name='category'
-                  control={control}
-                  rules={{ required: true }}
-                  mat={{
-                    sx: {
-                      borderWidth: '1px',
-                      borderColor: theme.palette.text.primary,
-                      borderRadius: '16px',
-                    },
-                    placeholder: 'Select a Category',
-                  }}
-                >
-                  <MenuItem value={'text'}>Text</MenuItem>
-                  <MenuItem value={'audio'}>Audio</MenuItem>
-                  <MenuItem value={'video'}>Video</MenuItem>
-                </SelectControl>
+                <OutputFields control={control} />
               </Box>
               <TextControl
                 name='description'
@@ -911,25 +946,7 @@ const UploadCurator = () => {
                 }}
                 style={{ width: '100%' }}
               />
-              <SelectControl
-                name='category'
-                control={control}
-                rules={{ required: true }}
-                mat={{
-                  sx: {
-                    borderWidth: '1px',
-                    borderColor: theme.palette.text.primary,
-                    borderRadius: '16px',
-                    marginTop: 0,
-                    marginBottom: 0,
-                  },
-                  placeholder: 'Select a Category',
-                }}
-              >
-                <MenuItem value={'text'}>Text</MenuItem>
-                <MenuItem value={'audio'}>Audio</MenuItem>
-                <MenuItem value={'video'}>Video</MenuItem>
-              </SelectControl>
+              <OutputFields control={control} />
             </Box>
             <Box padding='0px 32px'>
               <TextControl

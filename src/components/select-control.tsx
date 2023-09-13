@@ -6,6 +6,7 @@ type SelectControlProps = UseControllerProps & {
   mat?: SelectProps;
   style?: CSSProperties;
   helperText?: string;
+  disabled?: boolean;
 };
 
 const SelectControl = (props: SelectControlProps & { children: ReactNode }) => {
@@ -29,6 +30,7 @@ const SelectControl = (props: SelectControlProps & { children: ReactNode }) => {
           onChange={field.onChange}
           onBlur={field.onBlur}
           {...props.mat}
+          disabled={props.disabled}
         >
           {props.children}
         </Select>
