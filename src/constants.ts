@@ -32,11 +32,6 @@ export const MARKETPLACE_FEE = '0.5'; // u
 export const SCRIPT_CREATION_FEE = '0.5'; // u
 export const OPERATOR_REGISTRATION_AR_FEE = '0.05'; // u
 
-export const OPERATOR_PERCENTAGE_FEE = 0.8;
-export const MARKETPLACE_PERCENTAGE_FEE = 0.15;
-export const CURATOR_PERCENTAGE_FEE = 0.025;
-export const CREATOR_PERCENTAGE_FEE = 0.025;
-
 export const TAG_NAMES = {
   appName: 'App-Name',
   appVersion: 'App-Version',
