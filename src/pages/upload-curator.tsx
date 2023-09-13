@@ -554,7 +554,7 @@ const OutputFields = ({ control }: { control: Control<FieldValues, unknown> }) =
       }}
     >
       <MenuItem value={'none'}>None</MenuItem>
-      <MenuItem value={'audio'}>Stable Diffusion</MenuItem>
+      <MenuItem value={'stable-diffusion'}>Stable Diffusion</MenuItem>
     </SelectControl>
   </>; 
 };
