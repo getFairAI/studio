@@ -49,7 +49,6 @@ export const TAG_NAMES = {
   modelUser: 'Model-User',
   operationName: 'Operation-Name',
   notes: 'Notes',
-  category: 'Category',
   avatarUrl: 'AvatarUrl',
   description: 'Description',
   operatorName: 'Operator-Name',
@@ -80,6 +79,8 @@ export const TAG_NAMES = {
   sequencerOwner: 'Sequencer-Owner',
   updateFor: 'Update-For',
   previousVersions: 'Previous-Versions',
+  output: 'Output',
+  outputConfiguration: 'Output-Configuration',
 };
 
 // Operation Names

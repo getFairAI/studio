@@ -216,7 +216,7 @@ const Register = () => {
                 textAlign: 'center',
               }}
             >
-              Category
+              Output Type
             </Typography>
             <Typography
               sx={{
@@ -229,7 +229,7 @@ const Register = () => {
                 textAlign: 'center',
               }}
             >
-              {findTag(state, 'category')}
+              {findTag(state, 'output')}
             </Typography>
           </Box>
         </Box>
