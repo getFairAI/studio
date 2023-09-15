@@ -77,6 +77,8 @@ import {
   MODEL_CREATION_PAYMENT_TAGS,
   SCRIPT_CREATION_PAYMENT_TAGS,
   DEFAULT_TAGS_RETRO,
+  ATOMIC_ASSET_CONTRACT_SOURCE_ID,
+  UDL_ID,
 } from '@/constants';
 import { BundlrContext } from '@/context/bundlr';
 import { useSnackbar } from 'notistack';
@@ -84,7 +86,7 @@ import { WalletContext } from '@/context/wallet';
 import { FundContext } from '@/context/fund';
 import { ApolloError, useQuery } from '@apollo/client';
 import { FIND_BY_TAGS } from '@/queries/graphql';
-import { IContractEdge, IContractQueryResult } from '@/interfaces/arweave';
+import { IContractEdge, IContractQueryResult, ITag } from '@/interfaces/arweave';
 import {
   bundlrUpload,
   commonUpdateQuery,
@@ -99,6 +101,7 @@ import { sendU } from '@/utils/u';
 import { filterPreviousVersions } from '@/utils/script';
 import CachedIcon from '@mui/icons-material/Cached';
 import { fetchMoreFn } from '@/utils/apollo';
+import { AdvancedConfiguration } from '@/components/advanced-configuration';
 
 export interface CreateForm extends FieldValues {
   name: string;
@@ -113,6 +116,19 @@ export interface CreateForm extends FieldValues {
   avatar?: File;
   allow: { allowFiles: boolean; allowText: boolean };
 }
+
+interface LicenseForm extends FieldValues {
+  derivations?: 'With-Credit' | 'With-Indication' | 'With-License-Passthrough' | 'With-Revenue-Share',
+  revenueShare?: number,
+  commercialUse?: 'Allowed' | 'Allowed-With-Credit',
+  licenseFeeInterval?: 'One-Time' | string,
+  licenseFee?: number,
+  currency?: 'AR' | '$U',
+  expires?: number,
+  paymentAddress?: string,
+  paymentMode?: 'Random-Distribution' | 'Global-Distribution'
+}
+
 const AllowGroupControl = (props: UseControllerProps) => {
   const { field } = useController(props);
 
@@ -599,6 +615,16 @@ const UploadCurator = () => {
     [control._formState.isValid, control._formState.isDirty, currentAddress, isUploading],
   );
 
+  const licenseRef = useRef<HTMLInputElement>(null);
+  const { control: licenseControl, reset: resetLicenseForm } = useForm<LicenseForm>({
+    defaultValues: {
+      derivations: '',
+      commercialUse: '',
+      licenseFeeInterval: '',
+      paymentMode: '',
+    }
+  } as FieldValues);
+
   const {
     data: scriptsData,
     loading: scriptsLoading,
@@ -985,6 +1011,92 @@ const UploadCurator = () => {
     );
   };
 
+  const addAssetTags = (tags: ITag[]) => {
+    const contractManifest = {
+      evaluationOptions: {
+        sourceType: 'redstone-sequencer',
+        allowBigInt: true,
+        internalWrites: true,
+        unsafeClient: 'skip',
+        useConstructor: false
+      }
+    };
+    const initState = {
+      firstOwner: currentAddress,
+      canEvolve: false,
+      balances: {
+        [currentAddress]: 1,
+      },
+      name: 'Fair Protocol Atomic Asset',
+      ticker: 'FPAA',
+    };
+    
+    tags.push({ name: TAG_NAMES.contractSrc, value: ATOMIC_ASSET_CONTRACT_SOURCE_ID }); // use contract source here
+    tags.push({
+      name: 'Contract-Manifest',
+      value: JSON.stringify(contractManifest),
+    });
+    tags.push({
+      name: 'Init-State',
+      value: JSON.stringify(initState),
+    });
+  };
+
+  const getLicenseTags = (tags: ITag[]) => {
+    const data = licenseControl._formValues as LicenseForm;
+    if (!licenseRef.current?.value) {
+      return;
+    } else if (licenseRef.current.value === 'Universal Data License (UDL) Default Public Use') {
+      tags.push({ name: TAG_NAMES.license, value: UDL_ID });
+    } else if (licenseRef.current.value === 'Universal Data License (UDL) Commercial - One Time Payment') {
+      tags.push({ name: TAG_NAMES.license, value: UDL_ID });
+      // other options
+      tags.push({ name: TAG_NAMES.commercialUse, value: 'Allowed' });
+      tags.push({ name: TAG_NAMES.licenseFee, value: `One-Time-${data.licenseFee}`});
+      tags.push({ name: TAG_NAMES.currency, value: data.currency as string });
+    } else if (licenseRef.current.value === 'Universal Data License (UDL) Derivative Works - One Time Payment') {
+      tags.push({ name: TAG_NAMES.license, value: UDL_ID });
+      // other options
+      tags.push({ name: TAG_NAMES.derivation, value: 'With-Credit' });
+      tags.push({ name: TAG_NAMES.licenseFee, value: `One-Time-${data.licenseFee}`});
+      tags.push({ name: TAG_NAMES.currency, value: data.currency as string });
+    } else if (licenseRef.current.value === 'Universal Data License (UDL) Custom') {
+      tags.push({ name: TAG_NAMES.license, value: UDL_ID });
+      // other options
+      if (data.derivations && data.revenueShare) {
+        tags.push({ name: TAG_NAMES.derivation, value: `Allowed-With-RevenueShare-${data.revenueShare}%` });
+      } else if (data.derivations) {
+        tags.push({ name: TAG_NAMES.derivation, value: data.derivations });
+      }
+
+      if (data.commercialUse) {
+        tags.push({ name: TAG_NAMES.commercialUse, value: data.commercialUse });
+      }
+
+      if (data.licenseFeeInterval && data.licenseFee) {
+        tags.push({ name: TAG_NAMES.licenseFee, value: `${data.licenseFeeInterval}-${data.licenseFee}` });
+      }
+
+      if (data.currency) {
+        tags.push({ name: TAG_NAMES.currency, value: data.currency });
+      }
+
+      if (data.expires) {
+        tags.push({ name: TAG_NAMES.expires, value: data.expires.toString() });
+      }
+
+      if (data.paymentAddress) {
+        tags.push({ name: TAG_NAMES.paymentAddress, value: data.paymentAddress });
+      }
+
+      if (data.paymentMode) {
+        tags.push({ name: TAG_NAMES.paymentMode, value: data.paymentMode });
+      }
+    } else {
+      tags.push({ name: TAG_NAMES.license, value: licenseRef.current.value });
+    }
+  };
+
   return (
     <Container
       sx={{
@@ -1068,8 +1180,9 @@ const UploadCurator = () => {
                 sx={{ paddingBottom: 0, gap: '32px', display: 'flex', flexDirection: 'column' }}
               >
                 {getContent()}
+                <AdvancedConfiguration licenseRef={licenseRef} licenseControl={licenseControl} resetLicenseForm={resetLicenseForm} />
               </CardContent>
-              <CardActions sx={{ paddingBottom: '32px', justifyContent: 'center' }}>
+              <CardActions sx={{ paddingBottom: '32px', justifyContent: 'center', mt: '32px' }}>
                 <Button
                   onClick={() => reset()}
                   sx={{

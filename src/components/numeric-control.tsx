@@ -1,10 +1,13 @@
+
+
 import { TextField, TextFieldProps } from '@mui/material';
 import { CSSProperties } from 'react';
 import { useController, UseControllerProps } from 'react-hook-form';
+import { NumericFormat, NumericFormatProps } from 'react-number-format';
 
-type TextControlProps = UseControllerProps & { mat: TextFieldProps; style?: CSSProperties };
+type NumericControlProps = UseControllerProps & NumericFormatProps & { mat: TextFieldProps; style?: CSSProperties };
 
-const TextControl = (props: TextControlProps) => {
+const NumericControl = (props: NumericControlProps) => {
   const { field, fieldState } = useController(props);
 
   const showError = () => {
@@ -14,15 +17,23 @@ const TextControl = (props: TextControlProps) => {
       return '';
     }
   };
+
   return (
-    <TextField
+    <NumericFormat
+      customInput={TextField}
+      allowNegative={false}
+      decimalScale={0}
+      isAllowed={props.isAllowed}
+      disabled={props.mat.disabled}
       onChange={field.onChange} // send value to hook form
       onBlur={field.onBlur} // notify when input is touched/blur
       value={field.value}
       name={field.name} // send down the input name
       inputRef={field.ref} // send input ref, so we can focus on input when error appear
-      label={field.name}
       {...props.mat}
+      defaultValue={0}
+      maxLength={3}
+      type='text'
       style={props.style}
       error={fieldState.invalid}
       helperText={showError()}
@@ -30,4 +41,5 @@ const TextControl = (props: TextControlProps) => {
   );
 };
 
-export default TextControl;
+export default NumericControl;
+        

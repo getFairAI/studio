@@ -22,7 +22,7 @@ const SelectControl = (props: SelectControlProps & { children: ReactNode }) => {
 
   return (
     <>
-      <FormControl fullWidth margin='none' error={fieldState.invalid}>
+      <FormControl fullWidth margin='none' error={fieldState.invalid} sx={props.mat?.sx}>
         <InputLabel>{props.mat?.placeholder || field.name}</InputLabel>
         <Select
           label={props.mat?.placeholder || field.name}
@@ -30,6 +30,7 @@ const SelectControl = (props: SelectControlProps & { children: ReactNode }) => {
           onChange={field.onChange}
           onBlur={field.onBlur}
           {...props.mat}
+          sx={{}}
           disabled={props.disabled}
         >
           {props.children}
