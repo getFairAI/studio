@@ -44,27 +44,29 @@ const LicenseField = ({
   licenseControl: Control<LicenseForm, unknown>;
   isAllowed: (val: NumberFormatValues) => boolean;
 }) => {
-  if (!show) return null;
-
-  return (
-    <Box display={'flex'} gap={'16px'}>
-      <NumericControl
-        name='licenseFee'
-        control={licenseControl}
-        mat={{ label: 'License Fee', placeholder: 'License Fee', sx: { flexGrow: 1 } }}
-        isAllowed={isAllowed}
-      />
-      <SelectControl
-        name='currency'
-        control={licenseControl}
-        mat={{ label: 'Currency', placeholder: 'Currency', sx: { width: '25%' } }}
-        defaultValue={'$U'}
-      >
-        <MenuItem value='AR'>AR</MenuItem>
-        <MenuItem value='$U'>$U</MenuItem>
-      </SelectControl>
-    </Box>
-  );
+  if (!show) {
+    return null;
+  } else {
+    return (
+      <Box display={'flex'} gap={'16px'}>
+        <NumericControl
+          name='licenseFee'
+          control={licenseControl}
+          mat={{ label: 'License Fee', placeholder: 'License Fee', sx: { flexGrow: 1 } }}
+          isAllowed={isAllowed}
+        />
+        <SelectControl
+          name='currency'
+          control={licenseControl}
+          mat={{ label: 'Currency', placeholder: 'Currency', sx: { width: '25%' } }}
+          defaultValue={'$U'}
+        >
+          <MenuItem value='AR'>AR</MenuItem>
+          <MenuItem value='$U'>$U</MenuItem>
+        </SelectControl>
+      </Box>
+    );
+  }
 };
 
 export const AdvancedConfiguration = ({
@@ -124,8 +126,8 @@ export const AdvancedConfiguration = ({
   );
 
   const handleAutocompleteChange = useCallback(
-    (event: SyntheticEvent<Element, Event>, newValue: string | null) =>
-      setInputValue(newValue || ''),
+    (_event: SyntheticEvent<Element, Event>, newValue: string | null) =>
+      setInputValue(newValue ?? ''),
     [setInputValue],
   );
 

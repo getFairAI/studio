@@ -435,6 +435,8 @@ export const addLicenseTags = (tags: ITag[], licenseProps: LicenseForm, license?
       });
     } else if (licenseProps.derivations) {
       tags.push({ name: TAG_NAMES.derivation, value: licenseProps.derivations });
+    } else {
+      // ignore
     }
 
     if (licenseProps.commercialUse) {
