@@ -204,7 +204,7 @@ const UploadCreator = () => {
     tags.push({ name: TAG_NAMES.attachmentRole, value: AVATAR_ATTACHMENT });
     tags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
     addAssetTags(tags, currentAddress);
-    addLicenseTags(tags, licenseControl, licenseRef.current?.value);
+    addLicenseTags(tags, licenseControl._formValues, licenseRef.current?.value);
     setSnackbarOpen(true);
 
     await bundlrUpload(image, tags, 'Avatar Uploaded Successfully');
@@ -226,7 +226,7 @@ const UploadCreator = () => {
     tags.push({ name: TAG_NAMES.attachmentRole, value: NOTES_ATTACHMENT });
     tags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
     addAssetTags(tags, currentAddress);
-    addLicenseTags(tags, licenseControl, licenseRef.current?.value);
+    addLicenseTags(tags, licenseControl._formValues, licenseRef.current?.value);
     setSnackbarOpen(true);
 
     await bundlrUpload(file, tags, 'Usage Notes Uploaded Successfully');
@@ -268,8 +268,9 @@ const UploadCreator = () => {
     }
     tags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
     addAssetTags(tags, currentAddress);
-    addLicenseTags(tags, licenseControl, licenseRef.current?.value);
+    addLicenseTags(tags, licenseControl._formValues, licenseRef.current?.value);
     setSnackbarOpen(true);
+
     try {
       const res = await bundlrUpload(file, tags, 'Model Uploaded Successfully');
 

@@ -62,10 +62,9 @@ export const AdvancedConfiguration = ({ licenseRef, licenseControl, resetLicense
     <Slide direction="up" in={showAdvanced} mountOnEnter unmountOnExit>
       <Box padding='0px 32px' gap='16px' display={'flex'} flexDirection={'column'}>
         <Autocomplete
-          ref={licenseRef}
           freeSolo
           options={licenseOptions}
-          renderInput={(params) => <TextField {...params} label="License"  placeholder='Choose A license or add your own' />}
+          renderInput={(params) => <TextField {...params} inputRef={licenseRef} label="License"  placeholder='Choose A license or add your own' />}
           onInputChange={(event, newInputValue) => {
             setInputValue(newInputValue);
           }}
