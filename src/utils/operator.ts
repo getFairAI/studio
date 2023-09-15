@@ -18,7 +18,6 @@
 
 import {
   N_PREVIOUS_BLOCKS,
-  DEFAULT_TAGS,
   TAG_NAMES,
   VAULT_ADDRESS,
   CANCEL_OPERATION,
@@ -28,7 +27,7 @@ import {
   OPERATOR_REGISTRATION_AR_FEE,
   U_DIVIDER,
   REGISTER_OPERATION,
-  DEFAULT_TAGS_FOR_ASSETS,
+  DEFAULT_TAGS,
 } from '@/constants';
 import { IContractEdge, IEdge } from '@/interfaces/arweave';
 import { QUERY_TX_WITH, FIND_BY_TAGS } from '@/queries/graphql';
@@ -57,7 +56,7 @@ const getOperatorRequests = async (
     variables: {
       first: N_PREVIOUS_BLOCKS,
       tags: [
-        ...DEFAULT_TAGS_FOR_ASSETS,
+        ...DEFAULT_TAGS,
         { name: TAG_NAMES.contract, values: [U_CONTRACT_ID] },
         { name: TAG_NAMES.input, values: [requestPaymentsInputNumber, requestPaymentsInputStr] },
         { name: TAG_NAMES.operationName, values: [INFERENCE_PAYMENT] },
@@ -72,7 +71,7 @@ const getOperatorRequests = async (
 
 const hasOperatorAnswered = async (request: IEdge, opAddress: string) => {
   const responseTags = [
-    ...DEFAULT_TAGS_FOR_ASSETS,
+    ...DEFAULT_TAGS,
     { name: TAG_NAMES.requestTransaction, values: [findTag(request, 'inferenceTransaction')] },
     { name: TAG_NAMES.operationName, values: [SCRIPT_INFERENCE_RESPONSE] },
   ];
@@ -145,7 +144,7 @@ export const checkHasOperators = async (
   });
 
   const registrationTags = [
-    ...DEFAULT_TAGS_FOR_ASSETS,
+    ...DEFAULT_TAGS,
     {
       name: TAG_NAMES.operationName,
       values: [REGISTER_OPERATION],
