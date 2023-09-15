@@ -74,7 +74,7 @@ import {
   VAULT_ADDRESS,
   MODEL_CREATION_PAYMENT_TAGS,
   SCRIPT_CREATION_PAYMENT_TAGS,
-  DEFAULT_TAGS_FOR_ASSETS,
+  DEFAULT_TAGS,
   PROTOCOL_NAME,
   PROTOCOL_VERSION,
 } from '@/constants';
@@ -624,7 +624,7 @@ const UploadCurator = () => {
   } = useQuery(FIND_BY_TAGS, {
     variables: {
       tags: [
-        ...DEFAULT_TAGS_FOR_ASSETS,
+        ...DEFAULT_TAGS,
         ...SCRIPT_CREATION_PAYMENT_TAGS,
         {
           name: TAG_NAMES.sequencerOwner,
@@ -644,7 +644,7 @@ const UploadCurator = () => {
     fetchMore: modelsFetchMore,
   } = useQuery(FIND_BY_TAGS, {
     variables: {
-      tags: [...DEFAULT_TAGS_FOR_ASSETS, ...MODEL_CREATION_PAYMENT_TAGS],
+      tags: [...DEFAULT_TAGS, ...MODEL_CREATION_PAYMENT_TAGS],
       first: elementsPerPage,
     },
     notifyOnNetworkStatusChange: true,

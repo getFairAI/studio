@@ -33,12 +33,11 @@ import {
   TAG_NAMES,
   CANCEL_OPERATION,
   secondInMS,
-  DEFAULT_TAGS,
   OPERATOR_REGISTRATION_PAYMENT_TAGS,
   U_LOGO_SRC,
   PROTOCOL_NAME,
   PROTOCOL_VERSION,
-  DEFAULT_TAGS_FOR_ASSETS,
+  DEFAULT_TAGS,
 } from '@/constants';
 import { IEdge, ITransactions } from '@/interfaces/arweave';
 import {
@@ -382,7 +381,7 @@ const Registrations = () => {
   const { currentAddress } = useContext(WalletContext);
 
   const tags = [
-    ...DEFAULT_TAGS_FOR_ASSETS,
+    ...DEFAULT_TAGS,
     ...OPERATOR_REGISTRATION_PAYMENT_TAGS,
     { name: TAG_NAMES.sequencerOwner, values: [currentAddress] },
   ];
