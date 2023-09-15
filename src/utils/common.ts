@@ -42,8 +42,6 @@ import { UploadResponse } from 'bundlr-custom/build/cjs/common/types';
 import { EnqueueSnackbar } from 'notistack';
 import { client } from './apollo';
 import { LicenseForm } from '@/interfaces/common';
-import { RefObject } from 'react';
-import { Control } from 'react-hook-form';
 
 export const formatNumbers = (value: string) => {
   try {
@@ -253,9 +251,6 @@ export const uploadAvatarImage = async (
   extraProps: {
     nodeBalance: number;
     totalChunks: React.MutableRefObject<number>;
-    currentAddress: string;
-    licenseRef: RefObject<HTMLInputElement>;
-    licenseControl: Control<LicenseForm, unknown>;
     chunkUpload: (
       file: File,
       tags: ITag[],
@@ -269,8 +264,6 @@ export const uploadAvatarImage = async (
     setProgress: (progress: number) => void;
     getPrice: (size: number) => Promise<BigNumber>;
     showSuccessSnackbar: (id: string, message: string) => void;
-    addAssetTags: (tags: ITag[], currentAddress: string) => void;
-    addLicenseTags: (tags: ITag[], licenseProps: LicenseForm, license?: string) => void;
   },
   imageFor: 'script' | 'model',
   image?: File,
@@ -295,8 +288,6 @@ export const uploadAvatarImage = async (
   } else {
     throw new Error('Can only Upload Attachments for Models or Scripts');
   }
-  extraProps.addAssetTags(tags, extraProps.currentAddress);
-  extraProps.addLicenseTags(tags, extraProps.licenseControl._formValues, extraProps.licenseRef.current?.value);
   extraProps.setSnackbarOpen(true);
 
   await bundlrUpload({
@@ -315,9 +306,6 @@ export const uploadUsageNotes = async (
   extraProps: {
     nodeBalance: number;
     totalChunks: React.MutableRefObject<number>;
-    currentAddress: string;
-    licenseRef: RefObject<HTMLInputElement>;
-    licenseControl: Control<LicenseForm, unknown>;
     chunkUpload: (
       file: File,
       tags: ITag[],
@@ -331,8 +319,6 @@ export const uploadUsageNotes = async (
     setProgress: (progress: number) => void;
     getPrice: (size: number) => Promise<BigNumber>;
     showSuccessSnackbar: (id: string, message: string) => void;
-    addAssetTags: (tags: ITag[], currentAddress: string) => void;
-    addLicenseTags: (tags: ITag[], licenseProps: LicenseForm, license?: string) => void;
   },
   notesFor: 'script' | 'model',
 ) => {
@@ -357,8 +343,6 @@ export const uploadUsageNotes = async (
   } else {
     throw new Error('Can only Upload Attachments for Models or Scripts');
   }
-  extraProps.addAssetTags(tags, extraProps.currentAddress);
-  extraProps.addLicenseTags(tags, extraProps.licenseControl._formValues, extraProps.licenseRef.current?.value);
 
   await bundlrUpload({
     ...extraProps,

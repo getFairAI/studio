@@ -675,32 +675,22 @@ const UploadCurator = () => {
     () => ({
       nodeBalance,
       totalChunks,
-      currentAddress,
-      licenseRef,
-      licenseControl,
       chunkUpload,
       enqueueSnackbar,
       setSnackbarOpen,
       setProgress,
       getPrice,
       showSuccessSnackbar,
-      addAssetTags,
-      addLicenseTags
     }),
     [
       nodeBalance,
       totalChunks,
-      currentAddress,
-      licenseRef,
-      licenseControl,
       chunkUpload,
       enqueueSnackbar,
       setSnackbarOpen,
       setProgress,
       getPrice,
       showSuccessSnackbar,
-      addAssetTags,
-      addLicenseTags
     ],
   );
 
