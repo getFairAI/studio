@@ -29,8 +29,8 @@ export const UDL_ID = 'yRj4a5KMctX_uOmKWCFJIjmY8DeJcusVk6-HzLiM_t8';
 export const ATOMIC_ASSET_CONTRACT_SOURCE_ID = 'h9v17KHV4SXwdW2-JHU6a23f6R0YtbXZJJht8LfP8QM';
 
 export const PROTOCOL_NAME = 'Fair Protocol';
-export const PREVIOUS_VERSIONS = ['0.1'];
-export const PROTOCOL_VERSION = '0.3';
+export const PREVIOUS_VERSIONS = ['0.1', '0.3'];
+export const PROTOCOL_VERSION = '1.0';
 
 export const MARKETPLACE_FEE = '0.5'; // u
 export const SCRIPT_CREATION_FEE = '0.5'; // u
