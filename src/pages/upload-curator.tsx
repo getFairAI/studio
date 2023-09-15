@@ -74,8 +74,6 @@ import {
   VAULT_ADDRESS,
   MODEL_CREATION_PAYMENT_TAGS,
   SCRIPT_CREATION_PAYMENT_TAGS,
-  ATOMIC_ASSET_CONTRACT_SOURCE_ID,
-  UDL_ID,
   DEFAULT_TAGS_FOR_ASSETS,
   PROTOCOL_NAME,
   PROTOCOL_VERSION,
@@ -86,8 +84,10 @@ import { WalletContext } from '@/context/wallet';
 import { FundContext } from '@/context/fund';
 import { ApolloError, useQuery } from '@apollo/client';
 import { FIND_BY_TAGS } from '@/queries/graphql';
-import { IContractEdge, IContractQueryResult, ITag } from '@/interfaces/arweave';
+import { IContractEdge, IContractQueryResult } from '@/interfaces/arweave';
 import {
+  addAssetTags,
+  addLicenseTags,
   bundlrUpload,
   commonUpdateQuery,
   displayShortTxOrAddr,
@@ -671,98 +671,13 @@ const UploadCurator = () => {
     );
   };
   
-  const addAssetTags = (tags: ITag[]) => {
-    const contractManifest = {
-      evaluationOptions: {
-        sourceType: 'redstone-sequencer',
-        allowBigInt: true,
-        internalWrites: true,
-        unsafeClient: 'skip',
-        useConstructor: false
-      }
-    };
-    const initState = {
-      firstOwner: currentAddress,
-      canEvolve: false,
-      balances: {
-        [currentAddress]: 1,
-      },
-      name: 'Fair Protocol Atomic Asset',
-      ticker: 'FPAA',
-    };
-    
-    tags.push({ name: TAG_NAMES.appName, value: 'SmartWeaveContract' });
-    tags.push({ name: TAG_NAMES.appVersion, value: '0.3.0' });
-    tags.push({ name: TAG_NAMES.contractSrc, value: ATOMIC_ASSET_CONTRACT_SOURCE_ID }); // use contract source here
-    tags.push({
-      name: 'Contract-Manifest',
-      value: JSON.stringify(contractManifest),
-    });
-    tags.push({
-      name: 'Init-State',
-      value: JSON.stringify(initState),
-    });
-  };
-
-  const addLicenseTags = (tags: ITag[]) => {
-    const data = licenseControl._formValues as LicenseForm;
-    if (!licenseRef.current?.value) {
-      return;
-    } else if (licenseRef.current.value === 'Universal Data License (UDL) Default Public Use') {
-      tags.push({ name: TAG_NAMES.license, value: UDL_ID });
-    } else if (licenseRef.current.value === 'Universal Data License (UDL) Commercial - One Time Payment') {
-      tags.push({ name: TAG_NAMES.license, value: UDL_ID });
-      // other options
-      tags.push({ name: TAG_NAMES.commercialUse, value: 'Allowed' });
-      tags.push({ name: TAG_NAMES.licenseFee, value: `One-Time-${data.licenseFee}`});
-      tags.push({ name: TAG_NAMES.currency, value: data.currency as string });
-    } else if (licenseRef.current.value === 'Universal Data License (UDL) Derivative Works - One Time Payment') {
-      tags.push({ name: TAG_NAMES.license, value: UDL_ID });
-      // other options
-      tags.push({ name: TAG_NAMES.derivation, value: 'With-Credit' });
-      tags.push({ name: TAG_NAMES.licenseFee, value: `One-Time-${data.licenseFee}`});
-      tags.push({ name: TAG_NAMES.currency, value: data.currency as string });
-    } else if (licenseRef.current.value === 'Universal Data License (UDL) Custom') {
-      tags.push({ name: TAG_NAMES.license, value: UDL_ID });
-      // other options
-      if (data.derivations && data.revenueShare) {
-        tags.push({ name: TAG_NAMES.derivation, value: `Allowed-With-RevenueShare-${data.revenueShare}%` });
-      } else if (data.derivations) {
-        tags.push({ name: TAG_NAMES.derivation, value: data.derivations });
-      }
-
-      if (data.commercialUse) {
-        tags.push({ name: TAG_NAMES.commercialUse, value: data.commercialUse });
-      }
-
-      if (data.licenseFeeInterval && data.licenseFee) {
-        tags.push({ name: TAG_NAMES.licenseFee, value: `${data.licenseFeeInterval}-${data.licenseFee}` });
-      }
-
-      if (data.currency) {
-        tags.push({ name: TAG_NAMES.currency, value: data.currency });
-      }
-
-      if (data.expires) {
-        tags.push({ name: TAG_NAMES.expires, value: data.expires.toString() });
-      }
-
-      if (data.paymentAddress) {
-        tags.push({ name: TAG_NAMES.paymentAddress, value: data.paymentAddress });
-      }
-
-      if (data.paymentMode) {
-        tags.push({ name: TAG_NAMES.paymentMode, value: data.paymentMode });
-      }
-    } else {
-      tags.push({ name: TAG_NAMES.license, value: licenseRef.current.value });
-    }
-  };
-  
   const commonUploadProps = useMemo(
     () => ({
       nodeBalance,
       totalChunks,
+      currentAddress,
+      licenseRef,
+      licenseControl,
       chunkUpload,
       enqueueSnackbar,
       setSnackbarOpen,
@@ -775,6 +690,9 @@ const UploadCurator = () => {
     [
       nodeBalance,
       totalChunks,
+      currentAddress,
+      licenseRef,
+      licenseControl,
       chunkUpload,
       enqueueSnackbar,
       setSnackbarOpen,
@@ -890,8 +808,8 @@ const UploadCurator = () => {
     uploadTags.push({ name: TAG_NAMES.paymentQuantity, value: uFee.toString() });
     uploadTags.push({ name: TAG_NAMES.paymentTarget, value: VAULT_ADDRESS });
     uploadTags.push({ name: TAG_NAMES.operationName, value: SCRIPT_CREATION });
-    addAssetTags(uploadTags);
-    addLicenseTags(uploadTags);
+    addAssetTags(uploadTags, currentAddress);
+    addLicenseTags(uploadTags, licenseControl._formValues, licenseRef.current?.value);
 
     setSnackbarOpen(true);
     try {

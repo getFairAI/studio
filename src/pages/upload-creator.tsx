@@ -49,8 +49,6 @@ import {
   secondInMS,
   successStatusCode,
   U_DIVIDER,
-  ATOMIC_ASSET_CONTRACT_SOURCE_ID,
-  UDL_ID,
   PROTOCOL_NAME,
   PROTOCOL_VERSION,
 } from '@/constants';
@@ -63,6 +61,8 @@ import { ITag } from '@/interfaces/arweave';
 import DebounceButton from '@/components/debounce-button';
 import { sendU } from '@/utils/u';
 import { AdvancedConfiguration } from '@/components/advanced-configuration';
+import { LicenseForm } from '@/interfaces/common';
+import { addAssetTags, addLicenseTags } from '@/utils/common';
 
 interface CreateForm extends FieldValues {
   name: string;
@@ -70,18 +70,6 @@ interface CreateForm extends FieldValues {
   file: File;
   description?: string;
   avatar?: File;
-}
-
-interface LicenseForm extends FieldValues {
-  derivations?: 'With-Credit' | 'With-Indication' | 'With-License-Passthrough' | 'With-Revenue-Share',
-  revenueShare?: number,
-  commercialUse?: 'Allowed' | 'Allowed-With-Credit',
-  licenseFeeInterval?: 'One-Time' | string,
-  licenseFee?: number,
-  currency?: 'AR' | '$U',
-  expires?: number,
-  paymentAddress?: string,
-  paymentMode?: 'Random-Distribution' | 'Global-Distribution'
 }
 
 const UploadCreator = () => {
@@ -215,8 +203,8 @@ const UploadCreator = () => {
     tags.push({ name: TAG_NAMES.attachmentName, value: image.name });
     tags.push({ name: TAG_NAMES.attachmentRole, value: AVATAR_ATTACHMENT });
     tags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
-    addAssetTags(tags);
-    addLicenseTags(tags);
+    addAssetTags(tags, currentAddress);
+    addLicenseTags(tags, licenseControl, licenseRef.current?.value);
     setSnackbarOpen(true);
 
     await bundlrUpload(image, tags, 'Avatar Uploaded Successfully');
@@ -237,99 +225,11 @@ const UploadCreator = () => {
     tags.push({ name: TAG_NAMES.attachmentName, value: file.name });
     tags.push({ name: TAG_NAMES.attachmentRole, value: NOTES_ATTACHMENT });
     tags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
-    addAssetTags(tags);
-    addLicenseTags(tags);
+    addAssetTags(tags, currentAddress);
+    addLicenseTags(tags, licenseControl, licenseRef.current?.value);
     setSnackbarOpen(true);
 
     await bundlrUpload(file, tags, 'Usage Notes Uploaded Successfully');
-  };
-
-  const addAssetTags = (tags: ITag[]) => {
-    const contractManifest = {
-      evaluationOptions: {
-        sourceType: 'redstone-sequencer',
-        allowBigInt: true,
-        internalWrites: true,
-        unsafeClient: 'skip',
-        useConstructor: false
-      }
-    };
-    const initState = {
-      firstOwner: currentAddress,
-      canEvolve: false,
-      balances: {
-        [currentAddress]: 1,
-      },
-      name: 'Fair Protocol Atomic Asset',
-      ticker: 'FPAA',
-    };
-    
-    tags.push({ name: TAG_NAMES.appName, value: 'SmartWeaveContract' });
-    tags.push({ name: TAG_NAMES.appVersion, value: '0.3.0' });
-    tags.push({ name: TAG_NAMES.contractSrc, value: ATOMIC_ASSET_CONTRACT_SOURCE_ID }); // use contract source here
-    tags.push({
-      name: 'Contract-Manifest',
-      value: JSON.stringify(contractManifest),
-    });
-    tags.push({
-      name: 'Init-State',
-      value: JSON.stringify(initState),
-    });
-  };
-
-  const addLicenseTags = (tags: ITag[]) => {
-    const data = licenseControl._formValues as LicenseForm;
-    if (!licenseRef.current?.value) {
-      return;
-    } else if (licenseRef.current.value === 'Universal Data License (UDL) Default Public Use') {
-      tags.push({ name: TAG_NAMES.license, value: UDL_ID });
-    } else if (licenseRef.current.value === 'Universal Data License (UDL) Commercial - One Time Payment') {
-      tags.push({ name: TAG_NAMES.license, value: UDL_ID });
-      // other options
-      tags.push({ name: TAG_NAMES.commercialUse, value: 'Allowed' });
-      tags.push({ name: TAG_NAMES.licenseFee, value: `One-Time-${data.licenseFee}`});
-      tags.push({ name: TAG_NAMES.currency, value: data.currency as string });
-    } else if (licenseRef.current.value === 'Universal Data License (UDL) Derivative Works - One Time Payment') {
-      tags.push({ name: TAG_NAMES.license, value: UDL_ID });
-      // other options
-      tags.push({ name: TAG_NAMES.derivation, value: 'With-Credit' });
-      tags.push({ name: TAG_NAMES.licenseFee, value: `One-Time-${data.licenseFee}`});
-      tags.push({ name: TAG_NAMES.currency, value: data.currency as string });
-    } else if (licenseRef.current.value === 'Universal Data License (UDL) Custom') {
-      tags.push({ name: TAG_NAMES.license, value: UDL_ID });
-      // other options
-      if (data.derivations && data.revenueShare) {
-        tags.push({ name: TAG_NAMES.derivation, value: `Allowed-With-RevenueShare-${data.revenueShare}%` });
-      } else if (data.derivations) {
-        tags.push({ name: TAG_NAMES.derivation, value: data.derivations });
-      }
-
-      if (data.commercialUse) {
-        tags.push({ name: TAG_NAMES.commercialUse, value: data.commercialUse });
-      }
-
-      if (data.licenseFeeInterval && data.licenseFee) {
-        tags.push({ name: TAG_NAMES.licenseFee, value: `${data.licenseFeeInterval}-${data.licenseFee}` });
-      }
-
-      if (data.currency) {
-        tags.push({ name: TAG_NAMES.currency, value: data.currency });
-      }
-
-      if (data.expires) {
-        tags.push({ name: TAG_NAMES.expires, value: data.expires.toString() });
-      }
-
-      if (data.paymentAddress) {
-        tags.push({ name: TAG_NAMES.paymentAddress, value: data.paymentAddress });
-      }
-
-      if (data.paymentMode) {
-        tags.push({ name: TAG_NAMES.paymentMode, value: data.paymentMode });
-      }
-    } else {
-      tags.push({ name: TAG_NAMES.license, value: licenseRef.current.value });
-    }
   };
 
   const handleFundFinished = async (data?: CreateForm) => {
@@ -367,8 +267,8 @@ const UploadCreator = () => {
       tags.push({ name: TAG_NAMES.description, value: data.description });
     }
     tags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
-    addAssetTags(tags);
-    addLicenseTags(tags);
+    addAssetTags(tags, currentAddress);
+    addLicenseTags(tags, licenseControl, licenseRef.current?.value);
     setSnackbarOpen(true);
     try {
       const res = await bundlrUpload(file, tags, 'Model Uploaded Successfully');
