@@ -102,6 +102,7 @@ import { filterPreviousVersions } from '@/utils/script';
 import CachedIcon from '@mui/icons-material/Cached';
 import { fetchMoreFn } from '@/utils/apollo';
 import { AdvancedConfiguration } from '@/components/advanced-configuration';
+import { LicenseForm } from '@/interfaces/common';
 
 export interface CreateForm extends FieldValues {
   name: string;
@@ -115,18 +116,6 @@ export interface CreateForm extends FieldValues {
   description?: string;
   avatar?: File;
   allow: { allowFiles: boolean; allowText: boolean };
-}
-
-interface LicenseForm extends FieldValues {
-  derivations?: 'With-Credit' | 'With-Indication' | 'With-License-Passthrough' | 'With-Revenue-Share',
-  revenueShare?: number,
-  commercialUse?: 'Allowed' | 'Allowed-With-Credit',
-  licenseFeeInterval?: 'One-Time' | string,
-  licenseFee?: number,
-  currency?: 'AR' | '$U',
-  expires?: number,
-  paymentAddress?: string,
-  paymentMode?: 'Random-Distribution' | 'Global-Distribution'
 }
 
 const AllowGroupControl = (props: UseControllerProps) => {
@@ -535,44 +524,46 @@ const OutputFields = ({ control }: { control: Control<FieldValues, unknown> }) =
   const outputValue = useWatch({ name: 'output', control });
   const outputConfigurationDisabled = useMemo(() => outputValue !== 'image', [outputValue]);
 
-  return <>
-    <SelectControl
-      name='output'
-      control={control}
-      rules={{ required: true }}
-      defaultValue={'text'}
-      mat={{
-        sx: {
-          borderWidth: '1px',
-          borderColor: theme.palette.text.primary,
-          borderRadius: '16px',
-        },
-        placeholder: 'Select The Output Type',
-      }}
-    >
-      <MenuItem value={'text'}>Text</MenuItem>
-      <MenuItem value={'audio'}>Audio</MenuItem>
-      <MenuItem value={'image'}>Image</MenuItem>
-    </SelectControl>
-    <SelectControl
-      name='outputConfiguration'
-      control={control}
-      disabled={outputConfigurationDisabled}
-      rules={{ required: true }}
-      defaultValue={'none'}
-      mat={{
-        sx: {
-          borderWidth: '1px',
-          borderColor: theme.palette.text.primary,
-          borderRadius: '16px',
-        },
-        placeholder: 'Select The Output Configuration',
-      }}
-    >
-      <MenuItem value={'none'}>None</MenuItem>
-      <MenuItem value={'stable-diffusion'}>Stable Diffusion</MenuItem>
-    </SelectControl>
-  </>; 
+  return (
+    <>
+      <SelectControl
+        name='output'
+        control={control}
+        rules={{ required: true }}
+        defaultValue={'text'}
+        mat={{
+          sx: {
+            borderWidth: '1px',
+            borderColor: theme.palette.text.primary,
+            borderRadius: '16px',
+          },
+          placeholder: 'Select The Output Type',
+        }}
+      >
+        <MenuItem value={'text'}>Text</MenuItem>
+        <MenuItem value={'audio'}>Audio</MenuItem>
+        <MenuItem value={'image'}>Image</MenuItem>
+      </SelectControl>
+      <SelectControl
+        name='outputConfiguration'
+        control={control}
+        disabled={outputConfigurationDisabled}
+        rules={{ required: true }}
+        defaultValue={'none'}
+        mat={{
+          sx: {
+            borderWidth: '1px',
+            borderColor: theme.palette.text.primary,
+            borderRadius: '16px',
+          },
+          placeholder: 'Select The Output Configuration',
+        }}
+      >
+        <MenuItem value={'none'}>None</MenuItem>
+        <MenuItem value={'stable-diffusion'}>Stable Diffusion</MenuItem>
+      </SelectControl>
+    </>
+  );
 };
 
 const UploadCurator = () => {
@@ -622,7 +613,7 @@ const UploadCurator = () => {
       commercialUse: '',
       licenseFeeInterval: '',
       paymentMode: '',
-    }
+    },
   } as FieldValues);
 
   const {
@@ -670,7 +661,7 @@ const UploadCurator = () => {
       { variant: 'success' },
     );
   };
-  
+
   const commonUploadProps = useMemo(
     () => ({
       nodeBalance,
@@ -1096,7 +1087,11 @@ const UploadCurator = () => {
                 sx={{ paddingBottom: 0, gap: '32px', display: 'flex', flexDirection: 'column' }}
               >
                 {getContent()}
-                <AdvancedConfiguration licenseRef={licenseRef} licenseControl={licenseControl} resetLicenseForm={resetLicenseForm} />
+                <AdvancedConfiguration
+                  licenseRef={licenseRef}
+                  licenseControl={licenseControl}
+                  resetLicenseForm={resetLicenseForm}
+                />
               </CardContent>
               <CardActions sx={{ paddingBottom: '32px', justifyContent: 'center', mt: '32px' }}>
                 <Button

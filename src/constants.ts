@@ -170,8 +170,8 @@ export const DEFAULT_TAGS = [
 // add smartWeaveContract tags so atomic tokens can be picked up
 export const DEFAULT_TAGS_FOR_ASSETS = [
   ...DEFAULT_TAGS,
-  { name: TAG_NAMES.appName, values: [ 'SmartWeaveContract' ] },
-  { name: TAG_NAMES.appVersion, values: [ '0.3.0' ] },
+  { name: TAG_NAMES.appName, values: ['SmartWeaveContract'] },
+  { name: TAG_NAMES.appVersion, values: ['0.3.0'] },
 ];
 
 export const GITHUB_LINK = 'https://github.com/FAIR-Protocol/decentralized-inference';

@@ -380,8 +380,8 @@ export const addAssetTags = (tags: ITag[], owner: string) => {
       allowBigInt: true,
       internalWrites: true,
       unsafeClient: 'skip',
-      useConstructor: false
-    }
+      useConstructor: false,
+    },
   };
   const initState = {
     firstOwner: owner,
@@ -392,7 +392,7 @@ export const addAssetTags = (tags: ITag[], owner: string) => {
     name: 'Fair Protocol Atomic Asset',
     ticker: 'FPAA',
   };
-  
+
   tags.push({ name: TAG_NAMES.appName, value: 'SmartWeaveContract' });
   tags.push({ name: TAG_NAMES.appVersion, value: '0.3.0' });
   tags.push({ name: TAG_NAMES.contractSrc, value: ATOMIC_ASSET_CONTRACT_SOURCE_ID }); // use contract source here
@@ -415,19 +415,24 @@ export const addLicenseTags = (tags: ITag[], licenseProps: LicenseForm, license?
     tags.push({ name: TAG_NAMES.license, value: UDL_ID });
     // other options
     tags.push({ name: TAG_NAMES.commercialUse, value: 'Allowed' });
-    tags.push({ name: TAG_NAMES.licenseFee, value: `One-Time-${licenseProps.licenseFee}`});
+    tags.push({ name: TAG_NAMES.licenseFee, value: `One-Time-${licenseProps.licenseFee}` });
     tags.push({ name: TAG_NAMES.currency, value: licenseProps.currency as string });
-  } else if (license === 'Universal licenseProps License (UDL) Derivative Works - One Time Payment') {
+  } else if (
+    license === 'Universal licenseProps License (UDL) Derivative Works - One Time Payment'
+  ) {
     tags.push({ name: TAG_NAMES.license, value: UDL_ID });
     // other options
     tags.push({ name: TAG_NAMES.derivation, value: 'With-Credit' });
-    tags.push({ name: TAG_NAMES.licenseFee, value: `One-Time-${licenseProps.licenseFee}`});
+    tags.push({ name: TAG_NAMES.licenseFee, value: `One-Time-${licenseProps.licenseFee}` });
     tags.push({ name: TAG_NAMES.currency, value: licenseProps.currency as string });
   } else if (license === 'Universal licenseProps License (UDL) Custom') {
     tags.push({ name: TAG_NAMES.license, value: UDL_ID });
     // other options
     if (licenseProps.derivations && licenseProps.revenueShare) {
-      tags.push({ name: TAG_NAMES.derivation, value: `Allowed-With-RevenueShare-${licenseProps.revenueShare}%` });
+      tags.push({
+        name: TAG_NAMES.derivation,
+        value: `Allowed-With-RevenueShare-${licenseProps.revenueShare}%`,
+      });
     } else if (licenseProps.derivations) {
       tags.push({ name: TAG_NAMES.derivation, value: licenseProps.derivations });
     }
@@ -437,7 +442,10 @@ export const addLicenseTags = (tags: ITag[], licenseProps: LicenseForm, license?
     }
 
     if (licenseProps.licenseFeeInterval && licenseProps.licenseFee) {
-      tags.push({ name: TAG_NAMES.licenseFee, value: `${licenseProps.licenseFeeInterval}-${licenseProps.licenseFee}` });
+      tags.push({
+        name: TAG_NAMES.licenseFee,
+        value: `${licenseProps.licenseFeeInterval}-${licenseProps.licenseFee}`,
+      });
     }
 
     if (licenseProps.currency) {

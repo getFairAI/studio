@@ -106,7 +106,7 @@ const UploadCreator = () => {
       commercialUse: '',
       licenseFeeInterval: '',
       paymentMode: '',
-    }
+    },
   } as FieldValues);
 
   const onSubmit = async (data: FieldValues) => {
@@ -416,7 +416,11 @@ const UploadCreator = () => {
                 <Box padding='0px 32px'>
                   <FileControl name='file' control={control} rules={{ required: true }} />
                 </Box>
-                <AdvancedConfiguration licenseRef={licenseRef} licenseControl={licenseControl} resetLicenseForm={resetLicenseForm} />
+                <AdvancedConfiguration
+                  licenseRef={licenseRef}
+                  licenseControl={licenseControl}
+                  resetLicenseForm={resetLicenseForm}
+                />
               </CardContent>
               <CardActions sx={{ paddingBottom: '32px', justifyContent: 'center', mt: '32px' }}>
                 <Button
