@@ -38,11 +38,9 @@ import FileControl from '@/components/file-control';
 import AvatarControl from '@/components/avatar-control';
 import CustomProgress from '@/components/progress';
 import {
-  APP_VERSION,
   MARKETPLACE_FEE,
   VAULT_ADDRESS,
   TAG_NAMES,
-  APP_NAME,
   MODEL_CREATION,
   MODEL_CREATION_PAYMENT,
   MODEL_ATTACHMENT,
@@ -53,6 +51,8 @@ import {
   U_DIVIDER,
   ATOMIC_ASSET_CONTRACT_SOURCE_ID,
   UDL_ID,
+  PROTOCOL_NAME,
+  PROTOCOL_VERSION,
 } from '@/constants';
 import { BundlrContext } from '@/context/bundlr';
 import { useSnackbar } from 'notistack';
@@ -207,14 +207,16 @@ const UploadCreator = () => {
 
     // upload the file
     const tags = [];
-    tags.push({ name: TAG_NAMES.appName, value: APP_NAME });
-    tags.push({ name: TAG_NAMES.appVersion, value: APP_VERSION });
+    tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
+    tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
     tags.push({ name: TAG_NAMES.contentType, value: image.type });
     tags.push({ name: TAG_NAMES.modelTransaction, value: modelTx });
     tags.push({ name: TAG_NAMES.operationName, value: MODEL_ATTACHMENT });
     tags.push({ name: TAG_NAMES.attachmentName, value: image.name });
     tags.push({ name: TAG_NAMES.attachmentRole, value: AVATAR_ATTACHMENT });
     tags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
+    addAssetTags(tags);
+    addLicenseTags(tags);
     setSnackbarOpen(true);
 
     await bundlrUpload(image, tags, 'Avatar Uploaded Successfully');
@@ -227,14 +229,16 @@ const UploadCreator = () => {
 
     // upload the file
     const tags = [];
-    tags.push({ name: TAG_NAMES.appName, value: APP_NAME });
-    tags.push({ name: TAG_NAMES.appVersion, value: APP_VERSION });
+    tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
+    tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
     tags.push({ name: TAG_NAMES.contentType, value: file.type });
     tags.push({ name: TAG_NAMES.modelTransaction, value: modelTx });
     tags.push({ name: TAG_NAMES.operationName, value: MODEL_ATTACHMENT });
     tags.push({ name: TAG_NAMES.attachmentName, value: file.name });
     tags.push({ name: TAG_NAMES.attachmentRole, value: NOTES_ATTACHMENT });
     tags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
+    addAssetTags(tags);
+    addLicenseTags(tags);
     setSnackbarOpen(true);
 
     await bundlrUpload(file, tags, 'Usage Notes Uploaded Successfully');
@@ -260,6 +264,8 @@ const UploadCreator = () => {
       ticker: 'FPAA',
     };
     
+    tags.push({ name: TAG_NAMES.appName, value: 'SmartWeaveContract' });
+    tags.push({ name: TAG_NAMES.appVersion, value: '0.3.0' });
     tags.push({ name: TAG_NAMES.contractSrc, value: ATOMIC_ASSET_CONTRACT_SOURCE_ID }); // use contract source here
     tags.push({
       name: 'Contract-Manifest',
@@ -271,7 +277,7 @@ const UploadCreator = () => {
     });
   };
 
-  const getLicenseTags = (tags: ITag[]) => {
+  const addLicenseTags = (tags: ITag[]) => {
     const data = licenseControl._formValues as LicenseForm;
     if (!licenseRef.current?.value) {
       return;
@@ -350,8 +356,8 @@ const UploadCreator = () => {
       return;
     }
 
-    tags.push({ name: TAG_NAMES.appName, value: APP_NAME });
-    tags.push({ name: TAG_NAMES.appVersion, value: APP_VERSION });
+    tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
+    tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
     tags.push({ name: TAG_NAMES.contentType, value: file.type });
     tags.push({ name: TAG_NAMES.modelName, value: `${data.name}` });
     tags.push({ name: TAG_NAMES.operationName, value: MODEL_CREATION });
@@ -361,13 +367,15 @@ const UploadCreator = () => {
       tags.push({ name: TAG_NAMES.description, value: data.description });
     }
     tags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
+    addAssetTags(tags);
+    addLicenseTags(tags);
     setSnackbarOpen(true);
     try {
       const res = await bundlrUpload(file, tags, 'Model Uploaded Successfully');
 
       const paymentTags = [
-        { name: TAG_NAMES.appName, value: APP_NAME },
-        { name: TAG_NAMES.appVersion, value: APP_VERSION },
+        { name: TAG_NAMES.protocolName, value: PROTOCOL_NAME },
+        { name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION },
         { name: TAG_NAMES.contentType, value: file.type },
         { name: TAG_NAMES.operationName, value: MODEL_CREATION_PAYMENT },
         { name: TAG_NAMES.modelName, value: data.name },

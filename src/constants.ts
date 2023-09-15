@@ -28,15 +28,17 @@ export const UDL_ID = 'yRj4a5KMctX_uOmKWCFJIjmY8DeJcusVk6-HzLiM_t8';
 
 export const ATOMIC_ASSET_CONTRACT_SOURCE_ID = 'h9v17KHV4SXwdW2-JHU6a23f6R0YtbXZJJht8LfP8QM';
 
-export const APP_NAME = 'Fair Protocol';
+export const PROTOCOL_NAME = 'Fair Protocol';
 export const PREVIOUS_VERSIONS = ['0.1'];
-export const APP_VERSION = '0.3';
+export const PROTOCOL_VERSION = '0.3';
 
 export const MARKETPLACE_FEE = '0.5'; // u
 export const SCRIPT_CREATION_FEE = '0.5'; // u
 export const OPERATOR_REGISTRATION_AR_FEE = '0.05'; // u
 
 export const TAG_NAMES = {
+  protocolName: 'Protocol-Name',
+  protocolVersion: 'Protocol-Version',
   appName: 'App-Name',
   appVersion: 'App-Version',
   contentType: 'Content-Type',
@@ -161,20 +163,15 @@ export const N_PREVIOUS_BLOCKS = 7;
 export const MIN_CONFIRMATIONS = 7;
 
 export const DEFAULT_TAGS = [
-  { name: TAG_NAMES.appName, values: [APP_NAME] },
-  { name: TAG_NAMES.appVersion, values: [APP_VERSION] },
-];
-
-// export default tags with support for old version txs
-export const DEFAULT_TAGS_RETRO = [
-  { name: TAG_NAMES.appName, values: [APP_NAME] },
-  { name: TAG_NAMES.appVersion, values: [...PREVIOUS_VERSIONS, APP_VERSION] },
+  { name: TAG_NAMES.protocolName, values: [PROTOCOL_NAME] },
+  { name: TAG_NAMES.protocolVersion, values: [PROTOCOL_VERSION] },
 ];
 
 // add smartWeaveContract tags so atomic tokens can be picked up
-export const DEFAULT_TAGS_FOR_TOKENS = [
-  { name: TAG_NAMES.appName, values: [APP_NAME, 'SmartWeaveContract'] },
-  { name: TAG_NAMES.appVersion, values: [APP_VERSION, '0.3.0'] },
+export const DEFAULT_TAGS_FOR_ASSETS = [
+  ...DEFAULT_TAGS,
+  { name: TAG_NAMES.appName, values: [ 'SmartWeaveContract' ] },
+  { name: TAG_NAMES.appVersion, values: [ '0.3.0' ] },
 ];
 
 export const GITHUB_LINK = 'https://github.com/FAIR-Protocol/decentralized-inference';

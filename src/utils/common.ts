@@ -17,14 +17,14 @@
  */
 
 import {
-  APP_NAME,
-  APP_VERSION,
   AVATAR_ATTACHMENT,
   MARKETPLACE_ADDRESS,
   MODEL_ATTACHMENT,
   MODEL_DELETION,
   NET_ARWEAVE_URL,
   NOTES_ATTACHMENT,
+  PROTOCOL_NAME,
+  PROTOCOL_VERSION,
   SCRIPT_DELETION,
   TAG_NAMES,
   defaultDecimalPlaces,
@@ -261,6 +261,8 @@ export const uploadAvatarImage = async (
     setProgress: (progress: number) => void;
     getPrice: (size: number) => Promise<BigNumber>;
     showSuccessSnackbar: (id: string, message: string) => void;
+    addAssetTags: (tags: ITag[]) => void;
+    addLicenseTags: (tags: ITag[]) => void;
   },
   imageFor: 'script' | 'model',
   image?: File,
@@ -271,8 +273,8 @@ export const uploadAvatarImage = async (
 
   // upload the file
   const tags = [];
-  tags.push({ name: TAG_NAMES.appName, value: APP_NAME });
-  tags.push({ name: TAG_NAMES.appVersion, value: APP_VERSION });
+  tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
+  tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
   tags.push({ name: TAG_NAMES.contentType, value: image.type });
   tags.push({ name: TAG_NAMES.operationName, value: MODEL_ATTACHMENT });
   tags.push({ name: TAG_NAMES.attachmentName, value: image.name });
@@ -285,6 +287,8 @@ export const uploadAvatarImage = async (
   } else {
     throw new Error('Can only Upload Attachments for Models or Scripts');
   }
+  extraProps.addAssetTags(tags);
+  extraProps.addLicenseTags(tags);
   extraProps.setSnackbarOpen(true);
 
   await bundlrUpload({
@@ -316,6 +320,8 @@ export const uploadUsageNotes = async (
     setProgress: (progress: number) => void;
     getPrice: (size: number) => Promise<BigNumber>;
     showSuccessSnackbar: (id: string, message: string) => void;
+    addAssetTags: (tags: ITag[]) => void;
+    addLicenseTags: (tags: ITag[]) => void;
   },
   notesFor: 'script' | 'model',
 ) => {
@@ -325,8 +331,8 @@ export const uploadUsageNotes = async (
 
   // upload the file
   const tags = [];
-  tags.push({ name: TAG_NAMES.appName, value: APP_NAME });
-  tags.push({ name: TAG_NAMES.appVersion, value: APP_VERSION });
+  tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
+  tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
   tags.push({ name: TAG_NAMES.contentType, value: file.type });
   tags.push({ name: TAG_NAMES.operationName, value: MODEL_ATTACHMENT });
   tags.push({ name: TAG_NAMES.attachmentName, value: file.name });
@@ -340,6 +346,8 @@ export const uploadUsageNotes = async (
   } else {
     throw new Error('Can only Upload Attachments for Models or Scripts');
   }
+  extraProps.addAssetTags(tags);
+  extraProps.addLicenseTags(tags);
 
   await bundlrUpload({
     ...extraProps,

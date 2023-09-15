@@ -17,7 +17,7 @@
  */
 
 import {
-  DEFAULT_TAGS,
+  DEFAULT_TAGS_FOR_ASSETS,
   SCRIPT_CREATION_FEE,
   SCRIPT_CREATION_PAYMENT,
   TAG_NAMES,
@@ -74,7 +74,7 @@ const Operators = () => {
   });
 
   const tags = [
-    ...DEFAULT_TAGS,
+    ...DEFAULT_TAGS_FOR_ASSETS,
     {
       name: TAG_NAMES.operationName,
       values: [SCRIPT_CREATION_PAYMENT],
