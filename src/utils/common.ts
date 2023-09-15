@@ -17,16 +17,18 @@
  */
 
 import {
-  APP_NAME,
-  APP_VERSION,
+  ATOMIC_ASSET_CONTRACT_SOURCE_ID,
   AVATAR_ATTACHMENT,
   MARKETPLACE_ADDRESS,
   MODEL_ATTACHMENT,
   MODEL_DELETION,
   NET_ARWEAVE_URL,
   NOTES_ATTACHMENT,
+  PROTOCOL_NAME,
+  PROTOCOL_VERSION,
   SCRIPT_DELETION,
   TAG_NAMES,
+  UDL_ID,
   defaultDecimalPlaces,
   secondInMS,
   successStatusCode,
@@ -39,6 +41,7 @@ import BigNumber from 'bignumber.js';
 import { UploadResponse } from 'bundlr-custom/build/cjs/common/types';
 import { EnqueueSnackbar } from 'notistack';
 import { client } from './apollo';
+import { LicenseForm } from '@/interfaces/common';
 
 export const formatNumbers = (value: string) => {
   try {
@@ -271,8 +274,8 @@ export const uploadAvatarImage = async (
 
   // upload the file
   const tags = [];
-  tags.push({ name: TAG_NAMES.appName, value: APP_NAME });
-  tags.push({ name: TAG_NAMES.appVersion, value: APP_VERSION });
+  tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
+  tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
   tags.push({ name: TAG_NAMES.contentType, value: image.type });
   tags.push({ name: TAG_NAMES.operationName, value: MODEL_ATTACHMENT });
   tags.push({ name: TAG_NAMES.attachmentName, value: image.name });
@@ -325,8 +328,8 @@ export const uploadUsageNotes = async (
 
   // upload the file
   const tags = [];
-  tags.push({ name: TAG_NAMES.appName, value: APP_NAME });
-  tags.push({ name: TAG_NAMES.appVersion, value: APP_VERSION });
+  tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
+  tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
   tags.push({ name: TAG_NAMES.contentType, value: file.type });
   tags.push({ name: TAG_NAMES.operationName, value: MODEL_ATTACHMENT });
   tags.push({ name: TAG_NAMES.attachmentName, value: file.name });
@@ -368,4 +371,101 @@ export const isFakeDeleted = async (txid: string, owner: string, type: 'script' 
   });
 
   return data.transactions.edges.length > 0;
+};
+
+export const addAssetTags = (tags: ITag[], owner: string) => {
+  const contractManifest = {
+    evaluationOptions: {
+      sourceType: 'redstone-sequencer',
+      allowBigInt: true,
+      internalWrites: true,
+      unsafeClient: 'skip',
+      useConstructor: false,
+    },
+  };
+  const initState = {
+    firstOwner: owner,
+    canEvolve: false,
+    balances: {
+      [owner]: 1,
+    },
+    name: 'Fair Protocol Atomic Asset',
+    ticker: 'FPAA',
+  };
+
+  tags.push({ name: TAG_NAMES.appName, value: 'SmartWeaveContract' });
+  tags.push({ name: TAG_NAMES.appVersion, value: '0.3.0' });
+  tags.push({ name: TAG_NAMES.contractSrc, value: ATOMIC_ASSET_CONTRACT_SOURCE_ID }); // use contract source here
+  tags.push({
+    name: 'Contract-Manifest',
+    value: JSON.stringify(contractManifest),
+  });
+  tags.push({
+    name: 'Init-State',
+    value: JSON.stringify(initState),
+  });
+};
+
+export const addLicenseTags = (tags: ITag[], licenseProps: LicenseForm, license?: string) => {
+  if (!license) {
+    return;
+  } else if (license === 'Universal Data License (UDL) Default Public Use') {
+    tags.push({ name: TAG_NAMES.license, value: UDL_ID });
+  } else if (license === 'Universal Data License (UDL) Commercial - One Time Payment') {
+    tags.push({ name: TAG_NAMES.license, value: UDL_ID });
+    // other options
+    tags.push({ name: TAG_NAMES.commercialUse, value: 'Allowed' });
+    tags.push({ name: TAG_NAMES.licenseFee, value: `One-Time-${licenseProps.licenseFee}` });
+    tags.push({ name: TAG_NAMES.currency, value: licenseProps.currency as string });
+  } else if (
+    license === 'Universal licenseProps License (UDL) Derivative Works - One Time Payment'
+  ) {
+    tags.push({ name: TAG_NAMES.license, value: UDL_ID });
+    // other options
+    tags.push({ name: TAG_NAMES.derivation, value: 'With-Credit' });
+    tags.push({ name: TAG_NAMES.licenseFee, value: `One-Time-${licenseProps.licenseFee}` });
+    tags.push({ name: TAG_NAMES.currency, value: licenseProps.currency as string });
+  } else if (license === 'Universal licenseProps License (UDL) Custom') {
+    tags.push({ name: TAG_NAMES.license, value: UDL_ID });
+    // other options
+    if (licenseProps.derivations && licenseProps.revenueShare) {
+      tags.push({
+        name: TAG_NAMES.derivation,
+        value: `Allowed-With-RevenueShare-${licenseProps.revenueShare}%`,
+      });
+    } else if (licenseProps.derivations) {
+      tags.push({ name: TAG_NAMES.derivation, value: licenseProps.derivations });
+    } else {
+      // ignore
+    }
+
+    if (licenseProps.commercialUse) {
+      tags.push({ name: TAG_NAMES.commercialUse, value: licenseProps.commercialUse });
+    }
+
+    if (licenseProps.licenseFeeInterval && licenseProps.licenseFee) {
+      tags.push({
+        name: TAG_NAMES.licenseFee,
+        value: `${licenseProps.licenseFeeInterval}-${licenseProps.licenseFee}`,
+      });
+    }
+
+    if (licenseProps.currency) {
+      tags.push({ name: TAG_NAMES.currency, value: licenseProps.currency });
+    }
+
+    if (licenseProps.expires) {
+      tags.push({ name: TAG_NAMES.expires, value: licenseProps.expires.toString() });
+    }
+
+    if (licenseProps.paymentAddress) {
+      tags.push({ name: TAG_NAMES.paymentAddress, value: licenseProps.paymentAddress });
+    }
+
+    if (licenseProps.paymentMode) {
+      tags.push({ name: TAG_NAMES.paymentMode, value: licenseProps.paymentMode });
+    }
+  } else {
+    tags.push({ name: TAG_NAMES.license, value: license });
+  }
 };

@@ -18,8 +18,7 @@
 
 import {
   AVATAR_ATTACHMENT,
-  DEFAULT_TAGS,
-  DEFAULT_TAGS_RETRO,
+  DEFAULT_TAGS_FOR_ASSETS,
   MODEL_ATTACHMENT,
   NET_ARWEAVE_URL,
   OPERATOR_REGISTRATION_PAYMENT_TAGS,
@@ -211,7 +210,7 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
   );
 
   const tags = [
-    ...DEFAULT_TAGS,
+    ...DEFAULT_TAGS_FOR_ASSETS,
     {
       name: TAG_NAMES.scriptCurator,
       values: [owner],
@@ -248,7 +247,7 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
         firstScriptVersionTx = findTag(scriptTx, 'scriptTransaction');
       }
       const attachmentAvatarTags = [
-        ...DEFAULT_TAGS_RETRO, // filter from previous app versions as well
+        ...DEFAULT_TAGS_FOR_ASSETS, // filter from previous app versions as well
         { name: TAG_NAMES.operationName, values: [MODEL_ATTACHMENT] },
         { name: TAG_NAMES.attachmentRole, values: [AVATAR_ATTACHMENT] },
         { name: TAG_NAMES.scriptTransaction, values: [firstScriptVersionTx, currentScriptTx] },

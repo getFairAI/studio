@@ -65,9 +65,7 @@ import FileControl from '@/components/file-control';
 import AvatarControl from '@/components/avatar-control';
 import CustomProgress from '@/components/progress';
 import {
-  APP_VERSION,
   TAG_NAMES,
-  APP_NAME,
   SCRIPT_CREATION,
   SCRIPT_CREATION_PAYMENT,
   secondInMS,
@@ -76,7 +74,9 @@ import {
   VAULT_ADDRESS,
   MODEL_CREATION_PAYMENT_TAGS,
   SCRIPT_CREATION_PAYMENT_TAGS,
-  DEFAULT_TAGS_RETRO,
+  DEFAULT_TAGS_FOR_ASSETS,
+  PROTOCOL_NAME,
+  PROTOCOL_VERSION,
 } from '@/constants';
 import { BundlrContext } from '@/context/bundlr';
 import { useSnackbar } from 'notistack';
@@ -86,6 +86,8 @@ import { ApolloError, useQuery } from '@apollo/client';
 import { FIND_BY_TAGS } from '@/queries/graphql';
 import { IContractEdge, IContractQueryResult } from '@/interfaces/arweave';
 import {
+  addAssetTags,
+  addLicenseTags,
   bundlrUpload,
   commonUpdateQuery,
   displayShortTxOrAddr,
@@ -99,6 +101,8 @@ import { sendU } from '@/utils/u';
 import { filterPreviousVersions } from '@/utils/script';
 import CachedIcon from '@mui/icons-material/Cached';
 import { fetchMoreFn } from '@/utils/apollo';
+import { AdvancedConfiguration } from '@/components/advanced-configuration';
+import { LicenseForm } from '@/interfaces/common';
 
 export interface CreateForm extends FieldValues {
   name: string;
@@ -113,6 +117,7 @@ export interface CreateForm extends FieldValues {
   avatar?: File;
   allow: { allowFiles: boolean; allowText: boolean };
 }
+
 const AllowGroupControl = (props: UseControllerProps) => {
   const { field } = useController(props);
 
@@ -519,44 +524,46 @@ const OutputFields = ({ control }: { control: Control<FieldValues, unknown> }) =
   const outputValue = useWatch({ name: 'output', control });
   const outputConfigurationDisabled = useMemo(() => outputValue !== 'image', [outputValue]);
 
-  return <>
-    <SelectControl
-      name='output'
-      control={control}
-      rules={{ required: true }}
-      defaultValue={'text'}
-      mat={{
-        sx: {
-          borderWidth: '1px',
-          borderColor: theme.palette.text.primary,
-          borderRadius: '16px',
-        },
-        placeholder: 'Select The Output Type',
-      }}
-    >
-      <MenuItem value={'text'}>Text</MenuItem>
-      <MenuItem value={'audio'}>Audio</MenuItem>
-      <MenuItem value={'image'}>Image</MenuItem>
-    </SelectControl>
-    <SelectControl
-      name='outputConfiguration'
-      control={control}
-      disabled={outputConfigurationDisabled}
-      rules={{ required: true }}
-      defaultValue={'none'}
-      mat={{
-        sx: {
-          borderWidth: '1px',
-          borderColor: theme.palette.text.primary,
-          borderRadius: '16px',
-        },
-        placeholder: 'Select The Output Configuration',
-      }}
-    >
-      <MenuItem value={'none'}>None</MenuItem>
-      <MenuItem value={'stable-diffusion'}>Stable Diffusion</MenuItem>
-    </SelectControl>
-  </>; 
+  return (
+    <>
+      <SelectControl
+        name='output'
+        control={control}
+        rules={{ required: true }}
+        defaultValue={'text'}
+        mat={{
+          sx: {
+            borderWidth: '1px',
+            borderColor: theme.palette.text.primary,
+            borderRadius: '16px',
+          },
+          placeholder: 'Select The Output Type',
+        }}
+      >
+        <MenuItem value={'text'}>Text</MenuItem>
+        <MenuItem value={'audio'}>Audio</MenuItem>
+        <MenuItem value={'image'}>Image</MenuItem>
+      </SelectControl>
+      <SelectControl
+        name='outputConfiguration'
+        control={control}
+        disabled={outputConfigurationDisabled}
+        rules={{ required: true }}
+        defaultValue={'none'}
+        mat={{
+          sx: {
+            borderWidth: '1px',
+            borderColor: theme.palette.text.primary,
+            borderRadius: '16px',
+          },
+          placeholder: 'Select The Output Configuration',
+        }}
+      >
+        <MenuItem value={'none'}>None</MenuItem>
+        <MenuItem value={'stable-diffusion'}>Stable Diffusion</MenuItem>
+      </SelectControl>
+    </>
+  );
 };
 
 const UploadCurator = () => {
@@ -599,6 +606,16 @@ const UploadCurator = () => {
     [control._formState.isValid, control._formState.isDirty, currentAddress, isUploading],
   );
 
+  const licenseRef = useRef<HTMLInputElement>(null);
+  const { control: licenseControl, reset: resetLicenseForm } = useForm<LicenseForm>({
+    defaultValues: {
+      derivations: '',
+      commercialUse: '',
+      licenseFeeInterval: '',
+      paymentMode: '',
+    },
+  } as FieldValues);
+
   const {
     data: scriptsData,
     loading: scriptsLoading,
@@ -607,7 +624,7 @@ const UploadCurator = () => {
   } = useQuery(FIND_BY_TAGS, {
     variables: {
       tags: [
-        ...DEFAULT_TAGS_RETRO,
+        ...DEFAULT_TAGS_FOR_ASSETS,
         ...SCRIPT_CREATION_PAYMENT_TAGS,
         {
           name: TAG_NAMES.sequencerOwner,
@@ -627,7 +644,7 @@ const UploadCurator = () => {
     fetchMore: modelsFetchMore,
   } = useQuery(FIND_BY_TAGS, {
     variables: {
-      tags: [...DEFAULT_TAGS_RETRO, ...MODEL_CREATION_PAYMENT_TAGS],
+      tags: [...DEFAULT_TAGS_FOR_ASSETS, ...MODEL_CREATION_PAYMENT_TAGS],
       first: elementsPerPage,
     },
     notifyOnNetworkStatusChange: true,
@@ -696,8 +713,8 @@ const UploadCurator = () => {
   const getCommonTags = (data: CreateForm, modelData: IContractEdge, modelOwner: string) => {
     const file = data.file;
     const commonTags = [];
-    commonTags.push({ name: TAG_NAMES.appName, value: APP_NAME });
-    commonTags.push({ name: TAG_NAMES.appVersion, value: APP_VERSION });
+    commonTags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
+    commonTags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
     commonTags.push({ name: TAG_NAMES.contentType, value: file.type });
     commonTags.push({ name: TAG_NAMES.scriptName, value: `${data.name}` });
     commonTags.push({ name: TAG_NAMES.output, value: data.output });
@@ -772,6 +789,8 @@ const UploadCurator = () => {
     uploadTags.push({ name: TAG_NAMES.paymentQuantity, value: uFee.toString() });
     uploadTags.push({ name: TAG_NAMES.paymentTarget, value: VAULT_ADDRESS });
     uploadTags.push({ name: TAG_NAMES.operationName, value: SCRIPT_CREATION });
+    addAssetTags(uploadTags, currentAddress);
+    addLicenseTags(uploadTags, licenseControl._formValues, licenseRef.current?.value);
 
     setSnackbarOpen(true);
     try {
@@ -1068,8 +1087,13 @@ const UploadCurator = () => {
                 sx={{ paddingBottom: 0, gap: '32px', display: 'flex', flexDirection: 'column' }}
               >
                 {getContent()}
+                <AdvancedConfiguration
+                  licenseRef={licenseRef}
+                  licenseControl={licenseControl}
+                  resetLicenseForm={resetLicenseForm}
+                />
               </CardContent>
-              <CardActions sx={{ paddingBottom: '32px', justifyContent: 'center' }}>
+              <CardActions sx={{ paddingBottom: '32px', justifyContent: 'center', mt: '32px' }}>
                 <Button
                   onClick={() => reset()}
                   sx={{

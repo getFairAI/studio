@@ -16,6 +16,8 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
+import { FieldValues } from 'react-hook-form';
+
 export interface IMessage {
   id: string;
   msg: string | File;
@@ -29,3 +31,21 @@ export interface IMessage {
 }
 
 export type voteForOptions = 'model' | 'script' | 'operator';
+
+type derivationOptions =
+  | 'With-Credit'
+  | 'With-Indication'
+  | 'With-License-Passthrough'
+  | 'With-Revenue-Share';
+type licenseFeeIntervalOptions = 'One-Time' | 'Monthly' | 'Yearly' | 'Weekly' | 'Daily';
+export interface LicenseForm extends FieldValues {
+  derivations?: derivationOptions;
+  revenueShare?: number;
+  commercialUse?: 'Allowed' | 'Allowed-With-Credit';
+  licenseFeeInterval?: licenseFeeIntervalOptions;
+  licenseFee?: number;
+  currency?: 'AR' | '$U';
+  expires?: number;
+  paymentAddress?: string;
+  paymentMode?: 'Random-Distribution' | 'Global-Distribution';
+}

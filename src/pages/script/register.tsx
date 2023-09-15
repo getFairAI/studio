@@ -1,13 +1,13 @@
 import { CustomStepper } from '@/components/stepper';
 import {
   VAULT_ADDRESS,
-  APP_VERSION,
   TAG_NAMES,
-  APP_NAME,
   REGISTER_OPERATION,
   OPERATOR_REGISTRATION_AR_FEE,
   secondInMS,
   U_DIVIDER,
+  PROTOCOL_NAME,
+  PROTOCOL_VERSION,
 } from '@/constants';
 import { IEdge } from '@/interfaces/arweave';
 import { RouteLoaderResult } from '@/interfaces/router';
@@ -59,8 +59,8 @@ const Register = () => {
       const parsedOpFee = parseFloat(rate) * U_DIVIDER;
 
       const tags = [];
-      tags.push({ name: TAG_NAMES.appName, value: APP_NAME });
-      tags.push({ name: TAG_NAMES.appVersion, value: APP_VERSION });
+      tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
+      tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
       tags.push({
         name: TAG_NAMES.scriptName,
         value: findTag(state, 'scriptName') ?? '',

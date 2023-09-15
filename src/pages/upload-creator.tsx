@@ -38,11 +38,9 @@ import FileControl from '@/components/file-control';
 import AvatarControl from '@/components/avatar-control';
 import CustomProgress from '@/components/progress';
 import {
-  APP_VERSION,
   MARKETPLACE_FEE,
   VAULT_ADDRESS,
   TAG_NAMES,
-  APP_NAME,
   MODEL_CREATION,
   MODEL_CREATION_PAYMENT,
   MODEL_ATTACHMENT,
@@ -51,6 +49,8 @@ import {
   secondInMS,
   successStatusCode,
   U_DIVIDER,
+  PROTOCOL_NAME,
+  PROTOCOL_VERSION,
 } from '@/constants';
 import { BundlrContext } from '@/context/bundlr';
 import { useSnackbar } from 'notistack';
@@ -60,14 +60,18 @@ import { FundContext } from '@/context/fund';
 import { ITag } from '@/interfaces/arweave';
 import DebounceButton from '@/components/debounce-button';
 import { sendU } from '@/utils/u';
+import { AdvancedConfiguration } from '@/components/advanced-configuration';
+import { LicenseForm } from '@/interfaces/common';
+import { addAssetTags, addLicenseTags } from '@/utils/common';
 
-export interface CreateForm extends FieldValues {
+interface CreateForm extends FieldValues {
   name: string;
   notes: string;
   file: File;
   description?: string;
   avatar?: File;
 }
+
 const UploadCreator = () => {
   const { handleSubmit, reset, control } = useForm({
     defaultValues: {
@@ -94,6 +98,16 @@ const UploadCreator = () => {
       (!control._formState.isValid && control._formState.isDirty) || !currentAddress || isUploading,
     [control._formState.isValid, control._formState.isDirty, currentAddress, isUploading],
   );
+
+  const licenseRef = useRef<HTMLInputElement>(null);
+  const { control: licenseControl, reset: resetLicenseForm } = useForm<LicenseForm>({
+    defaultValues: {
+      derivations: '',
+      commercialUse: '',
+      licenseFeeInterval: '',
+      paymentMode: '',
+    },
+  } as FieldValues);
 
   const onSubmit = async (data: FieldValues) => {
     await updateBalance();
@@ -152,6 +166,7 @@ const UploadCreator = () => {
       handleError,
       handleDone,
     );
+
     if (res.status === successStatusCode) {
       enqueueSnackbar(
         <>
@@ -180,8 +195,8 @@ const UploadCreator = () => {
 
     // upload the file
     const tags = [];
-    tags.push({ name: TAG_NAMES.appName, value: APP_NAME });
-    tags.push({ name: TAG_NAMES.appVersion, value: APP_VERSION });
+    tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
+    tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
     tags.push({ name: TAG_NAMES.contentType, value: image.type });
     tags.push({ name: TAG_NAMES.modelTransaction, value: modelTx });
     tags.push({ name: TAG_NAMES.operationName, value: MODEL_ATTACHMENT });
@@ -200,8 +215,8 @@ const UploadCreator = () => {
 
     // upload the file
     const tags = [];
-    tags.push({ name: TAG_NAMES.appName, value: APP_NAME });
-    tags.push({ name: TAG_NAMES.appVersion, value: APP_VERSION });
+    tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
+    tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
     tags.push({ name: TAG_NAMES.contentType, value: file.type });
     tags.push({ name: TAG_NAMES.modelTransaction, value: modelTx });
     tags.push({ name: TAG_NAMES.operationName, value: MODEL_ATTACHMENT });
@@ -237,8 +252,8 @@ const UploadCreator = () => {
       return;
     }
 
-    tags.push({ name: TAG_NAMES.appName, value: APP_NAME });
-    tags.push({ name: TAG_NAMES.appVersion, value: APP_VERSION });
+    tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
+    tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
     tags.push({ name: TAG_NAMES.contentType, value: file.type });
     tags.push({ name: TAG_NAMES.modelName, value: `${data.name}` });
     tags.push({ name: TAG_NAMES.operationName, value: MODEL_CREATION });
@@ -248,13 +263,16 @@ const UploadCreator = () => {
       tags.push({ name: TAG_NAMES.description, value: data.description });
     }
     tags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
+    addAssetTags(tags, currentAddress);
+    addLicenseTags(tags, licenseControl._formValues, licenseRef.current?.value);
     setSnackbarOpen(true);
+
     try {
       const res = await bundlrUpload(file, tags, 'Model Uploaded Successfully');
 
       const paymentTags = [
-        { name: TAG_NAMES.appName, value: APP_NAME },
-        { name: TAG_NAMES.appVersion, value: APP_VERSION },
+        { name: TAG_NAMES.protocolName, value: PROTOCOL_NAME },
+        { name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION },
         { name: TAG_NAMES.contentType, value: file.type },
         { name: TAG_NAMES.operationName, value: MODEL_CREATION_PAYMENT },
         { name: TAG_NAMES.modelName, value: data.name },
@@ -398,8 +416,13 @@ const UploadCreator = () => {
                 <Box padding='0px 32px'>
                   <FileControl name='file' control={control} rules={{ required: true }} />
                 </Box>
+                <AdvancedConfiguration
+                  licenseRef={licenseRef}
+                  licenseControl={licenseControl}
+                  resetLicenseForm={resetLicenseForm}
+                />
               </CardContent>
-              <CardActions sx={{ paddingBottom: '32px', justifyContent: 'center' }}>
+              <CardActions sx={{ paddingBottom: '32px', justifyContent: 'center', mt: '32px' }}>
                 <Button
                   onClick={handleReset}
                   sx={{

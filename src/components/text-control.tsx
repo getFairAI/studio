@@ -2,7 +2,7 @@ import { TextField, TextFieldProps } from '@mui/material';
 import { CSSProperties } from 'react';
 import { useController, UseControllerProps } from 'react-hook-form';
 
-type TextControlProps = UseControllerProps & { mat: TextFieldProps; style: CSSProperties };
+type TextControlProps = UseControllerProps & { mat: TextFieldProps; style?: CSSProperties };
 
 const TextControl = (props: TextControlProps) => {
   const { field, fieldState } = useController(props);

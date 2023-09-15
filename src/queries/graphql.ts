@@ -16,7 +16,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import { APP_NAME, APP_VERSION, VAULT_ADDRESS } from '../constants';
+import { VAULT_ADDRESS } from '../constants';
 import { gql } from '@apollo/client';
 
 export const GET_LATEST_MODEL_ATTACHMENTS = gql`
@@ -144,58 +144,6 @@ export const GET_LATEST_FEE_UPDATE = gql`
   }
 `;
 
-export const LIST_OWN_MODELS_QUERY = gql`
-  query LIST_MODELS_QUERY($owner: String!) {
-    transactions(
-      tags: [
-        { name: "App-Name", values: ["${APP_NAME}"] }
-        { name: "App-Version", values: ["${APP_VERSION}"] }
-        { name: "Operation-Name", values: "Model Creation Payment" }
-      ]
-      recipients:["${VAULT_ADDRESS}"],
-      owners: [$owner]
-    ) {
-      edges {
-        cursor
-        node {
-          id
-          signature
-          recipient
-          owner {
-            address
-            key
-          }
-          fee {
-            winston
-            ar
-          }
-          quantity {
-            winston
-            ar
-          }
-          data {
-            size
-            type
-          }
-          tags {
-            name
-            value
-          }
-          block {
-            id
-            timestamp
-            height
-            previous
-          }
-          bundledIn {
-            id
-          }
-        }
-      }
-    }
-  }
-`;
-
 export const GET_MODELS_PAID_QUERY = gql`
   query GET_MODELS_PAID_QUERY($tags: [TagFilter!]) {
     transactions(tags: $tags) {
@@ -211,62 +159,6 @@ export const GET_MODELS_PAID_QUERY = gql`
           }
         }
       }
-    }
-  }
-`;
-
-export const QUERY_REGISTERED_MODELS = gql`
-  query QUERY_REGISTERED_MODELS {
-    transactions(
-      first: 25,
-      recipients:["${VAULT_ADDRESS}"],
-      tags: [
-        { name: "App-Name", values: ["${APP_NAME}"] }
-        { name: "App-Version", values: ["${APP_VERSION}"] }
-        {
-          name: "Opearation-Name",
-          values: ["Model Creation"]
-        }
-      ]
-    )
-    {
-        edges {
-            cursor
-            node {
-                id
-                signature
-                recipient
-                owner {
-                    address
-                    key
-                }
-                fee {
-                    winston
-                    ar
-                }
-                quantity {
-                    winston
-                    ar
-                }
-                data {
-                    size
-                    type
-                }
-                tags {
-                    name
-                    value
-                }
-                block {
-                    id
-                    timestamp
-                    height
-                    previous
-                }
-                bundledIn {
-                    id
-                }
-            }
-        }
     }
   }
 `;

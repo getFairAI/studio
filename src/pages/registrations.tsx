@@ -32,12 +32,13 @@ import {
 import {
   TAG_NAMES,
   CANCEL_OPERATION,
-  APP_NAME,
-  APP_VERSION,
   secondInMS,
   DEFAULT_TAGS,
   OPERATOR_REGISTRATION_PAYMENT_TAGS,
   U_LOGO_SRC,
+  PROTOCOL_NAME,
+  PROTOCOL_VERSION,
+  DEFAULT_TAGS_FOR_ASSETS,
 } from '@/constants';
 import { IEdge, ITransactions } from '@/interfaces/arweave';
 import {
@@ -263,8 +264,8 @@ const RegistrationCard = ({ tx }: { tx: IEdge }) => {
         const cancelTx = await arweave.createTransaction({
           data: 'Cancel Transaction',
         });
-        cancelTx.addTag(TAG_NAMES.appName, APP_NAME);
-        cancelTx.addTag(TAG_NAMES.appVersion, APP_VERSION);
+        cancelTx.addTag(TAG_NAMES.protocolName, PROTOCOL_NAME);
+        cancelTx.addTag(TAG_NAMES.protocolVersion, PROTOCOL_VERSION);
         cancelTx.addTag(TAG_NAMES.operationName, CANCEL_OPERATION);
         cancelTx.addTag(TAG_NAMES.registrationTransaction, id);
         cancelTx.addTag(TAG_NAMES.scriptName, registration.scriptName);
@@ -381,7 +382,7 @@ const Registrations = () => {
   const { currentAddress } = useContext(WalletContext);
 
   const tags = [
-    ...DEFAULT_TAGS,
+    ...DEFAULT_TAGS_FOR_ASSETS,
     ...OPERATOR_REGISTRATION_PAYMENT_TAGS,
     { name: TAG_NAMES.sequencerOwner, values: [currentAddress] },
   ];
