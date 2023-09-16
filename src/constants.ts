@@ -26,6 +26,10 @@ export const U_LOGO_SRC = 'https://arweave.net/J3WXX4OGa6wP5E9oLhNyqlN4deYI7ARjr
 
 export const UDL_ID = 'yRj4a5KMctX_uOmKWCFJIjmY8DeJcusVk6-HzLiM_t8';
 
+export const APACHE_ID = 'HO_Truhp5Y_RDLhy4tWyFUmp8xsYt6dx2_U278bEK9g';
+export const CREATIVEML_PLUSPLUS_M_ID = '51_v_jW77YGTpCAtI6GG0D9p7WlAiHf_zoHCFX1yUDk';
+export const CREATIVEML_M_ID = 'mR-ehDm3Gok5deOEGcskeNOxmDLp2h52KHZdSI1I3YI';
+export const MIT_ID = '5nreaPQMmB6mTx_q1be49wjF_LIdAlXKEv81wEHNeek';
 export const ATOMIC_ASSET_CONTRACT_SOURCE_ID = 'h9v17KHV4SXwdW2-JHU6a23f6R0YtbXZJJht8LfP8QM';
 
 export const PROTOCOL_NAME = 'Fair Protocol';
