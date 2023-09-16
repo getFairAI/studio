@@ -69,6 +69,16 @@ const LicenseField = ({
   }
 };
 
+const getLicenseGroup = (idx: number) => {
+  if (idx < 4) {
+    return 'UDL';
+  } else if (idx < 6) {
+    return 'General';
+  } else {
+    return 'Stable Diffusion';
+  }
+};
+
 export const AdvancedConfiguration = ({
   licenseRef,
   licenseControl,
@@ -87,7 +97,16 @@ export const AdvancedConfiguration = ({
     'Universal Data License (UDL) Commercial - One Time Payment',
     'Universal Data License (UDL) Derivative Works - One Time Payment',
     'Universal Data License (UDL) Custom',
+    'APACHE 2.0',
+    'MIT',
+    'CreativeML Open RAIL-M',
+    'CreativeML Open RAIL++-M',
   ];
+  const groupedLicenseOptions = licenseOptions.map((license, idx) => ({
+    label: license,
+    group: getLicenseGroup(idx)
+  }));
+
   const [inputValue, setInputValue] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const showLicenseConfig = useMemo(
@@ -160,7 +179,9 @@ export const AdvancedConfiguration = ({
         <Box padding='0px 32px' gap='16px' display={'flex'} flexDirection={'column'}>
           <Autocomplete
             freeSolo
-            options={licenseOptions}
+            options={groupedLicenseOptions}
+            groupBy={(option) => option.group}
+            getOptionLabel={(option) => (option as unknown as { label: string }).label}
             renderInput={handleRenderInput}
             onInputChange={handleAutocompleteChange}
           />

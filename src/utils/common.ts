@@ -17,9 +17,13 @@
  */
 
 import {
+  APACHE_ID,
   ATOMIC_ASSET_CONTRACT_SOURCE_ID,
   AVATAR_ATTACHMENT,
+  CREATIVEML_M_ID,
+  CREATIVEML_PLUSPLUS_M_ID,
   MARKETPLACE_ADDRESS,
+  MIT_ID,
   MODEL_ATTACHMENT,
   MODEL_DELETION,
   NET_ARWEAVE_URL,
@@ -465,6 +469,14 @@ export const addLicenseTags = (tags: ITag[], licenseProps: LicenseForm, license?
     if (licenseProps.paymentMode) {
       tags.push({ name: TAG_NAMES.paymentMode, value: licenseProps.paymentMode });
     }
+  } else if (license === 'APACHE 2.0') {
+    tags.push({ name: TAG_NAMES.license, value: APACHE_ID });
+  } else if (license === 'MIT') {
+    tags.push({ name: TAG_NAMES.license, value: MIT_ID });
+  } else if (license === 'CreativeML Open RAIL-M') {
+    tags.push({ name: TAG_NAMES.license, value: CREATIVEML_M_ID });
+  } else if (license === 'CreativeML Open RAIL++-M') {
+    tags.push({ name: TAG_NAMES.license, value: CREATIVEML_PLUSPLUS_M_ID });
   } else {
     tags.push({ name: TAG_NAMES.license, value: license });
   }
