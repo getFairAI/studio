@@ -92,13 +92,16 @@ const RegistrationContent = ({
   text: string;
   color: string;
 }) => {
+  const { enqueueSnackbar } = useSnackbar();
+
   const handleCopy = useCallback(() => {
     if (registration.scriptTransaction) {
       (async () => {
         await navigator.clipboard.writeText(registration.scriptTransaction);
+        enqueueSnackbar('Copied to clipboard', { variant: 'info' });
       })();
     }
-  }, [registration]);
+  }, [registration, enqueueSnackbar ]);
 
   const handleViewExplorer = useCallback(
     () =>
