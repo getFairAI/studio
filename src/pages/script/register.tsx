@@ -11,7 +11,7 @@ import {
 } from '@/constants';
 import { IEdge } from '@/interfaces/arweave';
 import { RouteLoaderResult } from '@/interfaces/router';
-import { findTag } from '@/utils/common';
+import { displayShortTxOrAddr, findTag } from '@/utils/common';
 import {
   Box,
   Typography,
@@ -21,16 +21,19 @@ import {
   IconButton,
   CardContent,
   useTheme,
+  Button,
 } from '@mui/material';
 import { toSvg } from 'jdenticon';
 import { useSnackbar } from 'notistack';
 import { useCallback, useContext, useMemo, useState } from 'react';
-import { useLoaderData, useLocation, useNavigate } from 'react-router-dom';
+import { useLoaderData, useLocation, useNavigate, useParams } from 'react-router-dom';
 import '@/styles/ui.css';
 import { WalletContext } from '@/context/wallet';
 import { sendU } from '@/utils/u';
+import { ContentCopy } from '@mui/icons-material';
 
 const Register = () => {
+  const { txid: scriptTxId } = useParams();
   const { avatarTxId } = (useLoaderData() as RouteLoaderResult) || {};
   const { state }: { state: IEdge } = useLocation();
   const [isRegistered, setIsRegistered] = useState(false);
@@ -103,6 +106,15 @@ const Register = () => {
   };
 
   const handleClose = useCallback(() => navigate(-1), [navigate]);
+
+  const handleCopy = useCallback(() => {
+    if (scriptTxId) {
+      (async () => {
+        await navigator.clipboard.writeText(scriptTxId);
+        enqueueSnackbar('Copied to clipboard', { variant: 'info' });
+      })();
+    }
+  }, [ scriptTxId ]);
 
   return (
     <Dialog
@@ -250,6 +262,9 @@ const Register = () => {
             </Typography>
             <Typography>{findTag(state, 'description') || 'No Description Available'}</Typography>
           </Box>
+          <Button variant='outlined' endIcon={<ContentCopy />} onClick={handleCopy}>
+            <Typography>Copy Tx Id ({displayShortTxOrAddr(scriptTxId as string)})</Typography>
+          </Button>
         </Box>
       </CardContent>
       <DialogContent sx={{ padding: '20px 32px' }}>
