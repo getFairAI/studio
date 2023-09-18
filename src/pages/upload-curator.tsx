@@ -103,6 +103,8 @@ import CachedIcon from '@mui/icons-material/Cached';
 import { fetchMoreFn } from '@/utils/apollo';
 import { AdvancedConfiguration } from '@/components/advanced-configuration';
 import { LicenseForm } from '@/interfaces/common';
+import { WarpFactory } from 'warp-contracts';
+import { DeployPlugin } from 'warp-contracts-plugin-deploy';
 
 export interface CreateForm extends FieldValues {
   name: string;
@@ -337,7 +339,9 @@ const GenericSelect = ({
       for (const el of newData.transactions.edges) {
         const modelId = findTag(el, 'modelTransaction') as string;
         const modelOwner = findTag(el, 'sequencerOwner') as string;
-        if (await isFakeDeleted(modelId, modelOwner, 'model')) {
+        if (!modelOwner || !modelId) {
+          // if no model owner or id ignore
+        } else if (await isFakeDeleted(modelId, modelOwner, 'model')) {
           // if fake deleted ignore
         } else {
           filtered.push(el);
@@ -800,6 +804,10 @@ const UploadCurator = () => {
         fileToUpload: file,
         successMessage: 'Script Uploaded Successfully',
       });
+
+       // register the model asset  in the warp contract
+       const warp = await WarpFactory.forMainnet().use(new DeployPlugin());
+       warp.register(res.data.id, 'node2');
 
       const paymentTags = [
         ...commonTags,
