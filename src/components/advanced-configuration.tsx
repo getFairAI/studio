@@ -92,6 +92,7 @@ export const AdvancedConfiguration = ({
   const maxNumberDigits = 4;
   const commercialOnetimeIdx = 1;
   const derivationOneTimeidx = 2;
+  const customDerivationIdx = 3;
   const licenseOptions = [
     'Universal Data License (UDL) Default Public Use',
     'Universal Data License (UDL) Commercial - One Time Payment',
@@ -110,7 +111,7 @@ export const AdvancedConfiguration = ({
   const [inputValue, setInputValue] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const showLicenseConfig = useMemo(
-    () => inputValue === licenseOptions[licenseOptions.length - 1],
+    () => inputValue === licenseOptions[customDerivationIdx],
     [inputValue],
   );
   const showLicenseFee = useMemo(

@@ -120,7 +120,7 @@ const ScriptImage = ({
           // backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
           backgroundSize: 'cover' /* <------ */,
-          backgroundPosition: 'center center',
+          backgroundPosition: 'center',
         }}
       />
     );
@@ -134,7 +134,7 @@ const ScriptImage = ({
           width: '100px',
           background: `linear-gradient(180deg, rgba(71, 71, 71, 0) 0%, rgba(1, 1, 1, 0) 188.85%), url(${imgUrl})`,
           backgroundPosition: 'center',
-          backgroundSize: 'contain',
+          backgroundSize: 'cover',
         }}
       />
     );

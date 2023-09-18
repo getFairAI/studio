@@ -63,6 +63,8 @@ import { sendU } from '@/utils/u';
 import { AdvancedConfiguration } from '@/components/advanced-configuration';
 import { LicenseForm } from '@/interfaces/common';
 import { addAssetTags, addLicenseTags } from '@/utils/common';
+import { WarpFactory } from 'warp-contracts';
+import { DeployPlugin } from 'warp-contracts-plugin-deploy';
 
 interface CreateForm extends FieldValues {
   name: string;
@@ -269,6 +271,9 @@ const UploadCreator = () => {
 
     try {
       const res = await bundlrUpload(file, tags, 'Model Uploaded Successfully');
+      // register the model asset  in the warp contract
+      const warp = await WarpFactory.forMainnet().use(new DeployPlugin());
+      warp.register(res.data.id, 'node2');
 
       const paymentTags = [
         { name: TAG_NAMES.protocolName, value: PROTOCOL_NAME },
