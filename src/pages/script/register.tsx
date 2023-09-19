@@ -114,7 +114,7 @@ const Register = () => {
         enqueueSnackbar('Copied to clipboard', { variant: 'info' });
       })();
     }
-  }, [ scriptTxId ]);
+  }, [scriptTxId]);
 
   return (
     <Dialog
