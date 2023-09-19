@@ -101,7 +101,7 @@ const RegistrationContent = ({
         enqueueSnackbar('Copied to clipboard', { variant: 'info' });
       })();
     }
-  }, [registration, enqueueSnackbar ]);
+  }, [registration, enqueueSnackbar]);
 
   const handleViewExplorer = useCallback(
     () =>

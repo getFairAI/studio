@@ -105,7 +105,7 @@ export const AdvancedConfiguration = ({
   ];
   const groupedLicenseOptions = licenseOptions.map((license, idx) => ({
     label: license,
-    group: getLicenseGroup(idx)
+    group: getLicenseGroup(idx),
   }));
 
   const [inputValue, setInputValue] = useState('');

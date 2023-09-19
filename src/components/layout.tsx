@@ -36,7 +36,6 @@ import { ChooseWalletContext } from '@/context/choose-wallet';
 import useWindowDimensions from '@/hooks/useWindowDimensions';
 
 export default function Layout({ children }: { children: ReactElement }) {
-  const [showBanner, setShowBanner] = useState(true);
   const [filterValue, setFilterValue] = useState('');
   const [headerHeight, setHeaderHeight] = useState('64px');
   const { currentAddress } = useContext(WalletContext);
@@ -66,7 +65,7 @@ export default function Layout({ children }: { children: ReactElement }) {
     if (currHeaderHeight) {
       setHeaderHeight(`${currHeaderHeight}px`);
     }
-  }, [width, height, showBanner]);
+  }, [width, height]);
 
   const handleIgnore = useCallback(() => {
     localStorage.setItem('ignoreWalletNotConnected', 'true');
@@ -75,11 +74,7 @@ export default function Layout({ children }: { children: ReactElement }) {
 
   return (
     <>
-      <Navbar
-        showBanner={showBanner}
-        setShowBanner={setShowBanner}
-        setFilterValue={setFilterValue}
-      />
+      <Navbar setFilterValue={setFilterValue} />
       <Container
         disableGutters
         sx={{

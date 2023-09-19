@@ -20,35 +20,15 @@ import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
-import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import ProfileMenu from './profile-menu';
 import { ChangeEvent, Dispatch, SetStateAction, useCallback, useContext, useState } from 'react';
-import {
-  Button,
-  Icon,
-  IconButton,
-  InputBase,
-  MenuItem,
-  Select,
-  styled,
-  Tooltip,
-  useTheme,
-} from '@mui/material';
+import { Icon, IconButton, InputBase, MenuItem, Select, Tooltip, useTheme } from '@mui/material';
 import { WalletContext } from '@/context/wallet';
-import CloseIcon from '@mui/icons-material/Close';
 import Pending from './pending';
 import NavigationMenu from './navigation-menu';
 import { ChooseWalletContext } from '@/context/choose-wallet';
 import { defaultDecimalPlaces, U_LOGO_SRC } from '@/constants';
-
-const Banner = styled(Toolbar)(({ theme }) => ({
-  backgroundColor: theme.palette.error.main,
-  color: theme.palette.error.contrastText,
-  // Override media queries injected by theme.mixins.toolbar
-  '@media all': {
-    minHeight: '25px',
-  },
-}));
 
 const CustomDropDownIcon = () => (
   <Icon
@@ -199,17 +179,8 @@ const WalletState = () => {
   );
 };
 
-const Navbar = ({
-  showBanner,
-  setShowBanner,
-  setFilterValue,
-}: {
-  showBanner: boolean;
-  setShowBanner: Dispatch<SetStateAction<boolean>>;
-  setFilterValue: Dispatch<SetStateAction<string>>;
-}) => {
-  const { pathname, state } = useLocation();
-  const navigate = useNavigate();
+const Navbar = ({ setFilterValue }: { setFilterValue: Dispatch<SetStateAction<string>> }) => {
+  const { pathname } = useLocation();
   const theme = useTheme();
   const extraIndex = 2; // number to add to zIndex to make sure it's above the drawer
   const zIndex = theme.zIndex.drawer + extraIndex; // add 2 to make sure it's above the drawer
@@ -231,21 +202,6 @@ const Navbar = ({
   return (
     <>
       <AppBar className='navbar' sx={{ zIndex }}>
-        {showBanner && (
-          <Banner>
-            <Box sx={{ flexGrow: 1, display: { md: 'flex', justifyContent: 'flex-start' } }}>
-              <Typography variant='h4'>
-                This App is in <b>ALPHA</b> version and the code has not been audited yet. Please
-                make sure you understand before using any of the functionalities.
-              </Typography>
-            </Box>
-            <Box sx={{ flexGrow: 0 }}>
-              <IconButton size='small' onClick={() => setShowBanner(false)}>
-                <CloseIcon fontSize='inherit' />
-              </IconButton>
-            </Box>
-          </Banner>
-        )}
         <Toolbar>
           <Box display={'flex'} flexDirection={'row'}>
             <Link to='/'>
@@ -329,7 +285,6 @@ const Navbar = ({
         </Toolbar>
       </AppBar>
       <Toolbar />
-      {showBanner && <Banner />}
     </>
   );
 };

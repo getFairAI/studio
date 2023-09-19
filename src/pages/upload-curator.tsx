@@ -805,9 +805,9 @@ const UploadCurator = () => {
         successMessage: 'Script Uploaded Successfully',
       });
 
-       // register the model asset  in the warp contract
-       const warp = await WarpFactory.forMainnet().use(new DeployPlugin());
-       warp.register(res.data.id, 'node2');
+      // register the model asset  in the warp contract
+      const warp = await WarpFactory.forMainnet().use(new DeployPlugin());
+      warp.register(res.data.id, 'node2');
 
       const paymentTags = [
         ...commonTags,
