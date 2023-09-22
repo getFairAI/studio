@@ -142,7 +142,6 @@ const FileControl = (props: FileControlProps) => {
                 sx: {
                   borderWidth: '1px',
                   borderColor: theme.palette.text.primary,
-                  borderRadius: '23px',
                 },
                 readOnly: true,
               }}
@@ -167,7 +166,6 @@ const FileControl = (props: FileControlProps) => {
           InputProps={{
             readOnly: true,
             sx: {
-              borderRadius: '20px',
               background: theme.palette.background.default,
               transform: hasFileDrag ? 'scale(1.02)' : 'scale(1)',
               filter: hasFileDrag

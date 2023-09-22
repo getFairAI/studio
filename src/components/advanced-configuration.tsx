@@ -58,7 +58,7 @@ const LicenseField = ({
         <SelectControl
           name='currency'
           control={licenseControl}
-          mat={{ label: 'Currency', placeholder: 'Currency', sx: { width: '25%' } }}
+          mat={{ label: 'Currency', placeholder: 'Currency' }}
           defaultValue={'$U'}
         >
           <MenuItem value='AR'>AR</MenuItem>

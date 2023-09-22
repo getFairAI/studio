@@ -18,13 +18,8 @@
 
 import {
   Alert,
-  Backdrop,
   Box,
   Button,
-  Card,
-  CardActions,
-  CardContent,
-  CardHeader,
   Container,
   Snackbar,
   Typography,
@@ -342,136 +337,104 @@ const UploadCreator = () => {
         },
       }}
     >
-      <Backdrop
-        sx={{
-          zIndex: theme.zIndex.drawer + 1,
-          position: 'relative',
-          height: '100%',
-          width: '100%',
-        }}
-        open={true}
-      >
         <Container maxWidth={'lg'}>
-          <Box sx={{ marginTop: '8px' }}>
-            <Card
-              sx={{
-                background:
-                  theme.palette.mode === 'dark'
-                    ? theme.palette.neutral.main
-                    : theme.palette.background.default,
-                borderRadius: '30px',
-              }}
-            >
-              <CardHeader title='Upload model' sx={{ paddingLeft: '48px', paddingTop: '32px' }} />
-              <CardContent
-                sx={{ paddingBottom: 0, gap: '32px', display: 'flex', flexDirection: 'column' }}
+          <Box sx={{ marginTop: '8px', paddingBottom: 0, gap: '32px', display: 'flex', flexDirection: 'column' }}>
+            <Box padding={'0px 32px'}>
+              <TextControl
+                name='name'
+                control={control}
+                rules={{ required: true }}
+                mat={{
+                  variant: 'outlined',
+                  InputProps: {
+                    sx: {
+                      borderWidth: '1px',
+                      borderColor: theme.palette.text.primary,
+                    },
+                  },
+                }}
+                style={{ width: '100%' }}
+              />
+            </Box>
+            <Box display={'flex'} gap={'30px'} width={'100%'} padding='0px 32px'>
+              <Box width={'25%'}>
+                <AvatarControl name='avatar' control={control} />
+              </Box>
+              <TextControl
+                name='description'
+                control={control}
+                mat={{
+                  variant: 'outlined',
+                  multiline: true,
+                  margin: 'normal',
+                  minRows: 6,
+                  maxRows: 6,
+                  InputProps: {
+                    sx: {
+                      borderWidth: '1px',
+                      borderColor: theme.palette.text.primary,
+                      height: '100%',
+                    },
+                  },
+                }}
+                style={{ width: '100%', marginTop: 0, height: '219px', marginBottom: 0, }}
+              />
+              
+            </Box>
+            
+            <Box padding='0px 32px'>
+              <MarkdownControl props={{ name: 'notes', control, rules: { required: true } }} />
+            </Box>
+            <Box padding='0px 32px'>
+              <FileControl name='file' control={control} rules={{ required: true }} />
+            </Box>
+            <AdvancedConfiguration
+              licenseRef={licenseRef}
+              licenseControl={licenseControl}
+              resetLicenseForm={resetLicenseForm}
+            />
+            <Box sx={{ display: 'flex', paddingBottom: '32px', justifyContent: 'flex-end', mt: '32px', width: '100%', gap: '32px' }}>
+              <Button
+                onClick={handleReset}
+                sx={{
+                  // border: `1px solid ${theme.palette.text.primary}`,
+                  height: '39px',
+                  width: '204px',
+                }}
+                variant='outlined'
               >
-                <Box display={'flex'} gap={'30px'} width={'100%'} padding='0px 32px'>
-                  <Box width={'22%'}>
-                    <AvatarControl name='avatar' control={control} />
-                  </Box>
-                  <Box
-                    display={'flex'}
-                    justifyContent={'space-between'}
-                    flexDirection='column'
-                    flexGrow={1}
-                    width={'30%'}
-                  >
-                    <TextControl
-                      name='name'
-                      control={control}
-                      rules={{ required: true }}
-                      mat={{
-                        variant: 'outlined',
-                        InputProps: {
-                          sx: {
-                            borderWidth: '1px',
-                            borderColor: theme.palette.text.primary,
-                            borderRadius: '16px',
-                          },
-                        },
-                      }}
-                      style={{ width: '100%' }}
-                    />
-                  </Box>
-                  <TextControl
-                    name='description'
-                    control={control}
-                    mat={{
-                      variant: 'outlined',
-                      multiline: true,
-                      margin: 'normal',
-                      minRows: 6,
-                      maxRows: 6,
-                      InputProps: {
-                        sx: {
-                          borderWidth: '1px',
-                          borderColor: theme.palette.text.primary,
-                          borderRadius: '23px',
-                          height: '100%',
-                        },
-                      },
-                    }}
-                    style={{ width: '40%', marginTop: 0, height: '219px' }}
-                  />
-                </Box>
-                <Box padding='0px 32px'>
-                  <MarkdownControl props={{ name: 'notes', control, rules: { required: true } }} />
-                </Box>
-                <Box padding='0px 32px'>
-                  <FileControl name='file' control={control} rules={{ required: true }} />
-                </Box>
-                <AdvancedConfiguration
-                  licenseRef={licenseRef}
-                  licenseControl={licenseControl}
-                  resetLicenseForm={resetLicenseForm}
-                />
-              </CardContent>
-              <CardActions sx={{ paddingBottom: '32px', justifyContent: 'center', mt: '32px' }}>
-                <Button
-                  onClick={handleReset}
+                <Typography
                   sx={{
-                    // border: `1px solid ${theme.palette.text.primary}`,
-                    borderRadius: '7px',
-                    height: '39px',
-                    width: '204px',
+                    fontStyle: 'normal',
+                    fontWeight: 500,
+                    fontSize: '15px',
+                    lineHeight: '20px',
                   }}
-                  variant='outlined'
                 >
-                  <Typography
-                    sx={{
-                      fontStyle: 'normal',
-                      fontWeight: 500,
-                      fontSize: '15px',
-                      lineHeight: '20px',
-                    }}
-                  >
-                    Reset to Default
-                  </Typography>
-                </Button>
-                <DebounceButton
-                  onClick={handleSubmit(onSubmit)}
-                  disabled={disabled}
+                  Reset to Default
+                </Typography>
+              </Button>
+              <DebounceButton
+                onClick={handleSubmit(onSubmit)}
+                disabled={disabled}
+                sx={{
+                  height: '39px',
+                  width: '204px',
+                }}
+                variant='contained'
+              >
+                <Typography
                   sx={{
-                    borderRadius: '7px',
-                    height: '39px',
-                    width: '204px',
+                    fontStyle: 'normal',
+                    fontWeight: 500,
+                    fontSize: '15px',
+                    lineHeight: '20px',
                   }}
-                  variant='contained'
                 >
-                  <Typography
-                    sx={{
-                      fontStyle: 'normal',
-                      fontWeight: 500,
-                      fontSize: '15px',
-                      lineHeight: '20px',
-                    }}
-                  >
-                    Submit
-                  </Typography>
-                </DebounceButton>
-              </CardActions>
-            </Card>
+                  Submit
+                </Typography>
+              </DebounceButton>
+            </Box>
           </Box>
           <Snackbar
             anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
@@ -485,7 +448,6 @@ const UploadCreator = () => {
             </Alert>
           </Snackbar>
         </Container>
-      </Backdrop>
     </Container>
   );
 };
