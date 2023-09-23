@@ -21,9 +21,6 @@ import {
   Backdrop,
   Box,
   Button,
-  Card,
-  CardActions,
-  CardContent,
   CardHeader,
   Checkbox,
   CircularProgress,
@@ -451,9 +448,9 @@ const GenericSelect = ({
       name={name}
       control={control}
       rules={{ required: !disabled }}
+      disabled={disabled}
       mat={{
         onClick: handleSelected,
-        disabled,
         placeholder: isScript ? 'Choose a Script' : 'Choose a Model',
         sx: {
           borderWidth: '1px',
@@ -529,7 +526,7 @@ const OutputFields = ({ control }: { control: Control<FieldValues, unknown> }) =
   const outputConfigurationDisabled = useMemo(() => outputValue !== 'image', [outputValue]);
 
   return (
-    <>
+    <Box display={'flex'} padding={'0px 32px'} gap='32px' width={'100%'}>
       <SelectControl
         name='output'
         control={control}
@@ -566,7 +563,7 @@ const OutputFields = ({ control }: { control: Control<FieldValues, unknown> }) =
         <MenuItem value={'none'}>None</MenuItem>
         <MenuItem value={'stable-diffusion'}>Stable Diffusion</MenuItem>
       </SelectControl>
-    </>
+    </Box>
   );
 };
 
@@ -854,162 +851,139 @@ const UploadCurator = () => {
   }, [setMode, reset]);
 
   const getContent = () => {
-    return (
-      <Box width={'100%'} padding='0px 32px' display={'flex'} flexDirection={'column'} gap={'16px'}>
-        {mode === 'upload' ? (
-          <>
-            <Box display={'flex'} gap={'30px'} width={'100%'} padding='0px 32px'>
-              <Box width={'22%'}>
-                <AvatarControl name='avatar' control={control} />
-              </Box>
-              <Box
-                display={'flex'}
-                justifyContent={'space-between'}
-                flexDirection='column'
-                flexGrow={1}
-                width={'30%'}
-              >
-                <TextControl
-                  name='name'
-                  control={control}
-                  rules={{ required: true }}
-                  mat={{
-                    variant: 'outlined',
-                    InputProps: {
-                      sx: {
-                        borderWidth: '1px',
-                        borderColor: theme.palette.text.primary,
-                        borderRadius: '16px',
-                      },
-                    },
-                  }}
-                  style={{ width: '100%' }}
-                />
-                <OutputFields control={control} />
-              </Box>
-              <TextControl
-                name='description'
-                control={control}
-                mat={{
-                  variant: 'outlined',
-                  multiline: true,
-                  margin: 'normal',
-                  minRows: 6,
-                  maxRows: 6,
-                  InputProps: {
-                    sx: {
-                      borderWidth: '1px',
-                      borderColor: theme.palette.text.primary,
-                      borderRadius: '23px',
-                      height: '100%',
-                    },
-                  },
-                }}
-                style={{ width: '40%', marginTop: 0 }}
-              />
-            </Box>
-            <Box padding='0px 32px'>
-              <GenericSelect
-                name='model'
-                control={control}
-                data={modelsData}
-                error={modelsError}
-                loading={modelsLoading}
-                hasNextPage={hasModelsNextPage}
-                loadMore={modelsFetchMore}
-                disabled={false}
-                setValue={setValue}
-              />
-            </Box>
-          </>
-        ) : (
-          <>
-            <Box padding='0px 32px' display={'flex'} flexDirection={'column'} gap={'16px'}>
-              <GenericSelect
-                name='script'
-                control={control}
-                data={scriptsData}
-                error={scriptsError}
-                loading={scriptsLoading}
-                hasNextPage={hasScriptsNextPage}
-                disabled={false}
-                loadMore={scriptsFetchMore}
-                setValue={setValue}
-                extraData={modelsData}
-              />
-              <GenericSelect
-                name='model'
-                control={control}
-                data={modelsData}
-                error={modelsError}
-                loading={modelsLoading}
-                hasNextPage={hasModelsNextPage}
-                disabled={true}
-                loadMore={modelsFetchMore}
-              />
-            </Box>
-            <Box
-              display={'flex'}
-              justifyContent={'space-between'}
-              alignItems={'center'}
-              flexGrow={1}
-              width={'100%'}
-              padding='0px 32px'
-              gap='16px'
-            >
-              <TextControl
-                name='name'
-                control={control}
-                rules={{ required: true }}
-                mat={{
-                  variant: 'outlined',
-                  InputProps: {
-                    sx: {
-                      borderWidth: '1px',
-                      borderColor: theme.palette.text.primary,
-                      borderRadius: '16px',
-                    },
-                  },
-                }}
-                style={{ width: '100%' }}
-              />
-              <OutputFields control={control} />
-            </Box>
-            <Box padding='0px 32px'>
-              <TextControl
-                name='description'
-                control={control}
-                mat={{
-                  variant: 'outlined',
-                  multiline: true,
-                  margin: 'normal',
-                  minRows: 6,
-                  maxRows: 6,
-                  InputProps: {
-                    sx: {
-                      borderWidth: '1px',
-                      borderColor: theme.palette.text.primary,
-                      borderRadius: '23px',
-                      height: '100%',
-                    },
-                  },
-                }}
-                style={{ width: '100%', marginTop: 0 }}
-              />
-            </Box>
-          </>
-        )}
-        <Box padding='0px 32px'>
-          <AllowGroupControl name={'allow'} control={control} />
+    if (mode === 'upload') {
+      return <>
+        <Box padding={'0px 32px'}>
+          <TextControl
+            name='name'
+            control={control}
+            rules={{ required: true }}
+            mat={{
+              variant: 'outlined',
+              InputProps: {
+                sx: {
+                  borderWidth: '1px',
+                  borderColor: theme.palette.text.primary,
+                },
+              },
+            }}
+            style={{ width: '100%' }}
+          />
+        </Box>
+        <Box display={'flex'} gap={'30px'} width={'100%'} padding='0px 32px'>
+          <Box width={'25%'}>
+            <AvatarControl name='avatar' control={control} />
+          </Box>
+          <TextControl
+            name='description'
+            control={control}
+            mat={{
+              variant: 'outlined',
+              multiline: true,
+              margin: 'normal',
+              minRows: 6,
+              maxRows: 6,
+              InputProps: {
+                sx: {
+                  borderWidth: '1px',
+                  borderColor: theme.palette.text.primary,
+                  height: '100%',
+                },
+              },
+            }}
+            style={{ width: '100%', marginTop: 0, marginBottom: 0 }}
+          />
         </Box>
         <Box padding='0px 32px'>
-          <MarkdownControl props={{ control, name: 'notes', rules: { required: true } }} />
+          <GenericSelect
+            name='model'
+            control={control}
+            data={modelsData}
+            error={modelsError}
+            loading={modelsLoading}
+            hasNextPage={hasModelsNextPage}
+            loadMore={modelsFetchMore}
+            disabled={false}
+            setValue={setValue}
+          />
+        </Box>
+        <OutputFields control={control} />
+      </>;
+    } else {
+      return <>
+        <Box padding='0px 32px' display={'flex'} flexDirection={'column'} gap={'16px'}>
+          <GenericSelect
+            name='script'
+            control={control}
+            data={scriptsData}
+            error={scriptsError}
+            loading={scriptsLoading}
+            hasNextPage={hasScriptsNextPage}
+            disabled={false}
+            loadMore={scriptsFetchMore}
+            setValue={setValue}
+            extraData={modelsData}
+          />
+          <GenericSelect
+            name='model'
+            control={control}
+            data={modelsData}
+            error={modelsError}
+            loading={modelsLoading}
+            hasNextPage={hasModelsNextPage}
+            disabled={true}
+            loadMore={modelsFetchMore}
+          />
+        </Box>
+        <Box
+          display={'flex'}
+          justifyContent={'space-between'}
+          alignItems={'center'}
+          flexGrow={1}
+          width={'100%'}
+          padding='0px 32px'
+          gap='16px'
+        >
+          <TextControl
+            name='name'
+            control={control}
+            rules={{ required: true }}
+            mat={{
+              variant: 'outlined',
+              InputProps: {
+                sx: {
+                  borderWidth: '1px',
+                  borderColor: theme.palette.text.primary,
+                },
+              },
+            }}
+            style={{ width: '100%' }}
+          />
+          <OutputFields control={control} />
         </Box>
         <Box padding='0px 32px'>
-          <FileControl name='file' control={control} rules={{ required: true }} />
+          <TextControl
+            name='description'
+            control={control}
+            mat={{
+              variant: 'outlined',
+              multiline: true,
+              margin: 'normal',
+              minRows: 6,
+              maxRows: 6,
+              InputProps: {
+                sx: {
+                  borderWidth: '1px',
+                  borderColor: theme.palette.text.primary,
+                  height: '100%',
+                },
+              },
+            }}
+            style={{ width: '100%', marginTop: 0 }}
+          />
         </Box>
-      </Box>
-    );
+      </>;
+    }
   };
 
   return (
@@ -1028,138 +1002,123 @@ const UploadCurator = () => {
         },
       }}
     >
-      <Backdrop
-        sx={{
-          zIndex: theme.zIndex.drawer + 1,
-          position: 'relative',
-          height: '100%',
-          width: '100%',
-        }}
-        open={true}
-      >
-        <Container maxWidth={'lg'}>
-          <Box sx={{ marginTop: '8px' }}>
-            <Card
-              sx={{
-                background:
-                  theme.palette.mode === 'dark'
-                    ? theme.palette.neutral.main
-                    : theme.palette.background.default,
-                borderRadius: '30px',
-              }}
-            >
-              <CardHeader
-                title={
-                  <Box display={'flex'} gap={'16px'} alignContent={'center'}>
-                    <Typography
-                      sx={{
-                        fontStyle: 'normal',
-                        fontWeight: 600,
-                        fontSize: '30px',
-                        fontHeight: '41px',
-                        opacity: mode === 'upload' ? 1 : '0.5',
-                      }}
-                      onClick={handleSwitchModeUpload}
-                    >
-                      Upload Script
-                    </Typography>
-                    <CachedIcon
-                      id='switch-icon'
-                      sx={{
-                        transform: 'rotate(0deg)',
-                        transition: 'transform 0.5s linear',
-                        '&.rotate': {
-                          transform: 'rotate(180deg)',
-                          transition: 'transform 0.5s linear',
-                        },
-                      }}
-                      fontSize='large'
-                    />
-                    <Typography
-                      sx={{
-                        fontStyle: 'normal',
-                        fontWeight: 600,
-                        fontSize: '30px',
-                        fontHeight: '41px',
-                        opacity: mode === 'update' ? 1 : '0.5',
-                      }}
-                      onClick={handleSwitchModeUpdate}
-                    >
-                      Update Script
-                    </Typography>
-                  </Box>
-                }
-                sx={{ paddingLeft: '48px', paddingTop: '32px' }}
-              ></CardHeader>
-              <CardContent
-                sx={{ paddingBottom: 0, gap: '32px', display: 'flex', flexDirection: 'column' }}
+      <Container maxWidth={'lg'}>
+        <CardHeader
+          title={
+            <Box display={'flex'} gap={'16px'} alignContent={'center'}>
+              <Typography
+                sx={{
+                  fontStyle: 'normal',
+                  fontWeight: 600,
+                  fontSize: '30px',
+                  fontHeight: '41px',
+                  opacity: mode === 'upload' ? 1 : '0.5',
+                }}
+                onClick={handleSwitchModeUpload}
               >
-                {getContent()}
-                <AdvancedConfiguration
-                  licenseRef={licenseRef}
-                  licenseControl={licenseControl}
-                  resetLicenseForm={resetLicenseForm}
-                />
-              </CardContent>
-              <CardActions sx={{ paddingBottom: '32px', justifyContent: 'center', mt: '32px' }}>
-                <Button
-                  onClick={() => reset()}
-                  sx={{
-                    // border: `1px solid ${theme.palette.text.primary}`,
-                    borderRadius: '7px',
-                    height: '39px',
-                    width: '204px',
-                  }}
-                  variant='outlined'
-                >
-                  <Typography
-                    sx={{
-                      fontStyle: 'normal',
-                      fontWeight: 500,
-                      fontSize: '15px',
-                      lineHeight: '20px',
-                    }}
-                  >
-                    Reset to Default
-                  </Typography>
-                </Button>
-                <DebounceButton
-                  onClick={handleSubmit(onSubmit)}
-                  disabled={disabled}
-                  sx={{
-                    borderRadius: '7px',
-                    height: '39px',
-                    width: '204px',
-                  }}
-                  variant='contained'
-                >
-                  <Typography
-                    sx={{
-                      fontStyle: 'normal',
-                      fontWeight: 500,
-                      fontSize: '15px',
-                      lineHeight: '20px',
-                    }}
-                  >
-                    Submit
-                  </Typography>
-                </DebounceButton>
-              </CardActions>
-            </Card>
+                Upload Script
+              </Typography>
+              <CachedIcon
+                id='switch-icon'
+                sx={{
+                  transform: 'rotate(0deg)',
+                  transition: 'transform 0.5s linear',
+                  '&.rotate': {
+                    transform: 'rotate(180deg)',
+                    transition: 'transform 0.5s linear',
+                  },
+                }}
+                fontSize='large'
+              />
+              <Typography
+                sx={{
+                  fontStyle: 'normal',
+                  fontWeight: 600,
+                  fontSize: '30px',
+                  fontHeight: '41px',
+                  opacity: mode === 'update' ? 1 : '0.5',
+                }}
+                onClick={handleSwitchModeUpdate}
+              >
+                Update Script
+              </Typography>
+            </Box>
+          }
+          sx={{ paddingLeft: '48px', paddingTop: '32px' }}
+        />
+        <Box sx={{ marginTop: '8px', paddingBottom: 0, gap: '32px', display: 'flex', flexDirection: 'column' }}>
+          {getContent()}
+          <Box padding='0px 32px'>
+            <AllowGroupControl name={'allow'} control={control} />
           </Box>
-          <Snackbar
-            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-            open={snackbarOpen}
-            onClose={() => setSnackbarOpen(false)}
-            ClickAwayListenerProps={{ onClickAway: () => null }}
-          >
-            <Alert severity='info' sx={{ width: '100%', minWidth: '300px' }}>
-              Uploading...
-              <CustomProgress value={progress}></CustomProgress>
-            </Alert>
-          </Snackbar>
-        </Container>
-      </Backdrop>
+          <Box padding='0px 32px'>
+            <MarkdownControl props={{ control, name: 'notes', rules: { required: true } }} />
+          </Box>
+          <Box padding='0px 32px'>
+            <FileControl name='file' control={control} rules={{ required: true }} />
+          </Box>
+          <AdvancedConfiguration
+            licenseRef={licenseRef}
+            licenseControl={licenseControl}
+            resetLicenseForm={resetLicenseForm}
+          />
+          <Box sx={{ display: 'flex', paddingBottom: '32px', justifyContent: 'flex-end', mt: '32px', width: '100%', gap: '32px' }}>
+            <Button
+                onClick={() => reset()}
+                sx={{
+                  // border: `1px solid ${theme.palette.text.primary}`,
+                  borderRadius: '7px',
+                  height: '39px',
+                  width: '204px',
+                }}
+                variant='outlined'
+              >
+                <Typography
+                  sx={{
+                    fontStyle: 'normal',
+                    fontWeight: 500,
+                    fontSize: '15px',
+                    lineHeight: '20px',
+                  }}
+                >
+                  Reset to Default
+                </Typography>
+            </Button>
+            <DebounceButton
+              onClick={handleSubmit(onSubmit)}
+              disabled={disabled}
+              sx={{
+                borderRadius: '7px',
+                height: '39px',
+                width: '204px',
+              }}
+              variant='contained'
+            >
+              <Typography
+                sx={{
+                  fontStyle: 'normal',
+                  fontWeight: 500,
+                  fontSize: '15px',
+                  lineHeight: '20px',
+                }}
+              >
+                Submit
+              </Typography>
+            </DebounceButton>
+          </Box>
+        </Box>
+        <Snackbar
+          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+          open={snackbarOpen}
+          onClose={() => setSnackbarOpen(false)}
+          ClickAwayListenerProps={{ onClickAway: () => null }}
+        >
+          <Alert severity='info' sx={{ width: '100%', minWidth: '300px' }}>
+            Uploading...
+            <CustomProgress value={progress}></CustomProgress>
+          </Alert>
+        </Snackbar>
+      </Container>
     </Container>
   );
 };

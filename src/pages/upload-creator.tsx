@@ -20,6 +20,7 @@ import {
   Alert,
   Box,
   Button,
+  CardHeader,
   Container,
   Snackbar,
   Typography,
@@ -338,6 +339,21 @@ const UploadCreator = () => {
       }}
     >
         <Container maxWidth={'lg'}>
+          <CardHeader
+            title={
+              <Typography
+                sx={{
+                  fontStyle: 'normal',
+                  fontWeight: 600,
+                  fontSize: '30px',
+                  fontHeight: '41px',
+                }}
+              >
+                Upload Model
+              </Typography>
+            }
+            sx={{ paddingLeft: '48px', paddingTop: '32px' }}
+          />
           <Box sx={{ marginTop: '8px', paddingBottom: 0, gap: '32px', display: 'flex', flexDirection: 'column' }}>
             <Box padding={'0px 32px'}>
               <TextControl
