@@ -19,34 +19,37 @@
 import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import { useNavigate } from 'react-router-dom';
 import { Tooltip, Typography } from '@mui/material';
 import { GITHUB_LINK, WHITEPAPER_LINK, TWITTER_LINK, DISCORD_LINK } from '@/constants';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import { WalletContext } from '@/context/wallet';
-import { FundContext } from '@/context/fund';
 import GetIcon from './get-icon';
 import Box from '@mui/material/Box';
 import { ChooseWalletContext } from '@/context/choose-wallet';
 import { useState, useContext, MouseEvent, useCallback, Dispatch } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FundContext } from '@/context/fund';
 import { SwapContext } from '@/context/swap';
 
-const bundlrSettings = 'Bundlr Settings';
 const changeWallet = 'Change Wallet';
+const uSwap = 'U Swap';
+const bundlrSettings = 'Bundlr Settings';
 const operatorRegistrations = 'Operator Registrations';
+const viewTerms = 'Terms And Conditions';
 const options = [
   bundlrSettings,
-  'U Swap',
+  uSwap,
   'Whitepaper',
   'Github',
   'Discord',
   'Twitter',
   operatorRegistrations,
+  viewTerms,
   changeWallet,
   'Disconnect',
 ];
-const disableableOptions = [bundlrSettings, operatorRegistrations, changeWallet, 'Disconnect'];
+const disableableOptions = [changeWallet, 'Disconnect', uSwap, bundlrSettings, operatorRegistrations ];
 
 const ITEM_HEIGHT = 64;
 
@@ -98,6 +101,10 @@ const Option = ({
           setAnchorEl(null);
           setSwapOpen(true);
           return;
+        case viewTerms:
+          setAnchorEl(null);
+          navigate('/terms');
+          return;
         default:
           setAnchorEl(null);
           return;
@@ -129,6 +136,14 @@ export default function ProfileMenu() {
     setAnchorEl(null);
   }, []);
 
+  const showIcon = () => {
+    if (!currentAddress) {
+      return <>{open ? <CloseIcon color='action' /> : <MenuIcon color='action' />}</>;
+    } else {
+      return <img src='./icon-empty-wallet.png' width={'27px'} height={'27px'} />;
+    }
+  };
+
   return (
     <div>
       <IconButton
@@ -139,7 +154,7 @@ export default function ProfileMenu() {
         aria-haspopup='true'
         onClick={handleClick}
       >
-        {open ? <CloseIcon color='action' /> : <MenuIcon color='action' />}
+        {showIcon()}
       </IconButton>
       <Menu
         id='long-menu'
