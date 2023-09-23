@@ -90,7 +90,7 @@ const ColorlibConnector = styled(StepConnector)(({ theme }) => ({
     height: 3,
     border: 0,
     backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#eaeaf0',
-    borderRadius: 1,
+    borderRadius: '8px',
   },
 }));
 
@@ -103,7 +103,7 @@ const ColorlibStepIconRoot = styled('div')<{
   width: 40,
   height: 40,
   display: 'flex',
-  borderRadius: '16px',
+  borderRadius: '8px',
   justifyContent: 'center',
   alignItems: 'center',
   ...(ownerState.active && {
@@ -228,7 +228,6 @@ const RegisterStep = ({
               sx: {
                 borderWidth: '1px',
                 borderColor: '#FFF',
-                borderRadius: '23px',
               },
             }}
             sx={{
@@ -247,7 +246,6 @@ const RegisterStep = ({
               sx: {
                 borderWidth: '1px',
                 borderColor: '#FFF',
-                borderRadius: '23px',
               },
             }}
             sx={{ width: '25%' }}
@@ -492,7 +490,6 @@ export const CustomStepper = (props: {
                   sx: {
                     borderWidth: '1px',
                     borderColor: '#FFF',
-                    borderRadius: '23px',
                   },
                 }}
               />
@@ -520,7 +517,6 @@ export const CustomStepper = (props: {
                   sx: {
                     borderWidth: '1px',
                     borderColor: '#FFF',
-                    borderRadius: '23px',
                   },
                 }}
               />
