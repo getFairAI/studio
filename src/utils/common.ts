@@ -46,6 +46,7 @@ import { UploadResponse } from 'bundlr-custom/build/cjs/common/types';
 import { EnqueueSnackbar } from 'notistack';
 import { client } from './apollo';
 import { LicenseForm } from '@/interfaces/common';
+import redstone from 'redstone-api';
 
 export const formatNumbers = (value: string) => {
   try {
@@ -480,4 +481,14 @@ export const addLicenseTags = (tags: ITag[], licenseProps: LicenseForm, license?
   } else {
     tags.push({ name: TAG_NAMES.license, value: license });
   }
+};
+
+export const getArPriceUSD = async () => {
+  const price = await redstone.getPrice('AR');
+  return price.value;
+};
+
+export const parseCost = async (cost: number) => {
+  const arPrice = await getArPriceUSD();
+  return cost * arPrice;
 };

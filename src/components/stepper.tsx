@@ -58,10 +58,11 @@ import {
   OPERATOR_REGISTRATION_AR_FEE,
   OPERATOR_REGISTRATION_PAYMENT_TAGS,
   TAG_NAMES,
+  U_LOGO_SRC,
   defaultDecimalPlaces,
 } from '@/constants';
 import { NumericFormat } from 'react-number-format';
-import { findTag, printSize } from '@/utils/common';
+import { findTag, parseCost, printSize } from '@/utils/common';
 import { useRouteLoaderData } from 'react-router-dom';
 import { RouteLoaderResult } from '@/interfaces/router';
 import { getData } from '@/utils/arweave';
@@ -147,6 +148,7 @@ const RegisterStep = ({
   const [operatorName, setOperatorName] = useState('');
   const [rate, setRate] = useState(0);
   const { currentAddress } = useContext(WalletContext);
+  const [ usdFee, setUsdFee ] = useState('0');
 
   const scriptTxid = useMemo(() => findTag(tx, 'scriptTransaction'), [tx]);
 
@@ -196,6 +198,14 @@ const RegisterStep = ({
   const handleFinish = useCallback(async () => {
     await handleSubmit(rate.toString(), operatorName, handleNext);
   }, [rate, operatorName, handleNext, handleSubmit]);
+  
+  useEffect(() => {
+    (async () => {
+      const nDigits = 4;
+      const usdCost = await parseCost(parseFloat(OPERATOR_REGISTRATION_AR_FEE));
+      setUsdFee(usdCost.toFixed(nDigits));
+    })();
+  }, [OPERATOR_REGISTRATION_AR_FEE, parseCost]);
 
   if (isLoading) {
     return (
@@ -251,9 +261,9 @@ const RegisterStep = ({
             sx={{ width: '25%' }}
           />
         </Box>
-        <Alert severity='warning' variant='outlined' sx={{ borderRadius: '23px' }}>
-          <Typography>
-            Registration Requires {OPERATOR_REGISTRATION_AR_FEE} $U to prevent malicious actors.
+        <Alert severity='warning' variant='outlined'>
+          <Typography alignItems={'center'} display={'flex'} gap={'4px'}>
+            Uploading a model requires a fee of {OPERATOR_REGISTRATION_AR_FEE}<img width='20px' height='20px' src={U_LOGO_SRC} /> (${usdFee}) Tokens. 
           </Typography>
         </Alert>
         <Box display={'flex'} justifyContent={'space-between'}>

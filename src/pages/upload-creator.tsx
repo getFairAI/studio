@@ -26,7 +26,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { FieldValues, useForm } from 'react-hook-form';
 import TextControl from '@/components/text-control';
 import MarkdownControl from '@/components/md-control';
@@ -47,6 +47,7 @@ import {
   U_DIVIDER,
   PROTOCOL_NAME,
   PROTOCOL_VERSION,
+  U_LOGO_SRC,
 } from '@/constants';
 import { BundlrContext } from '@/context/bundlr';
 import { useSnackbar } from 'notistack';
@@ -58,7 +59,7 @@ import DebounceButton from '@/components/debounce-button';
 import { sendU } from '@/utils/u';
 import { AdvancedConfiguration } from '@/components/advanced-configuration';
 import { LicenseForm } from '@/interfaces/common';
-import { addAssetTags, addLicenseTags } from '@/utils/common';
+import { addAssetTags, addLicenseTags, parseCost } from '@/utils/common';
 import { WarpFactory } from 'warp-contracts';
 import { DeployPlugin } from 'warp-contracts-plugin-deploy';
 
@@ -91,6 +92,8 @@ const UploadCreator = () => {
   const { currentAddress, currentUBalance, updateUBalance } = useContext(WalletContext);
   const { setOpen: setFundOpen } = useContext(FundContext);
   const [isUploading, setIsUploading] = useState(false);
+  const [ usdFee, setUsdFee ] = useState('0');
+ 
   const disabled = useMemo(
     () =>
       (!control._formState.isValid && control._formState.isDirty) || !currentAddress || isUploading,
@@ -322,6 +325,14 @@ const UploadCreator = () => {
 
   const handleCloseSnackbar = useCallback(() => setSnackbarOpen(false), [setSnackbarOpen]);
 
+  useEffect(() => {
+    (async () => {
+      const nDigits = 4;
+      const usdCost = await parseCost(parseFloat(MARKETPLACE_FEE));
+      setUsdFee(usdCost.toFixed(nDigits));
+    })();
+  }, [MARKETPLACE_FEE, parseCost]);
+
   return (
     <Container
       sx={{
@@ -409,6 +420,11 @@ const UploadCreator = () => {
               licenseControl={licenseControl}
               resetLicenseForm={resetLicenseForm}
             />
+            <Alert severity='warning' variant='outlined'>
+              <Typography alignItems={'center'} display={'flex'} gap={'4px'}>
+                Uploading a model requires a fee of {MARKETPLACE_FEE}<img width='20px' height='20px' src={U_LOGO_SRC} /> (${usdFee}) Tokens. 
+              </Typography>
+            </Alert>
             <Box sx={{ display: 'flex', paddingBottom: '32px', justifyContent: 'flex-end', mt: '32px', width: '100%', gap: '32px' }}>
               <Button
                 onClick={handleReset}

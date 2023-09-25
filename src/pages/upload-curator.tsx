@@ -74,6 +74,7 @@ import {
   DEFAULT_TAGS,
   PROTOCOL_NAME,
   PROTOCOL_VERSION,
+  U_LOGO_SRC,
 } from '@/constants';
 import { BundlrContext } from '@/context/bundlr';
 import { useSnackbar } from 'notistack';
@@ -90,6 +91,7 @@ import {
   displayShortTxOrAddr,
   findTag,
   isFakeDeleted,
+  parseCost,
   uploadAvatarImage,
   uploadUsageNotes,
 } from '@/utils/common';
@@ -601,6 +603,7 @@ const UploadCurator = () => {
   const { setOpen: setFundOpen } = useContext(FundContext);
   const [mode, setMode] = useState<'upload' | 'update'>('upload');
   const [isUploading, setIsUploading] = useState(false);
+  const [ usdFee, setUsdFee ] = useState('0');
   const disabled = useMemo(
     () =>
       (!control._formState.isValid && control._formState.isDirty) || !currentAddress || isUploading,
@@ -850,6 +853,14 @@ const UploadCurator = () => {
     document.querySelector('#switch-icon')?.classList.add('rotate');
   }, [setMode, reset]);
 
+  useEffect(() => {
+    (async () => {
+      const nDigits = 4;
+      const usdCost = await parseCost(parseFloat(SCRIPT_CREATION_FEE));
+      setUsdFee(usdCost.toFixed(nDigits));
+    })();
+  }, [SCRIPT_CREATION_FEE, parseCost]);
+
   const getContent = () => {
     if (mode === 'upload') {
       return <>
@@ -1062,6 +1073,11 @@ const UploadCurator = () => {
             licenseControl={licenseControl}
             resetLicenseForm={resetLicenseForm}
           />
+          <Alert severity='warning' variant='outlined'>
+            <Typography alignItems={'center'} display={'flex'} gap={'4px'}>
+              Uploading a Script requires a fee of {SCRIPT_CREATION_FEE}<img width='20px' height='20px' src={U_LOGO_SRC} /> (${usdFee}) Tokens. 
+            </Typography>
+          </Alert>
           <Box sx={{ display: 'flex', paddingBottom: '32px', justifyContent: 'flex-end', mt: '32px', width: '100%', gap: '32px' }}>
             <Button
                 onClick={() => reset()}
