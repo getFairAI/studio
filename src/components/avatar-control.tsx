@@ -40,7 +40,6 @@ const AvatarControl = (props: UseControllerProps & { control: Control }) => {
           theme.palette.mode === 'dark'
             ? 'linear-gradient(to bottom, #000000 10%, rgba(71, 71, 71, 0) 100%)'
             : theme.palette.secondary.main,
-        borderRadius: '23px',
         backgroundPosition: 'center',
         height: '100%',
         width: '100%',
@@ -63,7 +62,7 @@ const AvatarControl = (props: UseControllerProps & { control: Control }) => {
           src={src}
           width={'100%'}
           height={'100%'}
-          style={{ borderTopLeftRadius: '23px', borderTopRightRadius: '23px' }}
+          style={{ borderTopLeftRadius: '8px', borderTopRightRadius: '8px' }}
         />
       )}
       <input type='file' accept='image/*' hidden onChange={handleFileChosen} />
@@ -73,9 +72,9 @@ const AvatarControl = (props: UseControllerProps & { control: Control }) => {
           background: 'rgba(253, 253, 253, 0.3)',
           backdropFilter: 'blur(2px)',
           width: '100%',
-          borderBottomLeftRadius: '23px',
-          borderBottomRightRadius: '23px',
           padding: '16px 0px',
+          borderBottomLeftRadius: '8px',
+          borderBottomRightRadius: '8px',
         }}
       >
         <Typography sx={{ color: 'rgba(253, 253, 253, 1)' }} textAlign={'center'}>

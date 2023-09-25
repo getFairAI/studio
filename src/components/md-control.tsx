@@ -8,7 +8,7 @@ const StyledEditor = styled(MDEditor, {
   shouldForwardProp: (prop) => prop !== 'invalid',
 })<{ invalid: boolean }>(({ theme, invalid }) => ({
   marginBottom: '8px',
-  borderRadius: '23px',
+  borderRadius: '8px',
   border: 'none',
   boxShadow: 'none',
   ...(invalid && {

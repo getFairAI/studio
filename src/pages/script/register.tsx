@@ -128,7 +128,6 @@ const Register = () => {
             theme.palette.mode === 'dark'
               ? theme.palette.neutral.main
               : theme.palette.background.default,
-          borderRadius: '30px',
         },
       }}
     >

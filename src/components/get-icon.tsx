@@ -21,6 +21,9 @@ import { SvgIcon, useTheme } from '@mui/material';
 import SyncAltIcon from '@mui/icons-material/SyncAlt';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import PaymentsIcon from '@mui/icons-material/Payments';
+import GavelIcon from '@mui/icons-material/Gavel';
 
 type Props = {
   input: string;
@@ -32,6 +35,8 @@ const GetIcon = ({ input }: Props): JSX.Element => {
   const theme = useTheme();
 
   switch (input) {
+    case 'Studio':
+      return <DashboardIcon></DashboardIcon>;
     case 'Bundlr Settings':
       return <Settings></Settings>;
     case 'U Swap':
@@ -56,8 +61,12 @@ const GetIcon = ({ input }: Props): JSX.Element => {
       );
     case 'Operator Registrations':
       return <AssignmentIcon></AssignmentIcon>;
+    case 'Terms And Conditions':
+      return <GavelIcon></GavelIcon>;
     case 'Change Wallet':
       return <SyncAltIcon></SyncAltIcon>;
+    case 'View Payments':
+      return <PaymentsIcon />;
     default:
       return <Logout></Logout>;
   }

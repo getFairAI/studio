@@ -29,6 +29,7 @@ import { getScriptAttachments } from '@/pages/script/script';
 import UploadCreator from '@/pages/upload-creator';
 import UploadCurator from '@/pages/upload-curator';
 import Registrations from '@/pages/registrations';
+import Terms from './pages/terms';
 
 const router = createHashRouter([
   {
@@ -67,6 +68,10 @@ const router = createHashRouter([
       {
         path: 'registrations',
         element: <Registrations />,
+      },
+      {
+        path: 'terms',
+        element: <Terms />,
       },
     ],
   },

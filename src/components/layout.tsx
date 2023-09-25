@@ -29,11 +29,12 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { ReactElement, useCallback, useContext, useEffect, useLayoutEffect, useState } from 'react';
+import { ReactElement, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Navbar from './navbar';
 import { WalletContext } from '@/context/wallet';
 import { ChooseWalletContext } from '@/context/choose-wallet';
 import useWindowDimensions from '@/hooks/useWindowDimensions';
+import useScroll from '@/hooks/useScroll';
 
 export default function Layout({ children }: { children: ReactElement }) {
   const [filterValue, setFilterValue] = useState('');
@@ -43,6 +44,8 @@ export default function Layout({ children }: { children: ReactElement }) {
   const theme = useTheme();
   const { open: chooseWalletOpen, setOpen: setChooseWalletOpen } = useContext(ChooseWalletContext);
   const { width, height } = useWindowDimensions();
+  const scrollableRef = useRef<HTMLDivElement>(null);
+  const { isScrolled } = useScroll(scrollableRef);
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -74,7 +77,7 @@ export default function Layout({ children }: { children: ReactElement }) {
 
   return (
     <>
-      <Navbar setFilterValue={setFilterValue} />
+      <Navbar setFilterValue={setFilterValue} isScrolled={isScrolled} />
       <Container
         disableGutters
         sx={{
@@ -87,7 +90,7 @@ export default function Layout({ children }: { children: ReactElement }) {
       >
         <Box height='100%'>
           <FilterContext.Provider value={filterValue}>
-            <main style={{ height: '100%' }}>{children}</main>
+            <main style={{ height: '100%' }}  ref={scrollableRef}>{children}</main>
             <Dialog
               open={isOpen}
               maxWidth={'md'}

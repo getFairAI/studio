@@ -24,7 +24,6 @@ import { isVouched } from '@/utils/vouch';
 import { DispatchResult } from 'arweave-wallet-connector/lib/Arweave';
 import Transaction from 'arweave/web/lib/transaction';
 import { connectToU, getUBalance, parseUBalance } from '@/utils/u';
-import { usePollingEffect } from '@/hooks/usePollingEffect';
 
 const arweaveApp = 'arweave.app';
 const arConnect = 'arconnect';
@@ -61,7 +60,7 @@ type WalletAction =
   | WalletPermissionsChangedAction
   | WalletVouchedAction;
 
-interface WalletContext {
+interface IWalletContext {
   isArConnectAvailable: boolean;
   walletInstance: typeof wallet.namespaces.arweaveWallet | typeof window.arweaveWallet;
   currentAddress: string;
@@ -76,7 +75,7 @@ interface WalletContext {
   dispatchTx: (tx: Transaction) => Promise<DispatchResult | ArConnectDispatchResult>;
 }
 
-const createActions = (dispatch: Dispatch<WalletAction>, state: WalletContext) => {
+const createActions = (dispatch: Dispatch<WalletAction>, state: IWalletContext) => {
   return {
     arConnectAvailable: async () => dispatch({ type: 'arconnect_available' }),
     walletDisconnect: async () => asyncDisconnectWallet(dispatch, state.walletInstance),
@@ -102,7 +101,7 @@ const asyncArConnectWallet = async (dispatch: Dispatch<WalletAction>) => {
     dispatch({ type: 'wallet_connected', wallet: window.arweaveWallet });
     localStorage.setItem('wallet', arConnect);
     const addr = await window.arweaveWallet.getActiveAddress();
-    dispatch({ type: 'wallet_address_updated', address: addr });
+
     const winstonBalance = await arweave.wallets.getBalance(addr);
     dispatch({
       type: 'wallet_balance_updated',
@@ -112,6 +111,10 @@ const asyncArConnectWallet = async (dispatch: Dispatch<WalletAction>) => {
     dispatch({ type: 'wallet_vouched', isWalletVouched: isAddrVouched });
     // connect wallet to contract
     connectToU();
+    await asyncUpdateUBalance(dispatch, addr, 0);
+
+    // only load wallet adderss after fetching first balances
+    dispatch({ type: 'wallet_address_updated', address: addr });
   } catch (error) {
     // manually remove arconnect overlay
     const overlays: NodeListOf<HTMLDivElement> = document.querySelectorAll(
@@ -129,7 +132,6 @@ const asyncArweaveAppConnect = async (dispatch: Dispatch<WalletAction>) => {
     walletInstance.walletName = arweaveApp;
     dispatch({ type: 'wallet_connected', wallet: walletInstance });
     const addr = (await walletInstance.getActiveAddress()) as string;
-    dispatch({ type: 'wallet_address_updated', address: addr });
     const winstonBalance = await arweave.wallets.getBalance(addr);
     dispatch({
       type: 'wallet_balance_updated',
@@ -139,6 +141,10 @@ const asyncArweaveAppConnect = async (dispatch: Dispatch<WalletAction>) => {
     dispatch({ type: 'wallet_vouched', isWalletVouched: isAddrVouched });
     // connect wallet to contract
     connectToU();
+    await asyncUpdateUBalance(dispatch, addr, 0);
+
+    // only load wallet adderss after fetching first balances
+    dispatch({ type: 'wallet_address_updated', address: addr });
   } catch (error) {
     dispatch({ type: 'wallet_disconnect' });
     localStorage.removeItem('wallet');
@@ -217,7 +223,7 @@ const asyncUpdateUBalance = async (
   }
 };
 
-const walletReducer = (state: WalletContext, action?: WalletAction) => {
+const walletReducer = (state: IWalletContext, action?: WalletAction) => {
   if (!action) {
     return state;
   }
@@ -228,6 +234,7 @@ const walletReducer = (state: WalletContext, action?: WalletAction) => {
     case 'arconnect_available':
       return { ...state, isArConnectAvailable: true };
     case 'wallet_address_updated':
+      // eslint-disable-next-line no-case-declarations
       return { ...state, currentAddress: action.address };
     case 'wallet_balance_updated':
       return { ...state, currentBalance: action.balance };
@@ -265,7 +272,7 @@ const dispatchTx = async (tx: Transaction) => {
   }
 };
 
-const initialState: WalletContext = {
+const initialState: IWalletContext = {
   isArConnectAvailable: false,
   currentAddress: '',
   currentPermissions: [],
@@ -284,7 +291,7 @@ const initialState: WalletContext = {
   dispatchTx,
 };
 
-export const WalletContext = createContext<WalletContext>(initialState);
+export const WalletContext = createContext<IWalletContext>(initialState);
 
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(walletReducer, initialState);
@@ -293,7 +300,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const connectWalletSubscriptionRef = useRef<boolean>(false);
   const switchWalletSubscriptionRef = useRef<boolean>(false);
 
-  const value: WalletContext = useMemo(
+  const value: IWalletContext = useMemo(
     () => ({
       ...state,
       connectWallet: (walletInstance: 'arweave.app' | 'arconnect') =>
@@ -356,32 +363,25 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [window.arweaveWallet]);
 
-  useEffect(() => {
-    /*
-      disable arweave app support
-    */
-    if (localStorage.getItem('wallet') === arweaveApp) {
-      localStorage.removeItem('wallet');
-      try {
-        wallet.disconnect();
-      } catch (err) {
-        // already disconnected
+  const arweaveAppWalletSwitched = (event: string | undefined) => {
+    (async () => {
+      if (event) {
+        await actions.switchWallet(event);
       }
+    })();
+  };
+
+  useEffect(() => {
+    if (localStorage.getItem('wallet') === arweaveApp) {
+      (async () => {
+        await actions.arweaveAppConnect();
+      })();
+      wallet.on('change', arweaveAppWalletSwitched);
     }
+    return () => {
+      wallet.off('change', arweaveAppWalletSwitched);
+    };
   }, []);
-
-  const pollingTimeout = 10000;
-
-  usePollingEffect(
-    actions.updateUBalance,
-    [state.currentAddress, actions.updateUBalance],
-    pollingTimeout,
-  );
-  usePollingEffect(
-    actions.updateBalance,
-    [state.currentAddress, actions.updateBalance],
-    pollingTimeout,
-  );
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
 };
