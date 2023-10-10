@@ -242,12 +242,11 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
       return `${NET_ARWEAVE_URL}/${avatarTxId}`;
     } else {
       const imgSize = 100;
-      const scriptId = findTag(scriptTx, 'scriptTransaction');
       const img = toSvg(scriptId, imgSize);
       const svg = new Blob([img], { type: 'image/svg+xml' });
       return URL.createObjectURL(svg);
     }
-  }, [avatarData]);
+  }, [avatarData, scriptId]);
 
   useEffect(() => {
     if (data?.transactions?.pageInfo.hasNextPage) {

@@ -199,9 +199,9 @@ const RegistrationCard = ({ tx }: { tx: IEdge }) => {
       scriptName,
       scriptTransaction,
       scriptCurator,
-      operatorFee: parsedFee,
       operatorName,
       timestamp,
+      operatorFee: parsedFee,
     };
   }, [tx]);
 
