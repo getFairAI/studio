@@ -16,19 +16,9 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import {
-  DEFAULT_TAGS,
-  SCRIPT_CREATION_FEE,
-  SCRIPT_CREATION_PAYMENT,
-  TAG_NAMES,
-  U_CONTRACT_ID,
-  U_DIVIDER,
-  VAULT_ADDRESS,
-} from '@/constants';
 import { IContractEdge } from '@/interfaces/arweave';
-import { FIND_BY_TAGS } from '@/queries/graphql';
-import { commonUpdateQuery, findTag, genLoadingArray, isFakeDeleted } from '@/utils/common';
-import { NetworkStatus, useQuery } from '@apollo/client';
+import { commonUpdateQuery, genLoadingArray, isFakeDeleted } from '@/utils/common';
+import { NetworkStatus, gql, useQuery } from '@apollo/client';
 import {
   Container,
   Box,
@@ -42,54 +32,39 @@ import {
   MenuItem,
   useTheme,
 } from '@mui/material';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ReplayIcon from '@mui/icons-material/Replay';
 import ScriptCard from '@/components/script-card';
 import useOnScreen from '@/hooks/useOnScreen';
 import { Outlet } from 'react-router-dom';
-import { filterByUniqueScriptTxId, filterPreviousVersions } from '@/utils/script';
 import _ from 'lodash';
+import FairSDKWeb from 'fair-protocol-sdk/web';
 
 const Operators = () => {
   const [txs, setTxs] = useState<IContractEdge[]>([]);
+  const [filtering, setFiltering] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(false);
   const target = useRef<HTMLDivElement>(null);
   const isOnScreen = useOnScreen(target);
   const elementsPerPage = 5;
   const [hightlightTop, setHighLightTop] = useState(false);
   const theme = useTheme();
-
   const mockArray = genLoadingArray(elementsPerPage);
-
-  const scriptPaymentInputStr = JSON.stringify({
-    function: 'transfer',
-    target: VAULT_ADDRESS,
-    qty: (parseFloat(SCRIPT_CREATION_FEE) * U_DIVIDER).toString(),
+  const queryObject = FairSDKWeb.utils.getScriptsQuery();
+  const {
+    data,
+    previousData,
+    loading,
+    error,
+    networkStatus,
+    refetch,
+    fetchMore,
+  } = useQuery(gql(queryObject.query), {
+    variables: queryObject.variables,
+    notifyOnNetworkStatusChange: true,
   });
 
-  const scriptPaymentInputNumber = JSON.stringify({
-    function: 'transfer',
-    target: VAULT_ADDRESS,
-    qty: parseFloat(SCRIPT_CREATION_FEE) * U_DIVIDER,
-  });
-
-  const tags = [
-    ...DEFAULT_TAGS,
-    {
-      name: TAG_NAMES.operationName,
-      values: [SCRIPT_CREATION_PAYMENT],
-    },
-    { name: TAG_NAMES.contract, values: [U_CONTRACT_ID] },
-    { name: TAG_NAMES.input, values: [scriptPaymentInputStr, scriptPaymentInputNumber] },
-  ];
-
-  const { data, previousData, loading, error, networkStatus, refetch, fetchMore } = useQuery(
-    FIND_BY_TAGS,
-    {
-      variables: { tags, first: elementsPerPage },
-      notifyOnNetworkStatusChange: true,
-    },
-  );
+  const loadingOrFiltering = useMemo(() => loading || filtering, [loading, filtering]);
 
   useEffect(() => {
     if (isOnScreen && hasNextPage) {
@@ -111,23 +86,35 @@ const Operators = () => {
    * filtering correct payments
    */
   useEffect(() => {
+    if (networkStatus === NetworkStatus.loading) {
+      setFiltering(true);
+    }
+    // check has paid correct registration fee
     if (data && networkStatus === NetworkStatus.ready && !_.isEqual(data, previousData)) {
-      setHasNextPage(data.transactions.pageInfo.hasNextPage);
       (async () => {
-        const uniqueScriptIds = filterByUniqueScriptTxId<IContractEdge[]>(data.transactions.edges);
-        const filteredScritps = filterPreviousVersions<IContractEdge[]>(
-          uniqueScriptIds as IContractEdge[],
-        );
+        const uniqueScripts = FairSDKWeb.utils.filterByUniqueScriptTxId(data.transactions.edges);
+        const filteredScritps =  FairSDKWeb.utils.filterPreviousVersions(uniqueScripts);
         const filtered: IContractEdge[] = [];
         for (const el of filteredScritps) {
-          const scriptId = findTag(el, 'scriptTransaction') as string;
-          const scriptOwner = (findTag(el, 'sequencerOwner') as string) ?? el.node.owner.address;
-          if (await isFakeDeleted(scriptId, scriptOwner, 'script')) {
+          const scriptId = FairSDKWeb.utils.findTag(el, 'scriptTransaction') as string;
+          const scriptOwner = FairSDKWeb.utils.findTag(el, 'sequencerOwner') as string;
+          const sequencerId = FairSDKWeb.utils.findTag(el, 'sequencerTxId') as string;
+  
+          const isValidPayment = await FairSDKWeb.utils.isUTxValid(sequencerId);
+  
+          if (!isValidPayment) {
+            // ignore
+          } else if (!scriptOwner || !scriptId) {
+            // ignore
+          } else if (await isFakeDeleted(scriptId, scriptOwner, 'script')) {
             // if fake deleted ignore
           } else {
-            filtered.push(el);
+            filtered.push(el as IContractEdge);
           }
         }
+        
+        setHasNextPage(data.transactions.pageInfo.hasNextPage);
+        setFiltering(false);
         setTxs(filtered);
       })();
     }
@@ -353,7 +340,7 @@ const Operators = () => {
             ) : (
               txs.map((el, idx) => <ScriptCard scriptTx={el} key={el.node.id} index={idx} />)
             )}
-            {loading &&
+            {loadingOrFiltering &&
               mockArray.map((val) => (
                 <Card key={val}>
                   <Box>
