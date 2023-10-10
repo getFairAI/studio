@@ -21,14 +21,12 @@ import {
   DEFAULT_TAGS,
   MODEL_ATTACHMENT,
   NET_ARWEAVE_URL,
-  OPERATOR_REGISTRATION_PAYMENT_TAGS,
   TAG_NAMES,
   secondInMS,
 } from '@/constants';
 import { IContractEdge, IEdge } from '@/interfaces/arweave';
-import { FIND_BY_TAGS, GET_LATEST_MODEL_ATTACHMENTS } from '@/queries/graphql';
-import { parseWinston } from '@/utils/arweave';
-import { ApolloQueryResult, useLazyQuery, useQuery } from '@apollo/client';
+import { GET_LATEST_MODEL_ATTACHMENTS } from '@/queries/graphql';
+import { ApolloQueryResult, gql, useLazyQuery, useQuery } from '@apollo/client';
 import {
   Box,
   Button,
@@ -46,23 +44,7 @@ import { useNavigate } from 'react-router-dom';
 import ReplayIcon from '@mui/icons-material/Replay';
 import { commonUpdateQuery, findTag } from '@/utils/common';
 import { toSvg } from 'jdenticon';
-import { isValidRegistration } from '@/utils/operator';
-
-const checkOpResponses = async (el: IEdge, filtered: IEdge[]) => {
-  const opFee = findTag(el, 'operatorFee') as string;
-  const scriptName = findTag(el, 'scriptName') as string;
-  const scriptCurator = findTag(el, 'scriptCurator') as string;
-  const registrationOwner = (findTag(el, 'sequencerOwner') as string) ?? el.node.owner.address;
-
-  if (
-    !(await isValidRegistration(el.node.id, opFee, registrationOwner, scriptName, scriptCurator))
-  ) {
-    filtered.splice(
-      filtered.findIndex((existing) => el.node.id === existing.node.id),
-      1,
-    );
-  }
-};
+import FairSDKWeb from 'fair-protocol-sdk/web';
 
 interface Element {
   name: string;
@@ -142,16 +124,16 @@ const ScriptImage = ({
 };
 
 const parseScriptData = (
-  data: IEdge[],
+  data: IContractEdge[],
   scriptTx: IContractEdge,
   setCardData: Dispatch<SetStateAction<Element | undefined>>,
   owner?: string,
 ) => {
-  const uniqueOperators: IEdge[] = [];
-  const registrations: IEdge[] = data;
+  const uniqueOperators: IContractEdge[] = [];
+  const registrations: IContractEdge[] = data;
 
   // filter registratiosn for same model (only keep latest one per operator)
-  registrations.forEach((op: IEdge) =>
+  registrations.forEach((op: IContractEdge) =>
     uniqueOperators.filter(
       (unique) =>
         findTag(op, 'sequencerOwner') === findTag(unique, 'sequencerOwner') ||
@@ -170,9 +152,9 @@ const parseScriptData = (
     }
   });
   const average = (arr: number[]) => arr.reduce((p, c) => p + c, 0) / arr.length;
-  let avgFee = parseWinston(average(opFees).toString());
+  let avgFee: string = (average(opFees) / FairSDKWeb.utils.U_DIVIDER).toString();
 
-  if (Number.isNaN(avgFee) || avgFee === 'NaN') {
+  if (Number.isNaN(avgFee)) {
     avgFee = 'Not enough Operators for Fee';
   }
 
@@ -201,34 +183,26 @@ const headerTextProps = {
 const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: number }) => {
   const navigate = useNavigate();
   const [cardData, setCardData] = useState<Element>();
-  const elementsPerPage = 5;
   const theme = useTheme();
 
   const owner = useMemo(
     () => findTag(scriptTx, 'sequencerOwner') ?? scriptTx.node.owner.address,
     [scriptTx],
   );
+  const scriptId = findTag(scriptTx as IEdge, 'scriptTransaction') as string;
+  const scriptName = findTag(scriptTx as IEdge, 'scriptName');
+  const scriptCurator = findTag(scriptTx as IEdge, 'sequencerOwner');
 
-  const tags = [
-    ...DEFAULT_TAGS,
-    {
-      name: TAG_NAMES.scriptCurator,
-      values: [owner],
-    },
-    {
-      name: TAG_NAMES.scriptName,
-      values: [findTag(scriptTx as IEdge, 'scriptName')],
-    },
-    {
-      name: TAG_NAMES.scriptTransaction,
-      values: [findTag(scriptTx as IEdge, 'scriptTransaction')],
-    },
-    ...OPERATOR_REGISTRATION_PAYMENT_TAGS,
-  ];
-
-  const { data, loading, error, refetch, fetchMore } = useQuery(FIND_BY_TAGS, {
-    variables: { tags, first: elementsPerPage },
-    skip: !scriptTx && !owner,
+  const queryObject = FairSDKWeb.utils.getOperatorQueryForScript(scriptId, scriptName, scriptCurator);
+  const {
+    data,
+    loading,
+    error,
+    refetch,
+    fetchMore,
+  } = useQuery(gql(queryObject.query), {
+    variables: queryObject.variables,
+    notifyOnNetworkStatusChange: true,
   });
 
   const [getAvatar, { data: avatarData, loading: avatarLoading }] = useLazyQuery(
@@ -268,12 +242,11 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
       return `${NET_ARWEAVE_URL}/${avatarTxId}`;
     } else {
       const imgSize = 100;
-      const scriptId = findTag(scriptTx, 'scriptTransaction');
       const img = toSvg(scriptId, imgSize);
       const svg = new Blob([img], { type: 'image/svg+xml' });
       return URL.createObjectURL(svg);
     }
-  }, [avatarData]);
+  }, [avatarData, scriptId]);
 
   useEffect(() => {
     if (data?.transactions?.pageInfo.hasNextPage) {
@@ -285,12 +258,11 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
           updateQuery: commonUpdateQuery,
         }))();
     } else if (data?.transactions) {
+      // use immediately invoked function to be able to call async operations in useEffect
       (async () => {
-        const filtered: IEdge[] = [];
-        for (const el of data.transactions.edges) {
-          filtered.push(el);
-          await checkOpResponses(el, filtered);
-        }
+        const filtered = await FairSDKWeb.utils.operatorsFilter(
+          data.transactions.edges,
+        );
         parseScriptData(filtered, scriptTx, setCardData, owner);
       })();
     } else {
@@ -344,7 +316,7 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
     }
   };
 
-  const handleRefetch = useCallback(async () => refetch({ tags }), [tags, refetch]);
+  const handleRefetch = useCallback(async () => refetch(), [refetch]);
 
   if (error) {
     return <ScriptError handleRefetch={handleRefetch} />;

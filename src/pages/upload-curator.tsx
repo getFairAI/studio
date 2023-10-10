@@ -69,7 +69,6 @@ import {
   U_DIVIDER,
   SCRIPT_CREATION_FEE,
   VAULT_ADDRESS,
-  MODEL_CREATION_PAYMENT_TAGS,
   SCRIPT_CREATION_PAYMENT_TAGS,
   DEFAULT_TAGS,
   PROTOCOL_NAME,
@@ -80,7 +79,7 @@ import { BundlrContext } from '@/context/bundlr';
 import { useSnackbar } from 'notistack';
 import { WalletContext } from '@/context/wallet';
 import { FundContext } from '@/context/fund';
-import { ApolloError, useQuery } from '@apollo/client';
+import { ApolloError, gql, useQuery } from '@apollo/client';
 import { FIND_BY_TAGS } from '@/queries/graphql';
 import { IContractEdge, IContractQueryResult } from '@/interfaces/arweave';
 import {
@@ -97,13 +96,13 @@ import {
 } from '@/utils/common';
 import DebounceButton from '@/components/debounce-button';
 import { sendU } from '@/utils/u';
-import { filterPreviousVersions } from '@/utils/script';
 import CachedIcon from '@mui/icons-material/Cached';
 import { fetchMoreFn } from '@/utils/apollo';
 import { AdvancedConfiguration } from '@/components/advanced-configuration';
 import { LicenseForm } from '@/interfaces/common';
 import { WarpFactory } from 'warp-contracts';
 import { DeployPlugin } from 'warp-contracts-plugin-deploy';
+import FairSDKWeb from 'fair-protocol-sdk/web';
 
 export interface CreateForm extends FieldValues {
   name: string;
@@ -333,36 +332,33 @@ const GenericSelect = ({
   };
 
   const filterModels = (newData: IContractQueryResult) => {
-    const filtered: IContractEdge[] = [];
     (async () => {
-      for (const el of newData.transactions.edges) {
-        const modelId = findTag(el, 'modelTransaction') as string;
-        const modelOwner = findTag(el, 'sequencerOwner') as string;
-        if (!modelOwner || !modelId) {
-          // if no model owner or id ignore
-        } else if (await isFakeDeleted(modelId, modelOwner, 'model')) {
-          // if fake deleted ignore
-        } else {
-          filtered.push(el);
-        }
-      }
-
+      const filtered: IContractEdge[] = await FairSDKWeb.utils.modelsFilter(newData.transactions.edges);
       setModelData(filtered);
       checkShouldLoadMore(filtered);
     })();
   };
 
   const filterScripts = (newData: IContractQueryResult) => {
-    const filteredScritps = filterPreviousVersions<IContractEdge[]>(newData.transactions.edges);
-    const filtered: IContractEdge[] = [];
     (async () => {
+      const uniqueScripts = FairSDKWeb.utils.filterByUniqueScriptTxId(newData.transactions.edges);
+      const filteredScritps =  FairSDKWeb.utils.filterPreviousVersions(uniqueScripts);
+      const filtered: IContractEdge[] = [];
       for (const el of filteredScritps) {
-        const scriptId = findTag(el, 'scriptTransaction') as string;
-        const scriptOwner = findTag(el, 'sequencerOwner') as string;
-        if (await isFakeDeleted(scriptId, scriptOwner, 'script')) {
+        const scriptId = FairSDKWeb.utils.findTag(el, 'scriptTransaction') as string;
+        const scriptOwner = FairSDKWeb.utils.findTag(el, 'sequencerOwner') as string;
+        const sequencerId = FairSDKWeb.utils.findTag(el, 'sequencerTxId') as string;
+
+        const isValidPayment = await FairSDKWeb.utils.isUTxValid(sequencerId);
+
+        if (!isValidPayment) {
+          // ignore
+        } else if (!scriptOwner || !scriptId) {
+          // ignore
+        } else if (await isFakeDeleted(scriptId, scriptOwner, 'script')) {
           // if fake deleted ignore
         } else {
-          filtered.push(el);
+          filtered.push(el as IContractEdge);
         }
       }
 
@@ -641,16 +637,14 @@ const UploadCurator = () => {
     skip: !currentAddress,
   });
 
+  const queryObject = FairSDKWeb.utils.getModelsQuery();
   const {
     data: modelsData,
     loading: modelsLoading,
     error: modelsError,
     fetchMore: modelsFetchMore,
-  } = useQuery(FIND_BY_TAGS, {
-    variables: {
-      tags: [...DEFAULT_TAGS, ...MODEL_CREATION_PAYMENT_TAGS],
-      first: elementsPerPage,
-    },
+  } = useQuery(gql(queryObject.query), {
+    variables: queryObject.variables,
     notifyOnNetworkStatusChange: true,
   });
 

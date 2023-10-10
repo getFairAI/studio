@@ -69,18 +69,18 @@ import {
 } from '@/utils/common';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CopyIcon from '@mui/icons-material/ContentCopy';
-import arweave, { isTxConfirmed, parseWinston } from '@/utils/arweave';
+import arweave from '@/utils/arweave';
 import { useSnackbar } from 'notistack';
 import DebounceButton from '@/components/debounce-button';
+import FairSDKWeb from 'fair-protocol-sdk/web';
 
 interface Registration {
   scriptName: string;
   scriptTransaction: string;
   scriptCurator: string;
-  operatorFee: string;
+  operatorFee: number;
   operatorName: string;
   timestamp: string;
-  registrationFee: string;
 }
 
 const RegistrationContent = ({
@@ -153,12 +153,7 @@ const RegistrationContent = ({
         </Box>
         <Box display={'flex'} gap={'8px'} alignItems={'center'}>
           <Typography fontWeight={'600'}>Operator Fee:</Typography>
-          <Typography>{parseWinston(registration.operatorFee)}</Typography>
-          <img src={U_LOGO_SRC} width={'18px'} height={'18px'} />
-        </Box>
-        <Box display={'flex'} gap={'8px'} alignItems={'center'}>
-          <Typography fontWeight={'600'}>Registration Fee:</Typography>
-          <Typography>{parseWinston(registration.registrationFee)}</Typography>
+          <Typography>{registration.operatorFee}</Typography>
           <img src={U_LOGO_SRC} width={'18px'} height={'18px'} />
         </Box>
       </Box>
@@ -197,20 +192,21 @@ const RegistrationCard = ({ tx }: { tx: IEdge }) => {
     const operatorFee = findTag(tx, 'operatorFee') ?? 'Operator Fee Not Found';
     const operatorName = findTag(tx, 'operatorName') ?? 'Operator Name Not Found';
     const timestamp = findTag(tx, 'unixTime') ?? 'Timestamp Not Found';
-    const registrationFee = findTag(tx, 'paymentQuantity') ?? 'Registration Fee Not Found';
+
+    const parsedFee = parseFloat(operatorFee) / FairSDKWeb.utils.U_DIVIDER;
 
     return {
       scriptName,
       scriptTransaction,
       scriptCurator,
-      operatorFee,
       operatorName,
       timestamp,
-      registrationFee,
+      operatorFee: parsedFee,
     };
   }, [tx]);
 
   const id: string = useMemo(() => tx.node.id, [tx]);
+  const sequencerId = useMemo(() => FairSDKWeb.utils.findTag(tx, 'sequencerTxId'), [tx]);
 
   const { data: cancelData } = useQuery(QUERY_TX_WITH, {
     variables: {
@@ -251,13 +247,13 @@ const RegistrationCard = ({ tx }: { tx: IEdge }) => {
   }, [cancelData]);
 
   useEffect(() => {
-    if (id) {
+    if (sequencerId) {
       (async () => {
-        const x = await isTxConfirmed(id);
+        const x = await FairSDKWeb.utils.isUTxValid(sequencerId);
         setIsConfirmed(x);
       })();
     }
-  }, [id]);
+  }, [sequencerId]);
 
   const handleCancel = useCallback(() => {
     (async () => {
@@ -273,7 +269,6 @@ const RegistrationCard = ({ tx }: { tx: IEdge }) => {
         cancelTx.addTag(TAG_NAMES.scriptName, registration.scriptName);
         cancelTx.addTag(TAG_NAMES.scriptCurator, registration.scriptCurator);
         cancelTx.addTag(TAG_NAMES.scriptTransaction, registration.scriptTransaction);
-        cancelTx.addTag(TAG_NAMES.registrationFee, registration.registrationFee);
         cancelTx.addTag(TAG_NAMES.unixTime, (Date.now() / secondInMS).toString());
 
         const cancelResult = await dispatchTx(cancelTx);
