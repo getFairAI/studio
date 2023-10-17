@@ -44,7 +44,7 @@ import { useNavigate } from 'react-router-dom';
 import ReplayIcon from '@mui/icons-material/Replay';
 import { commonUpdateQuery, findTag } from '@/utils/common';
 import { toSvg } from 'jdenticon';
-import FairSDKWeb from 'fair-protocol-sdk/web';
+import FairSDKWeb from '@fair-protocol/sdk/web';
 
 interface Element {
   name: string;

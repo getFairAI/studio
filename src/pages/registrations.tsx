@@ -72,7 +72,7 @@ import CopyIcon from '@mui/icons-material/ContentCopy';
 import arweave from '@/utils/arweave';
 import { useSnackbar } from 'notistack';
 import DebounceButton from '@/components/debounce-button';
-import FairSDKWeb from 'fair-protocol-sdk/web';
+import FairSDKWeb from '@fair-protocol/sdk/web';
 
 interface Registration {
   scriptName: string;
