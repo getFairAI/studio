@@ -38,7 +38,7 @@ import ScriptCard from '@/components/script-card';
 import useOnScreen from '@/hooks/useOnScreen';
 import { Outlet } from 'react-router-dom';
 import _ from 'lodash';
-import FairSDKWeb from 'fair-protocol-sdk/web';
+import FairSDKWeb from '@fair-protocol/sdk/web';
 
 const Operators = () => {
   const [txs, setTxs] = useState<IContractEdge[]>([]);
