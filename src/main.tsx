@@ -21,7 +21,6 @@ import ReactDOM from 'react-dom/client';
 import { createHashRouter, RouterProvider } from 'react-router-dom';
 import Root from '@/root';
 import '@/styles/main.css';
-import FundBundlr from '@/guards/fund-bundlr';
 import ErrorDisplay from '@/pages/error-display';
 import Operators from '@/pages/operators';
 import Register from '@/pages/script/register';
@@ -51,19 +50,11 @@ const router = createHashRouter([
       },
       {
         path: 'upload-creator',
-        element: (
-          <FundBundlr>
-            <UploadCreator />
-          </FundBundlr>
-        ),
+        element: <UploadCreator />
       },
       {
         path: 'upload-curator',
-        element: (
-          <FundBundlr>
-            <UploadCurator />
-          </FundBundlr>
-        ),
+        element:<UploadCurator />
       },
       {
         path: 'registrations',

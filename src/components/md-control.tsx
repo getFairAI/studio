@@ -48,7 +48,7 @@ const MarkdownControl = ({
     };
 
     return (
-      <FormControl fullWidth margin='normal' error={fieldState.invalid}>
+      <FormControl fullWidth margin='dense' error={fieldState.invalid}>
         <StyledEditor
           value={field.value}
           onChange={field.onChange}

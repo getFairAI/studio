@@ -33,27 +33,58 @@ import fileReaderStream from 'filereader-stream';
 import BigNumber from 'bignumber.js';
 import { ChunkError, ChunkInfo } from '@/interfaces/bundlr';
 import { AxiosResponse } from 'axios';
-import arweave, { wallet } from '@/utils/arweave';
-import { WebBundlr } from 'bundlr-custom';
-import { FundResponse, UploadResponse } from 'bundlr-custom/build/cjs/common/types';
+import { wallet } from '@/utils/arweave';
+import { WebIrys } from '@irys/sdk';
+
+interface FundResponse {
+  reward: string;
+  target: string;
+  quantity: string;
+  id: string;
+}
+interface WithdrawalResponse {
+  tx_id: string;
+  requested: number;
+  fee: number;
+  final: number;
+}
+interface UploadResponse {
+  // The ID of the transaction
+  id: string;
+  // The Arweave public key of the node that received the transaction
+  public: string;
+  // The signature of this receipt
+  signature: string;
+  // the maximum expected Arweave block height for transaction inclusion
+  deadlineHeight: number;
+  // List of validator signatures
+  validatorSignatures: { address: string; signature: string }[];
+  // The UNIX (MS precision) timestamp of when the node received the Tx.
+  timestamp: number;
+  // The receipt version
+  version: string;
+  // Injected verification function (same as Utils/Irys.verifyReceipt)
+  verify: () => Promise<boolean>;
+}
 
 export type bundlrNodeUrl =
   | typeof DEV_BUNDLR_URL
   | typeof NODE1_BUNDLR_URL
   | typeof NODE2_BUNDLR_URL;
-type BundlrChangeNodeAction = { type: 'node_changed'; bundlr: WebBundlr };
+type BundlrChangeNodeAction = { type: 'node_changed'; bundlr: WebIrys };
 
 type BundlrUpdateBalanceAction = { type: 'update_balance'; balance: number };
 type BundlrUpdateLoadingAction = { type: 'update_loading'; isLoading: boolean };
 type BundlrAction = BundlrChangeNodeAction | BundlrUpdateBalanceAction | BundlrUpdateLoadingAction;
 
 interface BundlrContext {
-  bundlr: WebBundlr | null;
+  bundlr: WebIrys | null;
   nodeBalance: number;
   isLoading: boolean;
   changeNode: (value: bundlrNodeUrl) => Promise<void>;
   updateBalance: () => Promise<void>;
   fundNode: (value: string) => Promise<FundResponse>;
+  withdrawNode: (value: string) => Promise<WithdrawalResponse>;
   retryConnection: () => Promise<void>;
   getPrice: (bytes: number, currency?: string) => Promise<BigNumber>;
   upload: (data: string, tags: ITag[]) => Promise<UploadResponse>;
@@ -71,7 +102,7 @@ interface BundlrContext {
 
 const createActions = (
   dispatch: Dispatch<BundlrAction>,
-  bundlr: WebBundlr | null,
+  bundlr: WebIrys | null,
   walletInstance: typeof wallet.namespaces.arweaveWallet | typeof window.arweaveWallet,
 ) => {
   return {
@@ -89,7 +120,13 @@ const asyncChangeNode = async (
   if (!walletInstance) {
     return;
   }
-  const bundlr = new WebBundlr(node, 'arweave', walletInstance, { providerInstance: arweave });
+  const bundlr = new WebIrys({
+    url: node,
+    token: 'arweave',
+    wallet: {
+      provider: walletInstance,
+    }
+  });
   try {
     await bundlr.ready();
     dispatch({ type: 'node_changed', bundlr });
@@ -99,7 +136,7 @@ const asyncChangeNode = async (
   }
 };
 
-const asyncUpdateBalance = async (dispatch: Dispatch<BundlrAction>, bundlr: WebBundlr | null) => {
+const asyncUpdateBalance = async (dispatch: Dispatch<BundlrAction>, bundlr: WebIrys | null) => {
   if (!bundlr) {
     dispatch({ type: 'update_balance', balance: 0 });
     dispatch({ type: 'update_loading', isLoading: false });
@@ -117,7 +154,7 @@ const asyncUpdateBalance = async (dispatch: Dispatch<BundlrAction>, bundlr: WebB
 };
 
 const bundlrReducer = (
-  state: { bundlr: WebBundlr | null; nodeBalance: number; isLoading: boolean },
+  state: { bundlr: WebIrys | null; nodeBalance: number; isLoading: boolean },
   action?: BundlrAction,
 ) => {
   if (!action) {
@@ -156,6 +193,7 @@ export const BundlrContext = createContext<BundlrContext>({
   changeNode: async () => new Promise(() => null),
   updateBalance: async () => new Promise(() => null),
   fundNode: async () => new Promise(() => null),
+  withdrawNode: async () => new Promise(() => null),
 });
 
 export const BundlrProvider = ({ children }: { children: ReactNode }) => {
@@ -179,7 +217,7 @@ export const BundlrProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [currentAddress]);
 
-  const retryConnection = async () => state.bundlr?.ready();
+  const retryConnection = async () => { state.bundlr?.ready(); };
 
   const getPrice = async (bytes: number, currency?: string) => {
     if (state.bundlr) {
@@ -230,8 +268,14 @@ export const BundlrProvider = ({ children }: { children: ReactNode }) => {
     return state.bundlr.fund(value);
   };
 
+  const withdrawNode = (value: string) => {
+    if (!state.bundlr) throw new Error('Bundlr not Initialized');
+
+    return state.bundlr.withdrawBalance(value);
+  };
+
   const value = useMemo(
-    () => ({ ...state, ...actions, retryConnection, getPrice, upload, chunkUpload, fundNode }),
+    () => ({ ...state, ...actions, retryConnection, getPrice, upload, chunkUpload, fundNode, withdrawNode }),
     [state, actions],
   );
 

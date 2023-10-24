@@ -26,7 +26,7 @@ import {
 } from '@/constants';
 import { IContractEdge, IEdge } from '@/interfaces/arweave';
 import { GET_LATEST_MODEL_ATTACHMENTS } from '@/queries/graphql';
-import { ApolloQueryResult, gql, useLazyQuery, useQuery } from '@apollo/client';
+import { ApolloQueryResult, useLazyQuery, useQuery } from '@apollo/client';
 import {
   Box,
   Button,
@@ -200,7 +200,7 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
     error,
     refetch,
     fetchMore,
-  } = useQuery(gql(queryObject.query), {
+  } = useQuery(queryObject.query, {
     variables: queryObject.variables,
     notifyOnNetworkStatusChange: true,
   });

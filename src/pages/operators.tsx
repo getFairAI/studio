@@ -18,7 +18,7 @@
 
 import { IContractEdge } from '@/interfaces/arweave';
 import { commonUpdateQuery, genLoadingArray, isFakeDeleted } from '@/utils/common';
-import { NetworkStatus, gql, useQuery } from '@apollo/client';
+import { NetworkStatus, useQuery } from '@apollo/client';
 import {
   Container,
   Box,
@@ -59,7 +59,7 @@ const Operators = () => {
     networkStatus,
     refetch,
     fetchMore,
-  } = useQuery(gql(queryObject.query), {
+  } = useQuery(queryObject.query, {
     variables: queryObject.variables,
     notifyOnNetworkStatusChange: true,
   });

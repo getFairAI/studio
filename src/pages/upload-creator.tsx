@@ -410,6 +410,9 @@ const UploadCreator = () => {
             </Box>
             
             <Box padding='0px 32px'>
+              <Typography paddingLeft={'8px'}>
+                Usage Notes
+              </Typography>
               <MarkdownControl props={{ name: 'notes', control, rules: { required: true } }} />
             </Box>
             <Box padding='0px 32px'>

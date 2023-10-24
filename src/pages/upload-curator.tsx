@@ -79,7 +79,7 @@ import { BundlrContext } from '@/context/bundlr';
 import { useSnackbar } from 'notistack';
 import { WalletContext } from '@/context/wallet';
 import { FundContext } from '@/context/fund';
-import { ApolloError, gql, useQuery } from '@apollo/client';
+import { ApolloError, useQuery } from '@apollo/client';
 import { FIND_BY_TAGS } from '@/queries/graphql';
 import { IContractEdge, IContractQueryResult } from '@/interfaces/arweave';
 import {
@@ -191,13 +191,11 @@ const ScriptOption = ({
   setValue?: UseFormSetValue<FieldValues>;
   modelsData?: IContractEdge[];
 }) => {
-  const handleScriptChoice = useCallback(() => {
+  const handleScriptChoice = useCallback(async () => {
     if (!setValue || !modelsData) {
       return;
     } else {
-      const scriptModel = modelsData.find(
-        (model) => findTag(model, 'modelTransaction') === findTag(el, 'modelTransaction'),
-      );
+      const scriptModel = await FairSDKWeb.utils.getById(findTag(el, 'modelTransaction') as string);
       setValue('model', JSON.stringify(scriptModel), {
         shouldDirty: true,
         shouldTouch: true,
@@ -265,7 +263,6 @@ const GenericSelect = ({
   name,
   control,
   data,
-  extraData,
   error,
   loading,
   hasNextPage,
@@ -276,7 +273,6 @@ const GenericSelect = ({
   name: string;
   control: Control<FieldValues, unknown>;
   data: IContractQueryResult;
-  extraData?: IContractQueryResult;
   error?: ApolloError;
   loading: boolean;
   hasNextPage: boolean;
@@ -377,24 +373,6 @@ const GenericSelect = ({
     }
   }, [isScript, data]);
 
-  useEffect(() => {
-    if (extraData && extraData.transactions?.edges?.length > 0) {
-      filterModels(extraData);
-    } else {
-      setModelData([]);
-    }
-  }, [extraData]);
-
-  const hasScriptData = useMemo(
-    () => !error && !loading && scriptData.length > 0,
-    [error, loading, scriptData],
-  );
-
-  const hasModelData = useMemo(
-    () => !isScript && !error && !loading && modelData.length > 0,
-    [isScript, error, loading, modelData],
-  );
-
   const handleSelected = useCallback(
     (event: MouseEvent<HTMLElement>) => {
       if (selectAnchorEl) {
@@ -420,7 +398,7 @@ const GenericSelect = ({
       } else {
         title = findTag(JSON.parse(selected), 'modelName');
         mainText = findTag(JSON.parse(selected), 'modelTransaction');
-        subText = findTag(JSON.parse(selected), 'sequencerOwner');
+        subText = findTag(JSON.parse(selected), 'sequencerOwner') ?? JSON.parse(selected).node.owner.address;
       }
 
       return (
@@ -462,6 +440,7 @@ const GenericSelect = ({
           PaperProps: {
             onScroll: selectLoadMore,
             sx: {
+              minHeight: '144px',
               maxHeight: '144px',
               overflowY: loading ? 'hidden' : 'auto',
             },
@@ -473,14 +452,13 @@ const GenericSelect = ({
         <Backdrop
           sx={{
             zIndex: theme.zIndex.drawer + 1,
-            borderRadius: '23px',
             backdropFilter: 'blur(1px)',
             display: 'flex',
             flexDirection: 'column',
             position: 'absolute',
-            height: '144px',
+            minHeight: '144px',
           }}
-          open={true}
+          open={loading}
         >
           <CircularProgress color='primary'></CircularProgress>
         </Backdrop>
@@ -495,12 +473,12 @@ const GenericSelect = ({
         </Box>
       )}
 
-      {hasModelData &&
+      {modelData.length > 0 &&
         modelData.map((el: IContractEdge) => (
           <ModelOption key={el.node.id} el={el} setValue={setValue} />
         ))}
 
-      {hasScriptData &&
+      {scriptData.length > 0 &&
         scriptData.map((el: IContractEdge) => (
           <ScriptOption key={el.node.id} el={el} setValue={setValue} modelsData={modelData} />
         ))}
@@ -643,7 +621,7 @@ const UploadCurator = () => {
     loading: modelsLoading,
     error: modelsError,
     fetchMore: modelsFetchMore,
-  } = useQuery(gql(queryObject.query), {
+  } = useQuery(queryObject.query, {
     variables: queryObject.variables,
     notifyOnNetworkStatusChange: true,
   });
@@ -927,7 +905,6 @@ const UploadCurator = () => {
             disabled={false}
             loadMore={scriptsFetchMore}
             setValue={setValue}
-            extraData={modelsData}
           />
           <GenericSelect
             name='model'
@@ -1057,6 +1034,9 @@ const UploadCurator = () => {
             <AllowGroupControl name={'allow'} control={control} />
           </Box>
           <Box padding='0px 32px'>
+            <Typography paddingLeft={'8px'}>
+              Usage Notes
+            </Typography>
             <MarkdownControl props={{ control, name: 'notes', rules: { required: true } }} />
           </Box>
           <Box padding='0px 32px'>
