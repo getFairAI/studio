@@ -1057,6 +1057,9 @@ const UploadCurator = () => {
             <AllowGroupControl name={'allow'} control={control} />
           </Box>
           <Box padding='0px 32px'>
+            <Typography paddingLeft={'8px'}>
+              Usage Notes
+            </Typography>
             <MarkdownControl props={{ control, name: 'notes', rules: { required: true } }} />
           </Box>
           <Box padding='0px 32px'>
