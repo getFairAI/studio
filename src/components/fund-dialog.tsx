@@ -40,13 +40,13 @@ import {
 } from '@mui/material';
 import { ChangeEvent, Dispatch, SetStateAction, SyntheticEvent, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { NODE1_IRYS_URL, NODE2_IRYS_URL } from '@/constants';
-import { IrysContext, irysNodeUrl } from '@/context/irys';
 import { useSnackbar } from 'notistack';
 import { WalletContext } from '@/context/wallet';
 import arweave from '@/utils/arweave';
 import { NumberFormatValues, NumericFormat } from 'react-number-format';
 import DebounceLoadingButton from './debounce-loading-button';
+import { BundlrContext, bundlrNodeUrl } from '@/context/bundlr';
+import { NODE1_BUNDLR_URL, NODE2_BUNDLR_URL } from '@/constants';
 
 type FundFinishedFn = (node: string) => Promise<void>;
 type tabOptions = 'fund' | 'withdraw';
@@ -79,7 +79,7 @@ const valueLabelFormat = (val: number) => `${val}%`;
 
 const WithdrawPanel = ({ currentTab }: { currentTab: tabOptions }) => {
   const { enqueueSnackbar } = useSnackbar();
-  const { withdrawNode, nodeBalance } = useContext(IrysContext);
+  const { withdrawNode, nodeBalance } = useContext(BundlrContext);
   const [ percentage, setPercentage ] = useState(0);
   const [ withdrawAmount, setWithdrawAmount ] = useState(0);
   const [ loading, setLoading ] = useState(false);
@@ -197,18 +197,18 @@ const FundDialog = ({
   setOpen: Dispatch<SetStateAction<boolean>>;
   handleFundFinished?: FundFinishedFn;
 }) => {
-  const [node, setNode] = useState<irysNodeUrl>(NODE2_IRYS_URL);
+  const [node, setNode] = useState<bundlrNodeUrl>(NODE2_BUNDLR_URL);
   const [amount, setAmount] = useState(0);
   const [loading, setLoading] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
-  const { nodeBalance, fundNode, updateBalance, changeNode } = useContext(IrysContext);
+  const { nodeBalance, fundNode, updateBalance, changeNode } = useContext(BundlrContext);
   const { currentBalance: walletBalance, updateBalance: updateWalletBalance } =
     useContext(WalletContext);
   const [ currentTab, setCurrentTab ] = useState<'fund' | 'withdraw'>('fund');
 
   const handleChange = async (event: SelectChangeEvent) => {
-    setNode(event.target.value as irysNodeUrl);
-    await changeNode(event.target.value as irysNodeUrl);
+    setNode(event.target.value as bundlrNodeUrl);
+    await changeNode(event.target.value as bundlrNodeUrl);
   };
 
   const handleAmountChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -325,8 +325,8 @@ const FundDialog = ({
                 onChange={handleChange}
                 label={'Irys Node'}
               >
-                <MenuItem value={NODE1_IRYS_URL}>node1.irys.xyz</MenuItem>
-                <MenuItem value={NODE2_IRYS_URL}>node2.irys.xyz</MenuItem>
+                <MenuItem value={NODE1_BUNDLR_URL}>node1.bundlr.network</MenuItem>
+                <MenuItem value={NODE2_BUNDLR_URL}>node2.bundlr.network</MenuItem>
               </Select>
             </FormControl>
             <TextField
