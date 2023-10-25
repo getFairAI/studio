@@ -271,11 +271,12 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
   }, [data]); // data changes
 
   const handleCardClick = useCallback(
-    () =>
-      navigate(`/register/${encodeURIComponent(cardData?.txid ?? 'error')}`, {
+    () => {
+      const txid = findTag(scriptTx, 'scriptTransaction') as string;
+      navigate(`/register/${encodeURIComponent(txid ?? 'error')}`, {
         state: scriptTx,
-      }),
-    [scriptTx, cardData, navigate],
+      });
+    }, [scriptTx, navigate],
   );
 
   const getTimePassed = () => {
