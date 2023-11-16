@@ -48,6 +48,7 @@ export const TAG_NAMES = {
   contentType: 'Content-Type',
   unixTime: 'Unix-Time',
   modelName: 'Model-Name',
+  modelCategory: 'Model-Category',
   modelCreator: 'Model-Creator',
   modelOperator: 'Model-Operator',
   modelTransaction: 'Model-Transaction',
