@@ -22,6 +22,7 @@ import {
   Button,
   CardHeader,
   Container,
+  MenuItem,
   Snackbar,
   Typography,
   useTheme,
@@ -62,6 +63,7 @@ import { LicenseForm } from '@/interfaces/common';
 import { addAssetTags, addLicenseTags, parseCost } from '@/utils/common';
 import { WarpFactory } from 'warp-contracts';
 import { DeployPlugin } from 'warp-contracts-plugin-deploy';
+import SelectControl from '@/components/select-control';
 
 interface CreateForm extends FieldValues {
   name: string;
@@ -69,6 +71,7 @@ interface CreateForm extends FieldValues {
   file: File;
   description?: string;
   avatar?: File;
+  category: string;
 }
 
 const UploadCreator = () => {
@@ -79,6 +82,7 @@ const UploadCreator = () => {
       notes: '',
       avatar: '',
       file: '',
+      category: ''
     },
   } as FieldValues);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -257,6 +261,7 @@ const UploadCreator = () => {
     tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
     tags.push({ name: TAG_NAMES.contentType, value: file.type });
     tags.push({ name: TAG_NAMES.modelName, value: `${data.name}` });
+    tags.push({ name: TAG_NAMES.modelCategory, value: data.category });
     tags.push({ name: TAG_NAMES.operationName, value: MODEL_CREATION });
     tags.push({ name: TAG_NAMES.paymentQuantity, value: parsedUFee.toString() });
     tags.push({ name: TAG_NAMES.paymentTarget, value: VAULT_ADDRESS });
@@ -280,6 +285,7 @@ const UploadCreator = () => {
         { name: TAG_NAMES.contentType, value: file.type },
         { name: TAG_NAMES.operationName, value: MODEL_CREATION_PAYMENT },
         { name: TAG_NAMES.modelName, value: data.name },
+        { name: TAG_NAMES.modelCategory, value: data.category },
         { name: TAG_NAMES.modelTransaction, value: res.data.id },
         { name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() },
       ];
@@ -387,26 +393,47 @@ const UploadCreator = () => {
               <Box width={'25%'}>
                 <AvatarControl name='avatar' control={control} />
               </Box>
-              <TextControl
-                name='description'
-                control={control}
-                mat={{
-                  variant: 'outlined',
-                  multiline: true,
-                  margin: 'normal',
-                  minRows: 6,
-                  maxRows: 6,
-                  InputProps: {
+              <Box sx={{ width: '100%', marginTop: 0, height: '219px', marginBottom: 0 }}>
+                <SelectControl
+                  name='category'
+                  control={control}
+                  rules={{ required: true }}
+                  defaultValue={''}
+                  mat={{
                     sx: {
                       borderWidth: '1px',
                       borderColor: theme.palette.text.primary,
-                      height: '100%',
+                      borderRadius: '16px',
                     },
-                  },
-                }}
-                style={{ width: '100%', marginTop: 0, height: '219px', marginBottom: 0, }}
-              />
-              
+                    placeholder: 'Category',
+                  }}
+                >
+                  <MenuItem value={'text'}>Text</MenuItem>
+                  <MenuItem value={'image'}>Image</MenuItem>
+                  <MenuItem value={'audio'}>Audio</MenuItem>
+                  <MenuItem value={'video'}>Video</MenuItem>
+                  <MenuItem value={'other'}>Other</MenuItem>
+                </SelectControl>
+                <TextControl
+                  name='description'
+                  control={control}
+                  mat={{
+                    variant: 'outlined',
+                    multiline: true,
+                    margin: 'normal',
+                    minRows: 5,
+                    maxRows: 6,
+                    InputProps: {
+                      sx: {
+                        borderWidth: '1px',
+                        borderColor: theme.palette.text.primary,
+                        height: '100%',
+                      },
+                    },
+                  }}
+                  style={{ width: '100%' }}
+                />
+              </Box>
             </Box>
             
             <Box padding='0px 32px'>
