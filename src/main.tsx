@@ -29,6 +29,15 @@ import UploadCreator from '@/pages/upload-creator';
 import UploadCurator from '@/pages/upload-curator';
 import Registrations from '@/pages/registrations';
 import Terms from './pages/terms';
+import Plausible from 'plausible-tracker';
+
+const { enableAutoPageviews } = Plausible({
+  hashMode: true,
+  domain: 'fairstudio.ar-io.dev',
+});
+
+// Hash changes will also trigger page views
+enableAutoPageviews();
 
 const router = createHashRouter([
   {
