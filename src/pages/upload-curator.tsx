@@ -21,7 +21,6 @@ import {
   Backdrop,
   Box,
   Button,
-  CardHeader,
   Checkbox,
   CircularProgress,
   Container,
@@ -32,6 +31,8 @@ import {
   FormLabel,
   MenuItem,
   Snackbar,
+  Tab,
+  Tabs,
   Typography,
   useTheme,
 } from '@mui/material';
@@ -45,6 +46,7 @@ import {
   useRef,
   useState,
   MouseEvent,
+  SyntheticEvent,
 } from 'react';
 import {
   Control,
@@ -96,7 +98,6 @@ import {
 } from '@/utils/common';
 import DebounceButton from '@/components/debounce-button';
 import { sendU } from '@/utils/u';
-import CachedIcon from '@mui/icons-material/Cached';
 import { fetchMoreFn } from '@/utils/apollo';
 import { AdvancedConfiguration } from '@/components/advanced-configuration';
 import { LicenseForm } from '@/interfaces/common';
@@ -375,13 +376,15 @@ const GenericSelect = ({
 
   const handleSelected = useCallback(
     (event: MouseEvent<HTMLElement>) => {
-      if (selectAnchorEl) {
+      if (disabled) {
+        // ignore
+      } else if (selectAnchorEl) {
         setSelectAnchorEl(null);
       } else {
         setSelectAnchorEl(event.currentTarget);
       }
     },
-    [selectAnchorEl, setSelectAnchorEl],
+    [selectAnchorEl, disabled, setSelectAnchorEl],
   );
   const renderValueFn = useCallback(
     (selected: unknown) => {
@@ -575,9 +578,10 @@ const UploadCurator = () => {
   const theme = useTheme();
   const { currentAddress, currentUBalance, updateUBalance } = useContext(WalletContext);
   const { setOpen: setFundOpen } = useContext(FundContext);
-  const [mode, setMode] = useState<'upload' | 'update'>('upload');
   const [isUploading, setIsUploading] = useState(false);
   const [ usdFee, setUsdFee ] = useState('0');
+  const [ currentTab, setCurrentTab ] = useState<'create' | 'edit'>('create');
+
   const disabled = useMemo(
     () =>
       (!control._formState.isValid && control._formState.isDirty) || !currentAddress || isUploading,
@@ -713,7 +717,7 @@ const UploadCurator = () => {
     commonTags.push({ name: TAG_NAMES.allowFiles, value: `${data.allow.allowFiles}` });
     commonTags.push({ name: TAG_NAMES.allowText, value: `${data.allow.allowText}` });
 
-    if (mode === 'update') {
+    if (currentTab === 'edit') {
       const scriptData = JSON.parse(data.script) as IContractEdge;
       const currentScriptId = findTag(scriptData, 'scriptTransaction') as string;
       commonTags.push({ name: TAG_NAMES.updateFor, value: currentScriptId });
@@ -797,7 +801,7 @@ const UploadCurator = () => {
 
       try {
         await uploadUsageNotes(res.data.id, data.name, data.notes, commonUploadProps, 'script');
-        if (mode === 'upload') {
+        if (currentTab === 'create') {
           await uploadAvatarImage(res.data.id, commonUploadProps, 'script', data.avatar);
         }
       } catch (error) {
@@ -813,18 +817,6 @@ const UploadCurator = () => {
     }
   };
 
-  const handleSwitchModeUpload = useCallback(() => {
-    reset();
-    setMode('upload');
-    document.querySelector('#switch-icon')?.classList.remove('rotate');
-  }, [setMode, reset]);
-
-  const handleSwitchModeUpdate = useCallback(() => {
-    reset();
-    setMode('update');
-    document.querySelector('#switch-icon')?.classList.add('rotate');
-  }, [setMode, reset]);
-
   useEffect(() => {
     (async () => {
       const nDigits = 4;
@@ -833,8 +825,13 @@ const UploadCurator = () => {
     })();
   }, [SCRIPT_CREATION_FEE, parseCost]);
 
+  const handleTabChange = useCallback((_: SyntheticEvent, value: 'create' | 'edit') => {
+    reset();
+    setCurrentTab(value);
+  }, [ setCurrentTab, reset ]);
+
   const getContent = () => {
-    if (mode === 'upload') {
+    if (currentTab === 'create') {
       return <>
         <Box padding={'0px 32px'}>
           <TextControl
@@ -985,50 +982,11 @@ const UploadCurator = () => {
       }}
     >
       <Container maxWidth={'lg'}>
-        <CardHeader
-          title={
-            <Box display={'flex'} gap={'16px'} alignContent={'center'}>
-              <Typography
-                sx={{
-                  fontStyle: 'normal',
-                  fontWeight: 600,
-                  fontSize: '30px',
-                  fontHeight: '41px',
-                  opacity: mode === 'upload' ? 1 : '0.5',
-                }}
-                onClick={handleSwitchModeUpload}
-              >
-                Upload Script
-              </Typography>
-              <CachedIcon
-                id='switch-icon'
-                sx={{
-                  transform: 'rotate(0deg)',
-                  transition: 'transform 0.5s linear',
-                  '&.rotate': {
-                    transform: 'rotate(180deg)',
-                    transition: 'transform 0.5s linear',
-                  },
-                }}
-                fontSize='large'
-              />
-              <Typography
-                sx={{
-                  fontStyle: 'normal',
-                  fontWeight: 600,
-                  fontSize: '30px',
-                  fontHeight: '41px',
-                  opacity: mode === 'update' ? 1 : '0.5',
-                }}
-                onClick={handleSwitchModeUpdate}
-              >
-                Update Script
-              </Typography>
-            </Box>
-          }
-          sx={{ paddingLeft: '48px', paddingTop: '32px' }}
-        />
-        <Box sx={{ marginTop: '8px', paddingBottom: 0, gap: '32px', display: 'flex', flexDirection: 'column' }}>
+        <Tabs value={currentTab} onChange={handleTabChange}>
+          <Tab label='Create Script' value='create' />
+          <Tab label='Update Script' value='edit' />
+        </Tabs>
+        <Box role='tabpanel' sx={{ marginTop: '16px', paddingBottom: 0, gap: '32px', display: 'flex', flexDirection: 'column' }}>
           {getContent()}
           <Box padding='0px 32px'>
             <AllowGroupControl name={'allow'} control={control} />
@@ -1047,12 +1005,14 @@ const UploadCurator = () => {
             licenseControl={licenseControl}
             resetLicenseForm={resetLicenseForm}
           />
-          <Alert severity='warning' variant='outlined'>
-            <Typography alignItems={'center'} display={'flex'} gap={'4px'}>
-              Uploading a Script requires a fee of {SCRIPT_CREATION_FEE}<img width='20px' height='20px' src={U_LOGO_SRC} /> (${usdFee}) Tokens. 
-            </Typography>
-          </Alert>
-          <Box sx={{ display: 'flex', paddingBottom: '32px', justifyContent: 'flex-end', mt: '32px', width: '100%', gap: '32px' }}>
+          <Box padding='0px 32px'>
+            <Alert severity='warning' variant='outlined'>
+              <Typography alignItems={'center'} display={'flex'} gap={'4px'}>
+                Uploading a Script requires a fee of {SCRIPT_CREATION_FEE}<img width='20px' height='20px' src={U_LOGO_SRC} /> (${usdFee}) Tokens. 
+              </Typography>
+            </Alert>
+          </Box>
+          <Box sx={{ display: 'flex', padding: '0 32px 32px 32px', justifyContent: 'flex-end', mt: '32px', width: '100%', gap: '32px' }}>
             <Button
                 onClick={() => reset()}
                 sx={{

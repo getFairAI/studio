@@ -165,7 +165,7 @@ export const AdvancedConfiguration = ({
 
   return (
     <>
-      <Divider textAlign='left' sx={{ ml: '24px', mr: '24px', mt: '-32px' }}>
+      <Divider textAlign='left' sx={{ ml: '32px', mr: '32px', mt: '-32px' }}>
         <Button
           variant='text'
           startIcon={showAdvanced ? <ExpandMore /> : <ChevronRight />}

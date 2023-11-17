@@ -30,6 +30,12 @@ const AvatarControl = (props: UseControllerProps & { control: Control }) => {
   useEffect(() => {
     if (!field.value) {
       setSrc('');
+    } else if (field.value && field.value instanceof File) {
+      setSrc(URL.createObjectURL(field.value));
+    } else if (field.value && typeof field.value === 'string') {
+      setSrc(`https://arweave.dev/${field.value}`);
+    } else {
+      // do nothing
     }
   }, [field.value]);
 

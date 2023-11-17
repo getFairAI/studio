@@ -40,6 +40,32 @@ import { Outlet } from 'react-router-dom';
 import _ from 'lodash';
 import FairSDKWeb from '@fair-protocol/sdk/web';
 
+const ListLoadingCard = () => {
+  return (
+    <Card
+      sx={{
+        flexGrow: 0,
+        width: '100%',
+        height: '140px',
+      }}
+      raised={true}
+    >
+      <CardActionArea>
+        <Skeleton
+          sx={{
+            transform: 'none',
+            width: '100%',
+            height: '140px',
+            borderRadius: '8px',
+          }}
+          animation='wave'
+        />
+      </CardActionArea>
+    </Card>
+  );
+};
+
+
 const Operators = () => {
   const [txs, setTxs] = useState<IContractEdge[]>([]);
   const [filtering, setFiltering] = useState(false);
@@ -342,30 +368,7 @@ const Operators = () => {
             )}
             {loadingOrFiltering &&
               mockArray.map((val) => (
-                <Card key={val}>
-                  <Box>
-                    <CardActionArea>
-                      <Typography>
-                        <Skeleton animation={'wave'} />
-                      </Typography>
-                      <Typography>
-                        <Skeleton animation={'wave'} />
-                      </Typography>
-                      <Typography>
-                        <Skeleton animation={'wave'} />
-                      </Typography>
-                      <Typography>
-                        <Skeleton animation={'wave'} />
-                      </Typography>
-                      <Typography>
-                        <Skeleton animation={'wave'} />
-                      </Typography>
-                      <Typography>
-                        <Skeleton animation={'wave'} />
-                      </Typography>
-                    </CardActionArea>
-                  </Box>
-                </Card>
+                <ListLoadingCard key={val} />
               ))}
           </Stack>
           <Box ref={target} sx={{ paddingBottom: '16px' }}></Box>
