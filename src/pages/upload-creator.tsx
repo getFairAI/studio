@@ -18,17 +18,21 @@
 
 import {
   Alert,
+  Backdrop,
   Box,
   Button,
-  CardHeader,
+  CircularProgress,
+  /* CardHeader, */
   Container,
   MenuItem,
   Snackbar,
+  Tab,
+  Tabs,
   Typography,
   useTheme,
 } from '@mui/material';
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { FieldValues, useForm } from 'react-hook-form';
+import { SyntheticEvent, UIEvent, MouseEvent, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { FieldValues, UseFormSetValue, useForm, useWatch } from 'react-hook-form';
 import TextControl from '@/components/text-control';
 import MarkdownControl from '@/components/md-control';
 import FileControl from '@/components/file-control';
@@ -55,15 +59,20 @@ import { useSnackbar } from 'notistack';
 import { WalletContext } from '@/context/wallet';
 import { ChunkError, ChunkInfo } from '@/interfaces/bundlr';
 import { FundContext } from '@/context/fund';
-import { ITag } from '@/interfaces/arweave';
+import { IContractEdge, ITag } from '@/interfaces/arweave';
 import DebounceButton from '@/components/debounce-button';
 import { sendU } from '@/utils/u';
 import { AdvancedConfiguration } from '@/components/advanced-configuration';
 import { LicenseForm } from '@/interfaces/common';
-import { addAssetTags, addLicenseTags, parseCost } from '@/utils/common';
+import { addAssetTags, addLicenseTags, commonUpdateQuery, displayShortTxOrAddr, findTag, parseCost } from '@/utils/common';
 import { WarpFactory } from 'warp-contracts';
 import { DeployPlugin } from 'warp-contracts-plugin-deploy';
 import SelectControl from '@/components/select-control';
+import FairSDKWeb from '@fair-protocol/sdk/web';
+import { useLazyQuery, useQuery } from '@apollo/client';
+import { GET_LATEST_MODEL_ATTACHMENTS } from '@/queries/graphql';
+import { getData } from '@/utils/arweave';
+import _ from 'lodash';
 
 interface CreateForm extends FieldValues {
   name: string;
@@ -73,6 +82,39 @@ interface CreateForm extends FieldValues {
   avatar?: File;
   category: string;
 }
+
+const ModelOption = ({
+  el,
+  setValue,
+}: {
+  el: IContractEdge;
+  setValue?: UseFormSetValue<FieldValues>;
+}) => {
+  const handleModelChoice = useCallback(() => {
+    if (setValue) {
+      setValue('currentModel', JSON.stringify(el), {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true,
+      });
+    }
+  }, [el, setValue]);
+  return (
+    <MenuItem
+      onClick={handleModelChoice}
+      sx={{
+        display: 'flex',
+        gap: '16px',
+      }}
+    >
+      <Typography>{findTag(el, 'modelName')}</Typography>
+      <Typography sx={{ opacity: '0.5' }}>
+        {findTag(el, 'modelTransaction')}
+        {` (Creator: ${displayShortTxOrAddr(findTag(el, 'sequencerOwner') as string)})`}
+      </Typography>
+    </MenuItem>
+  );
+};
 
 const UploadCreator = () => {
   const { handleSubmit, reset, control } = useForm({
@@ -97,6 +139,10 @@ const UploadCreator = () => {
   const { setOpen: setFundOpen } = useContext(FundContext);
   const [isUploading, setIsUploading] = useState(false);
   const [ usdFee, setUsdFee ] = useState('0');
+  const [ currentTab, setCurrentTab ] = useState<'create' | 'edit'>('create');
+  const [selectAnchorEl, setSelectAnchorEl] = useState<null | HTMLElement>(null);
+  const selectOpen = useMemo(() => Boolean(selectAnchorEl), [selectAnchorEl]);
+  const [models, setModels] = useState<IContractEdge[]>([]);
  
   const disabled = useMemo(
     () =>
@@ -113,6 +159,99 @@ const UploadCreator = () => {
       paymentMode: '',
     },
   } as FieldValues);
+  const { control: updateControl, handleSubmit: handleUpdateSubmit, setValue: setUpdateValue } = useForm({
+    defaultValues: {
+      currentModel: '',
+      name: '',
+      description: '',
+      notes: '',
+      avatar: '',
+      file: '',
+      category: ''
+    },
+  } as FieldValues);
+  const modelChanged = useWatch({ name: 'currentModel', control: updateControl });
+
+  const queryObject = FairSDKWeb.utils.getModelsQuery();
+  const {
+    data: modelsData,
+    loading: modelsLoading,
+    error: modelsError,
+    fetchMore: modelsFetchMore,
+  } = useQuery(queryObject.query, {
+    variables: {
+      ...queryObject.variables,
+      tags: [
+        ...queryObject.variables.tags,
+        { name: TAG_NAMES.sequencerOwner, values: [ currentAddress ] },
+      ],
+    },
+    skip: !currentAddress,
+    notifyOnNetworkStatusChange: true,
+  });
+
+  const [ fetchAvatar, { data: avatarData }] = useLazyQuery(GET_LATEST_MODEL_ATTACHMENTS);
+  const [ fetchNotes, { data: notesData }] = useLazyQuery(GET_LATEST_MODEL_ATTACHMENTS);
+
+  useEffect(() => {
+    if (modelsData) {
+      setModels(FairSDKWeb.utils.filterByUniqueModelTxId(modelsData.transactions.edges));
+    }
+  }, [ modelsData ]);
+
+  useEffect(() => {
+    if (modelChanged) {
+      const tx = JSON.parse(modelChanged);
+      const name = findTag(tx, 'modelName') ?? '';
+      const description = findTag(tx, 'description') ?? '';
+      /* const notes = findTag(tx, '');
+      const avatar = findTag(tx, 'avatar'); */
+      const category = findTag(tx, 'modelCategory') ?? '';
+      const modelId = findTag(tx, 'modelTransaction') ?? '';
+      setUpdateValue('name', name);
+      setUpdateValue('description', description);
+      setUpdateValue('category', category);
+      fetchAvatar({ variables: {
+        tags: [
+          { name: TAG_NAMES.operationName, values: [MODEL_ATTACHMENT] },
+          { name: TAG_NAMES.attachmentRole, values: [AVATAR_ATTACHMENT] },
+          { name: TAG_NAMES.modelTransaction, values: [ modelId ] },
+        ],
+        owner: currentAddress
+      }});
+      fetchNotes({ variables: {
+        tags: [
+          { name: TAG_NAMES.operationName, values: [MODEL_ATTACHMENT] },
+          { name: TAG_NAMES.attachmentRole, values: [NOTES_ATTACHMENT] },
+          { name: TAG_NAMES.modelTransaction, values: [ modelId ] },
+        ],
+        owner: currentAddress
+      }});
+    }
+  }, [ modelChanged, updateControl, currentAddress, setUpdateValue ]);
+
+  useEffect(() => {
+    const avatarTxId = avatarData?.transactions?.edges[0]?.node.id ?? '';
+    
+    if (avatarTxId) {
+      setUpdateValue('avatar', avatarTxId);
+    } else {
+      setUpdateValue('avatar', '');
+    }
+  }, [ avatarData, setUpdateValue ]);
+
+  useEffect(() => {
+    const notesTxId = notesData?.transactions?.edges[0]?.node.id ?? '';
+    
+    if (notesTxId) {
+      (async () => {
+        const notesContent = await getData(notesTxId) as string;
+        setUpdateValue('notes', notesContent);
+      })();
+    } else {
+      setUpdateValue('notes', '');
+    }
+  }, [ notesData ]);
 
   const onSubmit = async (data: FieldValues) => {
     await updateBalance();
@@ -126,6 +265,107 @@ const UploadCreator = () => {
       setIsUploading(false);
     }
   };
+
+  const onUpdateSubmit = useCallback(async (data: FieldValues) => {
+    await updateBalance();
+
+    if (nodeBalance <= 0) {
+      setFundOpen(true);
+    } else if (currentUBalance < parseInt(MARKETPLACE_FEE, 10)) {
+      enqueueSnackbar('Not Enough Balance in your Wallet to pay MarketPlace Fee', {
+        variant: 'error',
+      });
+      return;
+    } else {
+      setIsUploading(true);
+      try {
+        const parsedCurrentModel = JSON.parse(data.currentModel);
+        const modelId = findTag(parsedCurrentModel, 'modelTransaction') ?? '';
+        const previousVersions = findTag(parsedCurrentModel, 'previousVersions') ?? '';
+        const previousData = {
+          name: findTag(parsedCurrentModel, 'modelName'),
+          description: findTag(parsedCurrentModel, 'description'),
+          category: findTag(parsedCurrentModel, 'modelCategory'),
+        };
+        const currentData = {
+          name: data.name,
+          description: data.description,
+          category: data.category,
+        };
+
+        if (!_.isEqual(previousData, currentData)) {
+          const parsedUFee = parseFloat(MARKETPLACE_FEE) * U_DIVIDER;
+    
+          const paymentTags = [
+            { name: TAG_NAMES.protocolName, value: PROTOCOL_NAME },
+            { name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION },
+            { name: TAG_NAMES.operationName, value: MODEL_CREATION_PAYMENT },
+            { name: TAG_NAMES.modelName, value: data.name },
+            { name: TAG_NAMES.modelCategory, value: data.category },
+            { name: TAG_NAMES.modelTransaction, value: modelId },
+            { name: TAG_NAMES.updateFor, value: modelId },
+            { name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() },
+          ];
+
+          if (previousVersions) {
+            const prevVersions: string[] = JSON.parse(
+              previousVersions
+            );
+            prevVersions.push(modelId);
+            paymentTags.push({ name: TAG_NAMES.previousVersions, value: JSON.stringify(prevVersions) });
+          } else {
+            paymentTags.push({
+              name: TAG_NAMES.previousVersions,
+              value: JSON.stringify([ modelId ]),
+            });
+          }
+    
+          if (data.description) {
+            paymentTags.push({ name: TAG_NAMES.description, value: data.description });
+          }
+    
+          const paymentId = await sendU(VAULT_ADDRESS, parsedUFee.toString(), paymentTags);
+          await updateUBalance();
+          enqueueSnackbar(
+            <>
+              Model Updated
+              <br></br>
+              <a
+                href={`https://viewblock.io/arweave/tx/${paymentId}`}
+                target={'_blank'}
+                rel='noreferrer'
+              >
+                <u>View Transaction in Explorer</u>
+              </a>
+            </>,
+            { variant: 'success' },
+          );
+        }
+
+        const avatarTxId = avatarData?.transactions?.edges[0]?.node.id ?? '';
+        const notesTxId = notesData?.transactions?.edges[0]?.node.id ?? '';
+        const notesContent = await getData(notesTxId) as string;
+        
+        try {
+          if (data.notes !== notesContent) {
+            await uploadUsageNotes(modelId, data.name, data.notes);
+          }
+          if (data.avatar !== avatarTxId) {
+            await uploadAvatarImage(modelId, data.avatar);
+          }
+        } catch (error) {
+          enqueueSnackbar('Error Uploading An Attchment', { variant: 'error' });
+          // error uploading attachments
+        }
+      } catch (error) {
+        setSnackbarOpen(false);
+        setProgress(0);
+        setMessage('Upload error ');
+        enqueueSnackbar('An Error Occured.', { variant: 'error' });
+      }
+      setIsUploading(false);
+    }
+  }, [ nodeBalance, currentUBalance, avatarData, notesData, enqueueSnackbar, updateBalance, updateUBalance, setFundOpen, setProgress, setMessage, setSnackbarOpen, setIsUploading ]);
 
   const bundlrUpload = async (fileToUpload: File, tags: ITag[], successMessage: string) => {
     const filePrice = await getPrice(fileToUpload.size);
@@ -339,6 +579,69 @@ const UploadCreator = () => {
     })();
   }, [MARKETPLACE_FEE, parseCost]);
 
+  const handleTabChange = useCallback((_: SyntheticEvent, value: 'create' | 'edit') => setCurrentTab(value), [ setCurrentTab ]);
+
+  const selectLoadMore = useCallback((event: UIEvent<HTMLDivElement>) => {
+    const bottomOffset = 100;
+    const bottom =
+      event.currentTarget.scrollHeight - event.currentTarget.scrollTop <=
+      event.currentTarget.clientHeight + bottomOffset;
+    
+    const hasNextPage = modelsData?.transactions?.pageInfo?.hasNextPage;
+    if (bottom && hasNextPage) {
+      // user is at the end of the list so load more items
+      modelsFetchMore({
+        variables: {
+          after:
+            modelsData && modelsData.transactions.edges.length > 0
+              ? modelsData.transactions.edges[modelsData.transactions.edges.length - 1].cursor
+              : undefined,
+        },
+        updateQuery: commonUpdateQuery,
+      });
+    }
+  }, [ modelsData, commonUpdateQuery ]);
+
+  const handleSelected = useCallback(
+    (event: MouseEvent<HTMLElement>) => {
+      if (selectAnchorEl) {
+        setSelectAnchorEl(null);
+      } else {
+        setSelectAnchorEl(event.currentTarget);
+      }
+    },
+    [selectAnchorEl, setSelectAnchorEl],
+  );
+
+  const renderValueFn = useCallback(
+    (selected: unknown) => {
+      if (typeof selected !== 'string') {
+        return '';
+      }
+
+      const title = findTag(JSON.parse(selected), 'modelName');
+      const mainText = findTag(JSON.parse(selected), 'modelTransaction');
+      const subText = findTag(JSON.parse(selected), 'sequencerOwner') ?? JSON.parse(selected).node.owner.address;
+
+      return (
+        <Box
+          sx={{
+            display: 'flex',
+            gap: '16px',
+          }}
+        >
+          <Typography>{title}</Typography>
+          <Typography sx={{ opacity: '0.5' }}>
+            {mainText}
+            {` (Creator: ${displayShortTxOrAddr(subText as string)}) `}
+          </Typography>
+        </Box>
+      );
+    },
+    [],
+  );
+
+
   return (
     <Container
       sx={{
@@ -356,147 +659,310 @@ const UploadCreator = () => {
       }}
     >
         <Container maxWidth={'lg'}>
-          <CardHeader
-            title={
-              <Typography
-                sx={{
-                  fontStyle: 'normal',
-                  fontWeight: 600,
-                  fontSize: '30px',
-                  fontHeight: '41px',
-                }}
-              >
-                Upload Model
-              </Typography>
-            }
-            sx={{ paddingLeft: '48px', paddingTop: '32px' }}
-          />
-          <Box sx={{ marginTop: '8px', paddingBottom: 0, gap: '32px', display: 'flex', flexDirection: 'column' }}>
-            <Box padding={'0px 32px'}>
-              <TextControl
-                name='name'
-                control={control}
-                rules={{ required: true }}
-                mat={{
-                  variant: 'outlined',
-                  InputProps: {
-                    sx: {
-                      borderWidth: '1px',
-                      borderColor: theme.palette.text.primary,
-                    },
-                  },
-                }}
-                style={{ width: '100%' }}
-              />
-            </Box>
-            <Box display={'flex'} gap={'30px'} width={'100%'} padding='0px 32px'>
-              <Box width={'25%'}>
-                <AvatarControl name='avatar' control={control} />
-              </Box>
-              <Box sx={{ width: '100%', marginTop: 0, height: '219px', marginBottom: 0 }}>
-                <SelectControl
-                  name='category'
+          <Tabs value={currentTab} onChange={handleTabChange}>
+            <Tab label='Create Model' value='create' />
+            <Tab label='Update Model' value='edit' />
+          </Tabs>
+          <Box role='tabpanel' hidden={currentTab !== 'create'} display={'flex'} flexDirection={'column'} gap={'16px'}>
+            { currentTab === 'create' && <Box sx={{ marginTop: '16px', paddingBottom: 0, gap: '32px', display: 'flex', flexDirection: 'column' }}>
+              <Box padding={'0px 32px'}>
+                <TextControl
+                  name='name'
                   control={control}
                   rules={{ required: true }}
-                  defaultValue={''}
-                  mat={{
-                    sx: {
-                      borderWidth: '1px',
-                      borderColor: theme.palette.text.primary,
-                      borderRadius: '16px',
-                    },
-                    placeholder: 'Category',
-                  }}
-                >
-                  <MenuItem value={'text'}>Text</MenuItem>
-                  <MenuItem value={'image'}>Image</MenuItem>
-                  <MenuItem value={'audio'}>Audio</MenuItem>
-                  <MenuItem value={'video'}>Video</MenuItem>
-                  <MenuItem value={'other'}>Other</MenuItem>
-                </SelectControl>
-                <TextControl
-                  name='description'
-                  control={control}
                   mat={{
                     variant: 'outlined',
-                    multiline: true,
-                    margin: 'normal',
-                    minRows: 5,
-                    maxRows: 6,
                     InputProps: {
                       sx: {
                         borderWidth: '1px',
                         borderColor: theme.palette.text.primary,
-                        height: '100%',
                       },
                     },
                   }}
                   style={{ width: '100%' }}
                 />
               </Box>
-            </Box>
-            
-            <Box padding='0px 32px'>
-              <Typography paddingLeft={'8px'}>
-                Usage Notes
-              </Typography>
-              <MarkdownControl props={{ name: 'notes', control, rules: { required: true } }} />
-            </Box>
-            <Box padding='0px 32px'>
-              <FileControl name='file' control={control} rules={{ required: true }} />
-            </Box>
-            <AdvancedConfiguration
-              licenseRef={licenseRef}
-              licenseControl={licenseControl}
-              resetLicenseForm={resetLicenseForm}
-            />
-            <Alert severity='warning' variant='outlined'>
-              <Typography alignItems={'center'} display={'flex'} gap={'4px'}>
-                Uploading a model requires a fee of {MARKETPLACE_FEE}<img width='20px' height='20px' src={U_LOGO_SRC} /> (${usdFee}) Tokens. 
-              </Typography>
-            </Alert>
-            <Box sx={{ display: 'flex', paddingBottom: '32px', justifyContent: 'flex-end', mt: '32px', width: '100%', gap: '32px' }}>
-              <Button
-                onClick={handleReset}
-                sx={{
-                  // border: `1px solid ${theme.palette.text.primary}`,
-                  height: '39px',
-                  width: '204px',
-                }}
-                variant='outlined'
-              >
-                <Typography
+              <Box display={'flex'} gap={'30px'} width={'100%'} padding='0px 32px'>
+                <Box width={'25%'}>
+                  <AvatarControl name='avatar' control={control} />
+                </Box>
+                <Box sx={{ width: '100%', marginTop: 0, height: '219px', marginBottom: 0 }}>
+                  <SelectControl
+                    name='category'
+                    control={control}
+                    rules={{ required: true }}
+                    defaultValue={''}
+                    mat={{
+                      sx: {
+                        borderWidth: '1px',
+                        borderColor: theme.palette.text.primary,
+                        borderRadius: '16px',
+                      },
+                      placeholder: 'Category',
+                    }}
+                  >
+                    <MenuItem value={'text'}>Text</MenuItem>
+                    <MenuItem value={'image'}>Image</MenuItem>
+                    <MenuItem value={'audio'}>Audio</MenuItem>
+                    <MenuItem value={'video'}>Video</MenuItem>
+                    <MenuItem value={'other'}>Other</MenuItem>
+                  </SelectControl>
+                  <TextControl
+                    name='description'
+                    control={control}
+                    mat={{
+                      variant: 'outlined',
+                      multiline: true,
+                      margin: 'normal',
+                      minRows: 5,
+                      maxRows: 6,
+                      InputProps: {
+                        sx: {
+                          borderWidth: '1px',
+                          borderColor: theme.palette.text.primary,
+                          height: '100%',
+                        },
+                      },
+                    }}
+                    style={{ width: '100%' }}
+                  />
+                </Box>
+              </Box>
+              
+              <Box padding='0px 32px'>
+                <Typography paddingLeft={'8px'}>
+                  Usage Notes
+                </Typography>
+                <MarkdownControl props={{ name: 'notes', control, rules: { required: true } }} />
+              </Box>
+              <Box padding='0px 32px'>
+                <FileControl name='file' control={control} rules={{ required: true }} />
+              </Box>
+              <AdvancedConfiguration
+                licenseRef={licenseRef}
+                licenseControl={licenseControl}
+                resetLicenseForm={resetLicenseForm}
+              />
+              <Box padding='0px 32px'>
+                <Alert severity='warning' variant='outlined'>
+                  <Typography alignItems={'center'} display={'flex'} gap={'4px'}>
+                    Uploading a model requires a fee of {MARKETPLACE_FEE}<img width='20px' height='20px' src={U_LOGO_SRC} /> (${usdFee}) Tokens. 
+                  </Typography>
+                </Alert>
+              </Box>
+              <Box sx={{ display: 'flex', padding: '0 32px 32px 32px', justifyContent: 'flex-end', mt: '32px', width: '100%', gap: '32px' }}>
+                <Button
+                  onClick={handleReset}
                   sx={{
-                    fontStyle: 'normal',
-                    fontWeight: 500,
-                    fontSize: '15px',
-                    lineHeight: '20px',
+                    // border: `1px solid ${theme.palette.text.primary}`,
+                    height: '39px',
+                    width: '204px',
+                  }}
+                  variant='outlined'
+                >
+                  <Typography
+                    sx={{
+                      fontStyle: 'normal',
+                      fontWeight: 500,
+                      fontSize: '15px',
+                      lineHeight: '20px',
+                    }}
+                  >
+                    Reset to Default
+                  </Typography>
+                </Button>
+                <DebounceButton
+                  onClick={handleSubmit(onSubmit)}
+                  disabled={disabled}
+                  sx={{
+                    height: '39px',
+                    width: '204px',
+                  }}
+                  variant='contained'
+                >
+                  <Typography
+                    sx={{
+                      fontStyle: 'normal',
+                      fontWeight: 500,
+                      fontSize: '15px',
+                      lineHeight: '20px',
+                    }}
+                  >
+                    Submit
+                  </Typography>
+                </DebounceButton>
+              </Box>
+            </Box>}
+          </Box>
+          <Box role='tabpanel' hidden={currentTab !== 'edit'} display={'flex'} flexDirection={'column'} gap={'16px'}>
+            { currentTab === 'edit' && <Box sx={{ marginTop: '16px', paddingBottom: 0, gap: '32px', display: 'flex', flexDirection: 'column' }}>
+              <Box padding={'0px 32px'}>
+                <SelectControl
+                  name={'currentModel'}
+                  control={updateControl}
+                  rules={{ required: !disabled }}
+                  disabled={disabled}
+                  defaultValue=''
+                  mat={{
+                    onClick: handleSelected,
+                    placeholder: 'Choose Model to Update',
+                    sx: {
+                      borderWidth: '1px',
+                      borderColor: theme.palette.text.primary,
+                      borderRadius: '16px',
+                    },
+                    renderValue: renderValueFn,
+                    MenuProps: {
+                      anchorEl: selectAnchorEl,
+                      open: selectOpen,
+                      PaperProps: {
+                        onScroll: selectLoadMore,
+                        sx: {
+                          minHeight: '144px',
+                          maxHeight: '144px',
+                          overflowY: modelsLoading ? 'hidden' : 'auto',
+                        },
+                      },
+                    },
                   }}
                 >
-                  Reset to Default
-                </Typography>
-              </Button>
-              <DebounceButton
-                onClick={handleSubmit(onSubmit)}
-                disabled={disabled}
-                sx={{
-                  height: '39px',
-                  width: '204px',
-                }}
-                variant='contained'
-              >
-                <Typography
-                  sx={{
-                    fontStyle: 'normal',
-                    fontWeight: 500,
-                    fontSize: '15px',
-                    lineHeight: '20px',
+                  {modelsLoading && (
+                    <Backdrop
+                      sx={{
+                        zIndex: theme.zIndex.drawer + 1,
+                        backdropFilter: 'blur(1px)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        position: 'absolute',
+                        minHeight: '144px',
+                      }}
+                      open={modelsLoading}
+                    >
+                      <CircularProgress color='primary'></CircularProgress>
+                    </Backdrop>
+                  )}
+                  {modelsError && (
+                    <Box>
+                      <Typography>
+                        {'Could Not Fetch Available Models'}
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {models.length > 0 &&
+                    models.map((el: IContractEdge) => (
+                      <ModelOption key={el.node.id} el={el} setValue={setUpdateValue} />
+                    ))}
+
+                  {models.length === 0 && (
+                    <Box>
+                      <Typography>
+                        {'There Are no Available Models'}
+                      </Typography>
+                    </Box>
+                  )}
+                </SelectControl>
+              </Box>
+              <Box padding={'0px 32px'}>
+                <TextControl
+                  name='name'
+                  control={updateControl}
+                  rules={{ required: true }}
+                  mat={{
+                    variant: 'outlined',
+                    InputProps: {
+                      sx: {
+                        borderWidth: '1px',
+                        borderColor: theme.palette.text.primary,
+                      },
+                    },
                   }}
-                >
-                  Submit
+                  style={{ width: '100%' }}
+                />
+              </Box>
+              <Box display={'flex'} gap={'30px'} width={'100%'} padding='0px 32px'>
+                <Box width={'25%'}>
+                  <AvatarControl name='avatar' control={updateControl} />
+                </Box>
+                <Box sx={{ width: '100%', marginTop: 0, height: '219px', marginBottom: 0 }}>
+                  <SelectControl
+                    name='category'
+                    control={updateControl}
+                    rules={{ required: true }}
+                    defaultValue={''}
+                    mat={{
+                      sx: {
+                        borderWidth: '1px',
+                        borderColor: theme.palette.text.primary,
+                        borderRadius: '16px',
+                      },
+                      placeholder: 'Category',
+                    }}
+                  >
+                    <MenuItem value={'text'}>Text</MenuItem>
+                    <MenuItem value={'image'}>Image</MenuItem>
+                    <MenuItem value={'audio'}>Audio</MenuItem>
+                    <MenuItem value={'video'}>Video</MenuItem>
+                    <MenuItem value={'other'}>Other</MenuItem>
+                  </SelectControl>
+                  <TextControl
+                    name='description'
+                    control={updateControl}
+                    mat={{
+                      variant: 'outlined',
+                      multiline: true,
+                      margin: 'normal',
+                      minRows: 5,
+                      maxRows: 6,
+                      InputProps: {
+                        sx: {
+                          borderWidth: '1px',
+                          borderColor: theme.palette.text.primary,
+                          height: '100%',
+                        },
+                      },
+                    }}
+                    style={{ width: '100%' }}
+                  />
+                </Box>
+              </Box>
+                
+              <Box padding='0px 32px'>
+                <Typography paddingLeft={'8px'}>
+                  Usage Notes
                 </Typography>
-              </DebounceButton>
-            </Box>
+                <MarkdownControl props={{ name: 'notes', control: updateControl, rules: { required: true } }} />
+              </Box>
+              <Box padding='0px 32px'>
+                <Alert severity='warning' variant='outlined'>
+                  <Typography alignItems={'center'} display={'flex'} gap={'4px'}>
+                    Updating a model requires a fee of {MARKETPLACE_FEE}<img width='20px' height='20px' src={U_LOGO_SRC} /> (${usdFee}) Tokens. 
+                  </Typography>
+                </Alert>
+              </Box>
+              <Box sx={{ display: 'flex', padding: '0 32px 32px 32px', justifyContent: 'flex-end', mt: '32px', width: '100%', gap: '32px' }}>
+                <DebounceButton
+                  onClick={handleUpdateSubmit(onUpdateSubmit)}
+                  disabled={disabled}
+                  sx={{
+                    height: '39px',
+                    width: '204px',
+                  }}
+                  variant='contained'
+                >
+                  <Typography
+                    sx={{
+                      fontStyle: 'normal',
+                      fontWeight: 500,
+                      fontSize: '15px',
+                      lineHeight: '20px',
+                    }}
+                  >
+                    Update Fields
+                  </Typography>
+                </DebounceButton>
+              </Box>
+            </Box>}
           </Box>
           <Snackbar
             anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
@@ -504,7 +970,12 @@ const UploadCreator = () => {
             onClose={handleCloseSnackbar}
             ClickAwayListenerProps={{ onClickAway: () => null }}
           >
-            <Alert severity='info' sx={{ width: '100%', minWidth: '300px' }}>
+            <Alert severity='info' sx={{
+              minWidth: '300px',
+              '.MuiAlert-message': {
+                width: '100%',
+              }
+            }}>
               Uploading...
               <CustomProgress value={progress}></CustomProgress>
             </Alert>
