@@ -42,11 +42,29 @@ import { ChunkError, ChunkInfo } from '@/interfaces/bundlr';
 import { QUERY_TX_WITH_OWNERS } from '@/queries/graphql';
 import { AxiosResponse } from 'axios';
 import BigNumber from 'bignumber.js';
-import { UploadResponse } from 'bundlr-custom/build/cjs/common/types';
 import { EnqueueSnackbar } from 'notistack';
 import { client } from './apollo';
 import { LicenseForm } from '@/interfaces/common';
 import redstone from 'redstone-api';
+
+interface UploadResponse {
+  // The ID of the transaction
+  id: string;
+  // The Arweave public key of the node that received the transaction
+  public: string;
+  // The signature of this receipt
+  signature: string;
+  // the maximum expected Arweave block height for transaction inclusion
+  deadlineHeight: number;
+  // List of validator signatures
+  validatorSignatures: { address: string; signature: string }[];
+  // The UNIX (MS precision) timestamp of when the node received the Tx.
+  timestamp: number;
+  // The receipt version
+  version: string;
+  // Injected verification function (same as Utils/Irys.verifyReceipt)
+  verify: () => Promise<boolean>;
+}
 
 export const formatNumbers = (value: string) => {
   try {
