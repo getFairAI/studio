@@ -232,7 +232,7 @@ export const BundlrProvider = ({ children }: { children: ReactNode }) => {
     return state.bundlr.upload(data, { tags });
   };
 
-  const chunkUpload = async (
+  const chunkUpload: (file: File, tags: ITag[], totalChunks: MutableRefObject<number>, handleUpload: (value: ChunkInfo) => void, handleError: (e: ChunkError) => void, handleDone: (value: unknown) => void) => Promise<AxiosResponse<UploadResponse, unknown>> = async (
     file: File,
     tags: ITag[],
     totalChunks: MutableRefObject<number>,
