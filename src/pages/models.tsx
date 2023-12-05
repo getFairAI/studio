@@ -1,4 +1,4 @@
-import { AVATAR_ATTACHMENT, DEFAULT_TAGS, MODEL_ATTACHMENT, MODEL_CREATION_PAYMENT, SCRIPT_INFERENCE_REQUEST, TAG_NAMES } from '@/constants';
+import { AVATAR_ATTACHMENT, BAZAR_ASSETS_LINK, DEFAULT_TAGS, MODEL_ATTACHMENT, MODEL_CREATION_PAYMENT, SCRIPT_INFERENCE_REQUEST, TAG_NAMES } from '@/constants';
 import { WalletContext } from '@/context/wallet';
 import { IEdge } from '@/interfaces/arweave';
 import { FIND_BY_TAGS, GET_LATEST_MODEL_ATTACHMENTS } from '@/queries/graphql';
@@ -116,6 +116,11 @@ const ModelCard = ({ tx, stampsCount }: { tx: IEdge, stampsCount: StampsCounts }
     navigate('/upload-creator');
   }, [ tx ]);
 
+  const handleViewInBazar = useCallback(
+    () => window.open(`${BAZAR_ASSETS_LINK}${txid}`, '_blank'),
+    [window, txid],
+  );
+
   return <Card sx={{ display: 'flex', padding: '16px', alignItems: 'center', height: '100%' }}>
     <CardImage txid={txid} />
     <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
@@ -144,7 +149,7 @@ const ModelCard = ({ tx, stampsCount }: { tx: IEdge, stampsCount: StampsCounts }
         <Button variant={'outlined'} endIcon={<EditIcon />} sx={{ display: 'flex', alignItems: 'center' }} onClick={handleEditClick}>
           <Typography>Edit Information</Typography>
         </Button>
-        <Button variant={'outlined'}>
+        <Button variant={'outlined'} onClick={handleViewInBazar}>
           <Typography>Trade on BazAR</Typography>
         </Button>
       </CardActions>
