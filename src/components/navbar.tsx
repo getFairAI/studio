@@ -335,6 +335,14 @@ const Navbar = ({
           >
               <Typography
                 component={NavLink}
+                to='/models'
+                className='navbar-links'
+                sx={navbarLinkStyles}
+              >
+                My Models
+              </Typography>
+              <Typography
+                component={NavLink}
                 to='/upload-creator'
                 className='navbar-links'
                 sx={navbarLinkStyles}

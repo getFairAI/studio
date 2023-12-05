@@ -18,9 +18,7 @@
 
 import { U_CONTRACT_ID, U_DIVIDER } from '@/constants';
 import { ITag } from '@/interfaces/arweave';
-import { WarpFactory } from 'warp-contracts';
-
-const warp = WarpFactory.forMainnet();
+import { UState, warp } from './warp';
 
 const contract = warp.contract(U_CONTRACT_ID).setEvaluationOptions({
   remoteStateSyncSource: 'https://dre-u.warp.cc/contract',
@@ -29,17 +27,6 @@ const contract = warp.contract(U_CONTRACT_ID).setEvaluationOptions({
   allowBigInt: true,
   internalWrites: true,
 });
-
-interface UState {
-  state: {
-    name: string;
-    ticker: string;
-    settings: Array<Array<string>>;
-    balances: { [address: string]: string };
-    claimable: Array<{ txid: string; to: string }>;
-    divisibility: number;
-  };
-}
 
 export const connectToU = () => {
   contract.connect('use_wallet');

@@ -30,6 +30,7 @@ import UploadCurator from '@/pages/upload-curator';
 import Registrations from '@/pages/registrations';
 import Terms from './pages/terms';
 import Plausible from 'plausible-tracker';
+import Models from './pages/models';
 
 const { enableAutoPageviews } = Plausible({
   hashMode: true,
@@ -56,6 +57,10 @@ const router = createHashRouter([
             element: <Register />,
           },
         ],
+      },
+      {
+        path: 'models',
+        element: <Models />
       },
       {
         path: 'upload-creator',

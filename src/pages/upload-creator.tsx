@@ -194,6 +194,15 @@ const UploadCreator = () => {
   const [ fetchNotes, { data: notesData }] = useLazyQuery(GET_LATEST_MODEL_ATTACHMENTS);
 
   useEffect(() => {
+    const txString = localStorage.getItem('model');
+    if (txString) {
+      setUpdateValue('currentModel', txString);
+      setCurrentTab('edit');
+      localStorage.removeItem('model');
+    }
+  }, [ setUpdateValue, setCurrentTab ]);
+
+  useEffect(() => {
     if (modelsData) {
       setModels(FairSDKWeb.utils.filterByUniqueModelTxId(modelsData.transactions.edges));
     }
