@@ -1,3 +1,21 @@
+/*
+ * Fair Protocol, open source decentralised inference marketplace for artificial intelligence.
+ * Copyright (C) 2023 Fair Protocol
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
+
 import { AVATAR_ATTACHMENT, BAZAR_ASSETS_LINK, DEFAULT_TAGS, MODEL_ATTACHMENT, MODEL_CREATION_PAYMENT, SCRIPT_INFERENCE_REQUEST, TAG_NAMES } from '@/constants';
 import { WalletContext } from '@/context/wallet';
 import { IEdge } from '@/interfaces/arweave';
@@ -12,6 +30,8 @@ import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import EditIcon from '@mui/icons-material/Edit';
 import FairSDKWeb from '@fair-protocol/sdk/web';
 import { useNavigate } from 'react-router-dom';
+
+const RADIX = 10;
 
 const CardImage = ({ txid }: { txid: string }) => {
   const [ imgSrc, setImgSrc ] = useState('');
@@ -74,7 +94,7 @@ const ModelCard = ({ tx, stampsCount }: { tx: IEdge, stampsCount: StampsCounts }
   });
 
   useEffect(() => {
-    if (data && data.transactions.pageInfo.hasNextPage) {
+    if (data?.transactions?.pageInfo?.hasNextPage) {
       const txs = data.transactions.edges;
       fetchMore({
         variables: {
@@ -84,6 +104,8 @@ const ModelCard = ({ tx, stampsCount }: { tx: IEdge, stampsCount: StampsCounts }
       });
     } else if (data) {
       setNinferences(data.transactions.edges.length);
+    } else {
+      // ignore
     }
   }, [ data ]);
 
@@ -107,7 +129,7 @@ const ModelCard = ({ tx, stampsCount }: { tx: IEdge, stampsCount: StampsCounts }
 
   useEffect(() => {
     if (!_.isEmpty(stampsCount)) {
-      setNStamps((stampsCount as StampsCounts)[txid].total);
+      setNStamps((stampsCount)[txid].total);
     }
   }, [ stampsCount, txid ]);
 
@@ -124,7 +146,7 @@ const ModelCard = ({ tx, stampsCount }: { tx: IEdge, stampsCount: StampsCounts }
   return <Card sx={{ display: 'flex', padding: '16px', alignItems: 'center', height: '100%' }}>
     <CardImage txid={txid} />
     <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-      <CardHeader title={findTag(tx, 'modelName')} subheader={'Last Updated on ' + new Date(parseInt(findTag(tx, 'unixTime') as string) * 1000).toDateString()} sx={{ paddingTop: 0 }}/>
+      <CardHeader title={findTag(tx, 'modelName')} subheader={'Last Updated on ' + new Date(parseInt(findTag(tx, 'unixTime') as string, RADIX) * 1000).toDateString()} sx={{ paddingTop: 0 }}/>
       <CardContent>
        <Box display={'flex'} gap={'8px'}>
           <Typography sx={{fontWeight: 500 }}>
