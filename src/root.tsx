@@ -36,7 +36,6 @@ import { BundlrProvider } from './context/bundlr';
 import { WalletProvider } from './context/wallet';
 import { client } from './utils/apollo';
 import { AppThemeProvider } from './context/theme';
-import { FundProvider } from './context/fund';
 import { StyledMaterialDesignContent } from './styles/components';
 import { useCallback, useEffect, useState } from 'react';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -161,15 +160,13 @@ const App = () => {
     return (
       <WalletProvider>
         <BundlrProvider>
-          <FundProvider>
-            <ChooseWalletProvider>
-              <SwapProvider>
-                <Layout>
-                  <Outlet />
-                </Layout>
-              </SwapProvider>
-            </ChooseWalletProvider>
-          </FundProvider>
+          <ChooseWalletProvider>
+            <SwapProvider>
+              <Layout>
+                <Outlet />
+              </Layout>
+            </SwapProvider>
+          </ChooseWalletProvider>
         </BundlrProvider>
       </WalletProvider>
     );

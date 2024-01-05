@@ -573,7 +573,7 @@ const UploadCurator = () => {
   const [hasModelsNextPage, setHasModelsNextPage] = useState(false);
   const [hasScriptsNextPage, setHasScriptsNextPage] = useState(false);
   const totalChunks = useRef(0);
-  const { nodeBalance, getPrice, chunkUpload, updateBalance } = useContext(BundlrContext);
+  const { chunkUpload } = useContext(BundlrContext);
   const { enqueueSnackbar } = useSnackbar();
   const theme = useTheme();
   const { currentAddress, currentUBalance, updateUBalance } = useContext(WalletContext);
@@ -644,23 +644,19 @@ const UploadCurator = () => {
 
   const commonUploadProps = useMemo(
     () => ({
-      nodeBalance,
       totalChunks,
       chunkUpload,
       enqueueSnackbar,
       setSnackbarOpen,
       setProgress,
-      getPrice,
       showSuccessSnackbar,
     }),
     [
-      nodeBalance,
       totalChunks,
       chunkUpload,
       enqueueSnackbar,
       setSnackbarOpen,
       setProgress,
-      getPrice,
       showSuccessSnackbar,
     ],
   );
@@ -678,16 +674,11 @@ const UploadCurator = () => {
   }, [scriptsData]);
 
   const onSubmit = async (data: FieldValues) => {
-    await updateBalance();
     setFormData(data as CreateForm);
 
-    if (nodeBalance <= 0) {
-      setFundOpen(true);
-    } else {
-      setIsUploading(true);
-      await handleFundFinished(data as CreateForm); // use default node
-      setIsUploading(false);
-    }
+    setIsUploading(true);
+    await handleFundFinished(data as CreateForm); // use default node
+    setIsUploading(false);
   };
 
   const getCommonTags = (data: CreateForm, modelData: IContractEdge, modelOwner: string) => {

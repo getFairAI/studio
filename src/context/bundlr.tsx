@@ -26,7 +26,7 @@ import {
   useMemo,
   useReducer,
 } from 'react';
-import { DEV_BUNDLR_URL, NODE1_BUNDLR_URL, NODE2_BUNDLR_URL } from '@/constants';
+import { ARIO_BUNDLR_URL, DEV_BUNDLR_URL, NODE1_BUNDLR_URL, NODE2_BUNDLR_URL } from '@/constants';
 import { WalletContext } from './wallet';
 import { ITag } from '@/interfaces/arweave';
 import fileReaderStream from 'filereader-stream';
@@ -70,7 +70,8 @@ interface UploadResponse {
 export type bundlrNodeUrl =
   | typeof DEV_BUNDLR_URL
   | typeof NODE1_BUNDLR_URL
-  | typeof NODE2_BUNDLR_URL;
+  | typeof NODE2_BUNDLR_URL
+  | typeof ARIO_BUNDLR_URL;
 type BundlrChangeNodeAction = { type: 'node_changed'; bundlr: WebIrys };
 
 type BundlrUpdateBalanceAction = { type: 'update_balance'; balance: number };
@@ -212,7 +213,7 @@ export const BundlrProvider = ({ children }: { children: ReactNode }) => {
     if (currentAddress) {
       (async () => {
         actions.updateLoading(true);
-        await actions.changeNode(NODE2_BUNDLR_URL);
+        await actions.changeNode(ARIO_BUNDLR_URL);
       })();
     }
   }, [currentAddress]);

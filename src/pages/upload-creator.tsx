@@ -132,7 +132,7 @@ const UploadCreator = () => {
   const [, setMessage] = useState('');
   const [formData, setFormData] = useState<CreateForm | undefined>(undefined);
   const totalChunks = useRef(0);
-  const { nodeBalance, getPrice, chunkUpload, updateBalance } = useContext(BundlrContext);
+  const { chunkUpload } = useContext(BundlrContext);
   const { enqueueSnackbar } = useSnackbar();
   const theme = useTheme();
   const { currentAddress, currentUBalance, updateUBalance } = useContext(WalletContext);
@@ -263,24 +263,15 @@ const UploadCreator = () => {
   }, [ notesData ]);
 
   const onSubmit = async (data: FieldValues) => {
-    await updateBalance();
     setFormData(data as CreateForm);
 
-    if (nodeBalance <= 0) {
-      setFundOpen(true);
-    } else {
-      setIsUploading(true);
-      await handleFundFinished(data as CreateForm);
-      setIsUploading(false);
-    }
+    setIsUploading(true);
+    await handleFundFinished(data as CreateForm);
+    setIsUploading(false);
   };
 
   const onUpdateSubmit = useCallback(async (data: FieldValues) => {
-    await updateBalance();
-
-    if (nodeBalance <= 0) {
-      setFundOpen(true);
-    } else if (currentUBalance < parseInt(MARKETPLACE_FEE, 10)) {
+    if (currentUBalance < parseInt(MARKETPLACE_FEE, 10)) {
       enqueueSnackbar('Not Enough Balance in your Wallet to pay MarketPlace Fee', {
         variant: 'error',
       });
@@ -374,13 +365,9 @@ const UploadCreator = () => {
       }
       setIsUploading(false);
     }
-  }, [ nodeBalance, currentUBalance, avatarData, notesData, enqueueSnackbar, updateBalance, updateUBalance, setFundOpen, setProgress, setMessage, setSnackbarOpen, setIsUploading ]);
+  }, [ currentUBalance, avatarData, notesData, enqueueSnackbar, updateUBalance, setFundOpen, setProgress, setMessage, setSnackbarOpen, setIsUploading ]);
 
   const bundlrUpload = async (fileToUpload: File, tags: ITag[], successMessage: string) => {
-    const filePrice = await getPrice(fileToUpload.size);
-    if (filePrice.toNumber() > nodeBalance) {
-      enqueueSnackbar('Not Enought Balance in Bundlr Node', { variant: 'error' });
-    }
     const finishedPercentage = 100;
 
     /** Register Event Callbacks */

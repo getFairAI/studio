@@ -41,7 +41,6 @@ import { IContractEdge, IEdge, ITag, ITransactions } from '@/interfaces/arweave'
 import { ChunkError, ChunkInfo } from '@/interfaces/bundlr';
 import { QUERY_TX_WITH_OWNERS } from '@/queries/graphql';
 import { AxiosResponse } from 'axios';
-import BigNumber from 'bignumber.js';
 import { EnqueueSnackbar } from 'notistack';
 import { client } from './apollo';
 import { LicenseForm } from '@/interfaces/common';
@@ -188,7 +187,6 @@ export const displayShortTxOrAddr = (addrOrTx: string) =>
 export const bundlrUpload = async ({
   fileToUpload,
   tags,
-  nodeBalance,
   totalChunks,
   successMessage,
   chunkUpload,
@@ -196,11 +194,9 @@ export const bundlrUpload = async ({
   setSnackbarOpen,
   setProgress,
   showSuccessSnackbar,
-  getPrice,
 }: {
   fileToUpload: File;
   tags: ITag[];
-  nodeBalance: number;
   totalChunks: React.MutableRefObject<number>;
   successMessage: string;
   chunkUpload: (
@@ -215,12 +211,7 @@ export const bundlrUpload = async ({
   setSnackbarOpen: (open: boolean) => void;
   setProgress: (progress: number) => void;
   showSuccessSnackbar: (id: string, message: string) => void;
-  getPrice: (size: number) => Promise<BigNumber>;
 }) => {
-  const filePrice = await getPrice(fileToUpload.size);
-  if (filePrice.toNumber() > nodeBalance) {
-    enqueueSnackbar('Not Enought Balance in Bundlr Node', { variant: 'error' });
-  }
   const finishedPercentage = 100;
 
   /** Register Event Callbacks */
@@ -272,7 +263,6 @@ export const bundlrUpload = async ({
 export const uploadAvatarImage = async (
   refTx: string,
   extraProps: {
-    nodeBalance: number;
     totalChunks: React.MutableRefObject<number>;
     chunkUpload: (
       file: File,
@@ -285,7 +275,6 @@ export const uploadAvatarImage = async (
     enqueueSnackbar: EnqueueSnackbar;
     setSnackbarOpen: (open: boolean) => void;
     setProgress: (progress: number) => void;
-    getPrice: (size: number) => Promise<BigNumber>;
     showSuccessSnackbar: (id: string, message: string) => void;
   },
   imageFor: 'script' | 'model',
@@ -327,7 +316,6 @@ export const uploadUsageNotes = async (
   refName: string,
   usageNotes: string,
   extraProps: {
-    nodeBalance: number;
     totalChunks: React.MutableRefObject<number>;
     chunkUpload: (
       file: File,
@@ -340,7 +328,6 @@ export const uploadUsageNotes = async (
     enqueueSnackbar: EnqueueSnackbar;
     setSnackbarOpen: (open: boolean) => void;
     setProgress: (progress: number) => void;
-    getPrice: (size: number) => Promise<BigNumber>;
     showSuccessSnackbar: (id: string, message: string) => void;
   },
   notesFor: 'script' | 'model',
