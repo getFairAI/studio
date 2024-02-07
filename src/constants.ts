@@ -98,6 +98,7 @@ export const TAG_NAMES = {
   expires: 'Expires',
   paymentAddress: 'Payment-Address',
   paymentMode: 'Payment-Mode',
+  renderWith: 'Render-With',
 };
 
 // Operation Names
@@ -262,3 +263,5 @@ const kb = 1024;
 const maxKb = 100;
 
 export const MAX_MESSAGE_SIZE = kb * maxKb;
+
+export const RENDERER_NAME = 'fair-renderer';
