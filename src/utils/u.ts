@@ -19,6 +19,7 @@
 import { U_CONTRACT_ID, U_DIVIDER } from '@/constants';
 import { ITag } from '@/interfaces/arweave';
 import { UState, warp } from './warp';
+import { Tag } from 'warp-contracts';
 
 const contract = warp.contract(U_CONTRACT_ID).setEvaluationOptions({
   remoteStateSyncSource: 'https://dre-u.warp.cc/contract',
@@ -79,7 +80,7 @@ export const sendU = async (to: string, amount: string | number, tags: ITag[]) =
       target: to,
       qty: amount,
     },
-    { tags, strict: true },
+    { tags: tags as Tag[], strict: true, disableBundling: true, },
   );
 
   return result?.originalTxId;

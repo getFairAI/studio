@@ -53,6 +53,7 @@ import {
   PROTOCOL_NAME,
   PROTOCOL_VERSION,
   U_LOGO_SRC,
+  RENDERER_NAME,
 } from '@/constants';
 import { BundlrContext } from '@/context/bundlr';
 import { useSnackbar } from 'notistack';
@@ -504,6 +505,7 @@ const UploadCreator = () => {
     if (data.description) {
       tags.push({ name: TAG_NAMES.description, value: data.description });
     }
+    tags.push({ name: TAG_NAMES.renderWith, value: RENDERER_NAME });
     tags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
     addAssetTags(tags, currentAddress);
     addLicenseTags(tags, licenseControl._formValues, licenseRef.current?.value);
@@ -513,7 +515,7 @@ const UploadCreator = () => {
       const res = await bundlrUpload(file, tags, 'Model Uploaded Successfully');
       // register the model asset  in the warp contract
       const warp = await WarpFactory.forMainnet().use(new DeployPlugin());
-      warp.register(res.data.id, 'node2');
+      warp.register(res.data.id, 'arweave');
 
       const paymentTags = [
         { name: TAG_NAMES.protocolName, value: PROTOCOL_NAME },

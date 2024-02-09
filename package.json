@@ -39,8 +39,8 @@
     "redstone-api": "^0.4.11",
     "rehype-sanitize": "5.0.1",
     "vite-plugin-svgr": "^3.2.0",
-    "warp-contracts": "1.4.5",
-    "warp-contracts-plugin-deploy": "^1.0.9"
+    "warp-contracts": "1.4.26",
+    "warp-contracts-plugin-deploy": "1.0.13"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.4.2",

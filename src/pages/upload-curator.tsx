@@ -774,7 +774,7 @@ const UploadCurator = () => {
 
       // register the model asset  in the warp contract
       const warp = await WarpFactory.forMainnet().use(new DeployPlugin());
-      warp.register(res.data.id, 'node2');
+      warp.register(res.data.id, 'arweave');
 
       const paymentTags = [
         ...commonTags,
