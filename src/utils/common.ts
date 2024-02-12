@@ -488,12 +488,12 @@ export const addLicenseTags = (tags: ITag[], licenseProps: LicenseForm, license?
   }
 };
 
-export const getArPriceUSD = async () => {
-  const price = await redstone.getPrice('AR');
+export const getUDollarPrice = async () => {
+  const price = await redstone.getPrice('U');
   return price.value;
 };
 
 export const parseCost = async (cost: number) => {
-  const arPrice = await getArPriceUSD();
+  const arPrice = await getUDollarPrice();
   return cost * arPrice;
 };
