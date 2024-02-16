@@ -117,7 +117,7 @@ const asyncArConnectWallet = async (dispatch: Dispatch<WalletAction>) => {
     const isAddrVouched = await isVouched(addr);
     dispatch({ type: 'wallet_vouched', isWalletVouched: isAddrVouched });
     // connect wallet to contract
-    connectToU();
+    await connectToU(window.arweaveWallet);
     await asyncUpdateUBalance(dispatch, addr, 0);
 
     // only load wallet adderss after fetching first balances
@@ -157,7 +157,7 @@ const asyncArweaveAppConnect = async (dispatch: Dispatch<WalletAction>) => {
     const isAddrVouched = await isVouched(addr);
     dispatch({ type: 'wallet_vouched', isWalletVouched: isAddrVouched });
     // connect wallet to contract
-    connectToU();
+    await connectToU(walletInstance);
     await asyncUpdateUBalance(dispatch, addr, 0);
 
     // only load wallet adderss after fetching first balances

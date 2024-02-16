@@ -123,8 +123,8 @@ const Operators = () => {
         const filtered: IContractEdge[] = [];
         for (const el of filteredScritps) {
           const scriptId = FairSDKWeb.utils.findTag(el, 'scriptTransaction') as string;
-          const scriptOwner = FairSDKWeb.utils.findTag(el, 'sequencerOwner') as string;
-          const sequencerId = FairSDKWeb.utils.findTag(el, 'sequencerTxId') as string;
+          const scriptOwner = FairSDKWeb.utils.findTag(el, 'sequencerOwner') as string ?? el.node.owner.address;
+          const sequencerId = FairSDKWeb.utils.findTag(el, 'sequencerTxId') as string ?? el.node.id;
   
           const isValidPayment = await FairSDKWeb.utils.isUTxValid(sequencerId);
   

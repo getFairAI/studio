@@ -206,7 +206,7 @@ const RegistrationCard = ({ tx }: { tx: IEdge }) => {
   }, [tx]);
 
   const id: string = useMemo(() => tx.node.id, [tx]);
-  const sequencerId = useMemo(() => FairSDKWeb.utils.findTag(tx, 'sequencerTxId'), [tx]);
+  const sequencerId = useMemo(() => FairSDKWeb.utils.findTag(tx, 'sequencerTxId') ?? tx.node.id, [tx]);
 
   const { data: cancelData } = useQuery(QUERY_TX_WITH, {
     variables: {

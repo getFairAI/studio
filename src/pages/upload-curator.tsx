@@ -343,8 +343,8 @@ const GenericSelect = ({
       const filtered: IContractEdge[] = [];
       for (const el of filteredScritps) {
         const scriptId = FairSDKWeb.utils.findTag(el, 'scriptTransaction') as string;
-        const scriptOwner = FairSDKWeb.utils.findTag(el, 'sequencerOwner') as string;
-        const sequencerId = FairSDKWeb.utils.findTag(el, 'sequencerTxId') as string;
+        const scriptOwner = FairSDKWeb.utils.findTag(el, 'sequencerOwner') as string ?? el.node.owner.address;
+        const sequencerId = FairSDKWeb.utils.findTag(el, 'sequencerTxId') as string ?? el.node.id;
 
         const isValidPayment = await FairSDKWeb.utils.isUTxValid(sequencerId);
 
@@ -502,7 +502,7 @@ const GenericSelect = ({
 const OutputFields = ({ control }: { control: Control<FieldValues, unknown> }) => {
   const theme = useTheme();
   const outputValue = useWatch({ name: 'output', control });
-  const outputConfigurationDisabled = useMemo(() => outputValue !== 'image', [outputValue]);
+  const showOutputConfig = useMemo(() => outputValue === 'image', [outputValue]);
 
   return (
     <Box display={'flex'} padding={'0px 32px'} gap='32px' width={'100%'}>
@@ -524,24 +524,25 @@ const OutputFields = ({ control }: { control: Control<FieldValues, unknown> }) =
         <MenuItem value={'audio'}>Audio</MenuItem>
         <MenuItem value={'image'}>Image</MenuItem>
       </SelectControl>
-      <SelectControl
-        name='outputConfiguration'
-        control={control}
-        disabled={outputConfigurationDisabled}
-        rules={{ required: true }}
-        defaultValue={'none'}
-        mat={{
-          sx: {
-            borderWidth: '1px',
-            borderColor: theme.palette.text.primary,
-            borderRadius: '16px',
-          },
-          placeholder: 'Select The Output Configuration',
-        }}
-      >
-        <MenuItem value={'none'}>None</MenuItem>
-        <MenuItem value={'stable-diffusion'}>Stable Diffusion</MenuItem>
-      </SelectControl>
+      {
+        showOutputConfig && <SelectControl
+          name='outputConfiguration'
+          control={control}
+          rules={{ required: true }}
+          defaultValue={'none'}
+          mat={{
+            sx: {
+              borderWidth: '1px',
+              borderColor: theme.palette.text.primary,
+              borderRadius: '16px',
+            },
+            placeholder: 'Select The Output Configuration',
+          }}
+        >
+          <MenuItem value={'none'}>None</MenuItem>
+          <MenuItem value={'stable-diffusion'}>Stable Diffusion</MenuItem>
+        </SelectControl>
+      }
     </Box>
   );
 };
@@ -689,7 +690,7 @@ const UploadCurator = () => {
     commonTags.push({ name: TAG_NAMES.contentType, value: file.type });
     commonTags.push({ name: TAG_NAMES.scriptName, value: `${data.name}` });
     commonTags.push({ name: TAG_NAMES.output, value: data.output });
-    if (data.outputConfiguration !== 'none') {
+    if (!!data.outputConfiguration  && data.outputConfiguration !== 'none') {
       commonTags.push({ name: TAG_NAMES.outputConfiguration, value: data.outputConfiguration });
     }
     commonTags.push({
@@ -753,7 +754,7 @@ const UploadCurator = () => {
       return;
     }
 
-    const modelOwner = findTag(modelData, 'sequencerOwner') as string;
+    const modelOwner = findTag(modelData, 'sequencerOwner') as string ?? modelData.node.owner.address;
     const commonTags = getCommonTags(data, modelData, modelOwner);
     // add extra tags for payment save
     const uploadTags = [...commonTags];
