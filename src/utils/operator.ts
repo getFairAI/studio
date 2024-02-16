@@ -151,7 +151,7 @@ export const checkHasOperators = async (
     },
     {
       name: TAG_NAMES.scriptCurator,
-      values: [findTag(scriptTx, 'sequencerOwner')],
+      values: [findTag(scriptTx, 'sequencerOwner') ?? scriptTx.node.owner.address],
     },
     {
       name: TAG_NAMES.scriptName,

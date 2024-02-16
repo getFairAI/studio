@@ -70,7 +70,7 @@ const Register = () => {
       });
       tags.push({
         name: TAG_NAMES.scriptCurator,
-        value: findTag(state, 'sequencerOwner') as string,
+        value: findTag(state, 'sequencerOwner') as string ?? state.node.owner.address,
       });
       tags.push({
         name: TAG_NAMES.scriptTransaction,

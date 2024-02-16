@@ -41,6 +41,7 @@ import { useCallback, useEffect, useState } from 'react';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { ChooseWalletProvider } from './context/choose-wallet';
 import { SwapProvider } from './context/swap';
+import { FundProvider } from './context/fund';
 
 const App = () => {
   const [hasAgreed, setHasAgreed] = useState(true);
@@ -160,13 +161,15 @@ const App = () => {
     return (
       <WalletProvider>
         <BundlrProvider>
-          <ChooseWalletProvider>
-            <SwapProvider>
-              <Layout>
-                <Outlet />
-              </Layout>
-            </SwapProvider>
-          </ChooseWalletProvider>
+          <FundProvider>
+            <ChooseWalletProvider>
+              <SwapProvider>
+                <Layout>
+                  <Outlet />
+                </Layout>
+              </SwapProvider>
+            </ChooseWalletProvider>
+          </FundProvider>
         </BundlrProvider>
       </WalletProvider>
     );

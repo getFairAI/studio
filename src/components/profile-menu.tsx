@@ -30,12 +30,16 @@ import { ChooseWalletContext } from '@/context/choose-wallet';
 import { useState, useContext, MouseEvent, useCallback, Dispatch } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SwapContext } from '@/context/swap';
+import { FundContext } from '@/context/fund';
 
 const changeWallet = 'Change Wallet';
 const uSwap = 'U Swap';
 const operatorRegistrations = 'Operator Registrations';
 const viewTerms = 'Terms And Conditions';
+const bundlrSettings = 'Bundlr Settings';
+
 const options = [
+  bundlrSettings,
   uSwap,
   'Whitepaper',
   'Github',
@@ -46,7 +50,7 @@ const options = [
   changeWallet,
   'Disconnect',
 ];
-const disableableOptions = [changeWallet, 'Disconnect', uSwap, operatorRegistrations ];
+const disableableOptions = [changeWallet, 'Disconnect', uSwap, bundlrSettings, operatorRegistrations ];
 
 const ITEM_HEIGHT = 64;
 
@@ -61,10 +65,15 @@ const Option = ({
   const { disconnectWallet } = useContext(WalletContext);
   const { setOpen: setChooseWalletOpen } = useContext(ChooseWalletContext);
   const { setOpen: setSwapOpen } = useContext(SwapContext);
+  const { setOpen: setFundOpen } = useContext(FundContext);
 
   const handleOptionClick = useCallback(() => {
     (async () => {
       switch (option) {
+        case bundlrSettings:
+          setFundOpen(true);
+          setAnchorEl(null);
+          break;
         case 'Github':
           window.open(GITHUB_LINK, '_blank');
           break;

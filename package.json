@@ -15,7 +15,7 @@
     "@apollo/client": "^3.7.16",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
-    "@fair-protocol/sdk": "^2.0.8",
+    "@fair-protocol/sdk": "^2.0.22",
     "@irys/sdk": "^0.0.4",
     "@mui/icons-material": "5.11.0",
     "@mui/lab": "^5.0.0-alpha.134",
@@ -40,7 +40,8 @@
     "rehype-sanitize": "5.0.1",
     "vite-plugin-svgr": "^3.2.0",
     "warp-contracts": "1.4.26",
-    "warp-contracts-plugin-deploy": "1.0.13"
+    "warp-contracts-plugin-deploy": "1.0.13",
+    "warp-contracts-plugin-signature": "^1.0.20-beta.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.4.2",

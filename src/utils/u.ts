@@ -20,6 +20,8 @@ import { U_CONTRACT_ID, U_DIVIDER } from '@/constants';
 import { ITag } from '@/interfaces/arweave';
 import { UState, warp } from './warp';
 import { Tag } from 'warp-contracts';
+import { wallet } from '@/utils/arweave';
+import { InjectedArweaveSigner } from 'warp-contracts-plugin-signature';
 
 const contract = warp.contract(U_CONTRACT_ID).setEvaluationOptions({
   remoteStateSyncSource: 'https://dre-u.warp.cc/contract',
@@ -29,8 +31,13 @@ const contract = warp.contract(U_CONTRACT_ID).setEvaluationOptions({
   internalWrites: true,
 });
 
-export const connectToU = () => {
-  contract.connect('use_wallet');
+type walletType = typeof wallet.namespaces.arweaveWallet | typeof window.arweaveWallet;
+
+export const connectToU = async (wallet: walletType) => {
+  const signer = new InjectedArweaveSigner(wallet);
+  await signer.setPublicKey();
+  signer.getAddress = wallet.getActiveAddress;
+  contract.connect(signer);
 };
 
 export const getUBalance = async (address: string) => {
@@ -80,7 +87,7 @@ export const sendU = async (to: string, amount: string | number, tags: ITag[]) =
       target: to,
       qty: amount,
     },
-    { tags: tags as Tag[], strict: true, disableBundling: true, },
+    { tags: tags as Tag[], strict: true, },
   );
 
   return result?.originalTxId;
