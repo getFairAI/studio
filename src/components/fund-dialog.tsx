@@ -197,7 +197,7 @@ const FundDialog = ({
   setOpen: Dispatch<SetStateAction<boolean>>;
   handleFundFinished?: FundFinishedFn;
 }) => {
-  const [node, setNode] = useState<bundlrNodeUrl>(NODE2_BUNDLR_URL);
+  const [node, setNode] = useState<bundlrNodeUrl>(NODE1_BUNDLR_URL);
   const [amount, setAmount] = useState(0);
   const [loading, setLoading] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
@@ -325,8 +325,8 @@ const FundDialog = ({
                 onChange={handleChange}
                 label={'Irys Node'}
               >
-                <MenuItem value={NODE1_BUNDLR_URL}>node1.bundlr.network</MenuItem>
-                <MenuItem value={NODE2_BUNDLR_URL}>node2.bundlr.network</MenuItem>
+                <MenuItem value={NODE1_BUNDLR_URL}>node1.irys.xyz</MenuItem>
+                <MenuItem value={NODE2_BUNDLR_URL}>node2.irys.xyz</MenuItem>
               </Select>
             </FormControl>
             <TextField
