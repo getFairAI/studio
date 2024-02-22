@@ -172,6 +172,7 @@ export const AdvancedConfiguration = ({
           sx={{ borderRadius: '8px' }}
           disableRipple={true}
           onClick={handleAdvancedClick}
+          className='plausible-event-name=Advanced+Configuration+Click'
         >
           Advanced Configuration
         </Button>

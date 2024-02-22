@@ -168,10 +168,10 @@ const ModelCard = ({ tx, stampsCount }: { tx: IEdge, stampsCount: StampsCounts }
         </Box>
       </CardContent>
       <CardActions sx={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: '8px', padding: 0 }}>
-        <Button variant={'outlined'} endIcon={<EditIcon />} sx={{ display: 'flex', alignItems: 'center' }} onClick={handleEditClick}>
+        <Button variant={'outlined'} endIcon={<EditIcon />} sx={{ display: 'flex', alignItems: 'center' }} onClick={handleEditClick} className={`plausible-event-name=Edit+Model+Info plausible-event-modelId=${txid}`}>
           <Typography>Edit Information</Typography>
         </Button>
-        <Button variant={'outlined'} onClick={handleViewInBazar}>
+        <Button variant={'outlined'} onClick={handleViewInBazar} className={`plausible-event-name=Trade+Model plausible-event-modelId=${txid}`}>
           <Typography>Trade on BazAR</Typography>
         </Button>
       </CardActions>

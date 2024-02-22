@@ -150,6 +150,7 @@ const App = () => {
               variant='contained'
               color='primary'
               sx={{ width: 'fit-content' }}
+              className='plausible-event-name=Accept+Terms+Click'
             >
               <Typography color={theme.palette.primary.contrastText}>I Accept</Typography>
             </Button>

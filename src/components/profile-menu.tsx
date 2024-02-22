@@ -114,7 +114,7 @@ const Option = ({
   }, [option]);
 
   return (
-    <MenuItem onClick={handleOptionClick}>
+    <MenuItem onClick={handleOptionClick} className={`plausible-event-name=Menu+${option.replaceAll(' ', '+')}+Click`}>
       <GetIcon input={option}></GetIcon>
       <Box sx={{ marginLeft: '10px' }}>
         <Typography>{option}</Typography>

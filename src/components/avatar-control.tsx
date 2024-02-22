@@ -62,6 +62,7 @@ const AvatarControl = (props: UseControllerProps & { control: Control }) => {
         },
       }}
       component='label'
+      className='plausible-event-name=Attach+Image+Click'
     >
       {src && (
         <img
