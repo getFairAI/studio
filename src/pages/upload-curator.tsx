@@ -254,7 +254,7 @@ const ModelOption = ({
       <Typography>{findTag(el, 'modelName')}</Typography>
       <Typography sx={{ opacity: '0.5' }}>
         {findTag(el, 'modelTransaction')}
-        {` (Creator: ${displayShortTxOrAddr(findTag(el, 'sequencerOwner') as string)}`}
+        {` (Creator: ${displayShortTxOrAddr(findTag(el, 'sequencerOwner') as string ?? el.node.owner.address)}`}
       </Typography>
     </MenuItem>
   );
