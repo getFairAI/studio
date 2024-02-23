@@ -99,6 +99,7 @@ export const TAG_NAMES = {
   paymentAddress: 'Payment-Address',
   paymentMode: 'Payment-Mode',
   renderWith: 'Render-With',
+  termsVersion: 'Terms-Version',
 };
 
 // Operation Names
@@ -156,6 +157,10 @@ export const VOTE_FOR_OPERATOR = 'Vote For Operator';
 export const AVATAR_ATTACHMENT = 'avatar';
 
 export const NOTES_ATTACHMENT = 'notes';
+
+export const TERMS_STUDIO_AGREEMENT = 'Terms Studio Agreement';
+
+export const TERMS_VERSION = '0.1';
 
 // misc
 export const DEV_BUNDLR_URL = 'https://devnet.bundlr.network/';

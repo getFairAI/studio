@@ -30,6 +30,8 @@ import UploadCurator from '@/pages/upload-curator';
 import Registrations from '@/pages/registrations';
 import Terms from './pages/terms';
 import Models from './pages/models';
+import PrivacyPolicy from './pages/privacy-policy';
+import TermsAgreement from './guards/terms-agreement';
 
 const router = createHashRouter([
   {
@@ -39,7 +41,10 @@ const router = createHashRouter([
     children: [
       {
         path: '',
-        element: <Operators />,
+        element: 
+          <TermsAgreement>
+            <Operators />
+          </TermsAgreement>,
         children: [
           {
             path: 'register/:txid/',
@@ -51,15 +56,21 @@ const router = createHashRouter([
       },
       {
         path: 'models',
-        element: <Models />
+        element: <TermsAgreement>
+          <Models />
+        </TermsAgreement>
       },
       {
         path: 'upload-creator',
-        element: <UploadCreator />
+        element: <TermsAgreement>
+          <UploadCreator />
+        </TermsAgreement>
       },
       {
         path: 'upload-curator',
-        element:<UploadCurator />
+        element: <TermsAgreement>
+          <UploadCurator />
+        </TermsAgreement>
       },
       {
         path: 'registrations',
@@ -68,6 +79,10 @@ const router = createHashRouter([
       {
         path: 'terms',
         element: <Terms />,
+      },
+      {
+        path: 'privacy-policy',
+        element: <PrivacyPolicy />,
       },
     ],
   },

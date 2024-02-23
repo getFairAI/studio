@@ -25,12 +25,12 @@ const CustomIframe = styled('iframe')(() => ({
   border: 'none',
 }));
 
-const Terms = () => {
+const PrivacyPolicy = () => {
   const theme = useTheme();
   const [isReady, setIsReady] = useState(false);
 
   const backgroundColor = theme.palette.background.default;
-  const styles = `.c16 {
+  const styles = `.c26 {
     background-color: ${backgroundColor} !important;
   }
   html {
@@ -54,7 +54,7 @@ const Terms = () => {
     }
   }, [setIsReady]);
 
-  return <CustomIframe src='./TermsStudio.html' hidden={!isReady} onLoad={onIframeLoaded} />;
+  return <CustomIframe src='./PrivacyPolicy.html' hidden={!isReady} onLoad={onIframeLoaded} />;
 };
 
-export default Terms;
+export default PrivacyPolicy;
