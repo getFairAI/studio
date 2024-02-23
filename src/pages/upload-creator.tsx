@@ -766,6 +766,7 @@ const UploadCreator = () => {
                     width: '204px',
                   }}
                   variant='outlined'
+                  className='plausible-event-name=Reset+to+Default+Click'
                 >
                   <Typography
                     sx={{
@@ -786,6 +787,7 @@ const UploadCreator = () => {
                     width: '204px',
                   }}
                   variant='contained'
+                  className='plausible-event-name=Submit+Model+Click'
                 >
                   <Typography
                     sx={{
@@ -956,6 +958,7 @@ const UploadCreator = () => {
                     width: '204px',
                   }}
                   variant='contained'
+                  className='plausible-event-name=Update+Model+Click'
                 >
                   <Typography
                     sx={{

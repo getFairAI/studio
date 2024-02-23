@@ -185,6 +185,7 @@ const Operators = () => {
                   fontHeight: '41px',
                   opacity: !hightlightTop ? 1 : 0.5,
                 }}
+                className='plausible-event-name=Trending+Click'
                 onClick={() => handleHighlight(false)}
               >
                 Trending
@@ -198,6 +199,7 @@ const Operators = () => {
                   opacity: hightlightTop ? 1 : 0.5,
                 }}
                 onClick={() => handleHighlight(true)}
+                className='plausible-event-name=Top+Click'
               >
                 Top
               </Typography>
@@ -235,7 +237,7 @@ const Operators = () => {
               }}
               value={'24h'}
             >
-              <MenuItem value={'24h'}>
+              <MenuItem value={'24h'} className='plausible-event-name=24H+Click'>
                 <Typography
                   sx={{
                     fontStyle: 'normal',
@@ -249,7 +251,7 @@ const Operators = () => {
                   24H
                 </Typography>
               </MenuItem>
-              <MenuItem value={'week'}>
+              <MenuItem value={'week'} className='plausible-event-name=Week+Click'>
                 <Typography>1 Week</Typography>
               </MenuItem>
             </Select>
@@ -260,6 +262,7 @@ const Operators = () => {
                 textTransform: 'none',
                 background: `linear-gradient(${theme.palette.background.default}, ${theme.palette.background.default}) padding-box,linear-gradient(170.66deg, ${theme.palette.primary.main} -38.15%, ${theme.palette.primary.main} 30.33%, rgba(84, 81, 228, 0) 93.33%) border-box`,
               }}
+              className='plausible-event-name=View+All+Click'
             >
               <Typography
                 sx={{
@@ -358,6 +361,7 @@ const Operators = () => {
                     sx={{ width: 'fit-content' }}
                     endIcon={<ReplayIcon />}
                     onClick={() => refetch()}
+                    className='plausible-event-name=Retry+Models+Click'
                   >
                     Retry
                   </Button>

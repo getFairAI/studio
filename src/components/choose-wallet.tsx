@@ -97,6 +97,7 @@ const ChooseWallet = ({
                 onClick={handleArConnect}
                 disabled={!isArConnectAvailable || localStorage.getItem('wallet') === 'arconnect'}
                 endIcon={<PowerIcon />}
+                className='plausible-event-name=ArConnect+Connect+Click'
               >
                 <Typography>Connect</Typography>
               </Button>
@@ -115,6 +116,7 @@ const ChooseWallet = ({
                 onClick={handleArweaveApp}
                 disabled={forceDisable} // disable until we have a working version
                 endIcon={<PowerIcon />}
+                className='plausible-event-name=ArweaveApp+Connect+Click'
               >
                 <Typography fontStyle={'bold'}>Connect</Typography>
               </Button>
@@ -135,7 +137,7 @@ const ChooseWallet = ({
           paddingBottom: '20px',
         }}
       >
-        <Button variant='outlined' onClick={handleClose} sx={{ width: 'fit-content' }}>
+        <Button variant='outlined' onClick={handleClose} sx={{ width: 'fit-content' }} className='plausible-event-name=Close+Choose+Wallet+Popup'>
           <Typography>Close</Typography>
         </Button>
       </DialogActions>

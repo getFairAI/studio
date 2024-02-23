@@ -67,6 +67,7 @@ const ScriptError = ({
           sx={{ width: 'fit-content' }}
           endIcon={<ReplayIcon />}
           onClick={handleRefetch as () => void}
+          className='plausibe-event-name=Retry+Fetch+Operators'
         >
           Retry
         </Button>
@@ -270,13 +271,13 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
     }
   }, [data]); // data changes
 
+  const txid = useMemo(()=> findTag(scriptTx, 'scriptTransaction') as string, [scriptTx]);
   const handleCardClick = useCallback(
     () => {
-      const txid = findTag(scriptTx, 'scriptTransaction') as string;
       navigate(`/register/${encodeURIComponent(txid ?? 'error')}`, {
         state: scriptTx,
       });
-    }, [scriptTx, navigate],
+    }, [txid, scriptTx, navigate],
   );
 
   const getTimePassed = () => {
@@ -346,6 +347,7 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
           gap: '30px',
         }}
         onClick={handleCardClick}
+        className={`plausible-event-name=ScriptCard+Click plausible-event-scriptId=${txid}`}
       >
         <CardHeader
           title={index + 1}

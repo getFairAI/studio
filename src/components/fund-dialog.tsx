@@ -180,6 +180,7 @@ const WithdrawPanel = ({ currentTab }: { currentTab: tabOptions }) => {
           variant='outlined'
           onClick={handleWithdraw}
           disabled={withdrawAmount <= 0 || withdrawAmount >= nodeBalance}
+          className='plausible-event-name=Withdraw+From+Irys+Click'
         >
           Withdraw
         </DebounceLoadingButton>
@@ -337,7 +338,7 @@ const FundDialog = ({
               InputProps={{
                 endAdornment: (
                   <InputAdornment position='start'>
-                    <IconButton onClick={asyncGetNodeBalance}>
+                    <IconButton onClick={asyncGetNodeBalance} className='plausible-event-name=Refresh+Irys+Balance'>
                       <RefreshIcon />
                     </IconButton>
                   </InputAdornment>
@@ -377,6 +378,7 @@ const FundDialog = ({
                     variant='outlined'
                     onClick={handleFund}
                     disabled={amount <= 0 || amount >= walletBalance}
+                    className='plausible-event-name=Fund+Irys+Node+Click'
                   >
                     Fund
                   </DebounceLoadingButton>
@@ -385,6 +387,7 @@ const FundDialog = ({
                       onClick={() => handleFundFinished(node)}
                       variant='contained'
                       disabled={nodeBalance <= 0}
+                      className='plausible-event-name=Upload+After+Fund+Click'
                     >
                       Continue
                     </Button>

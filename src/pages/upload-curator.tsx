@@ -254,7 +254,7 @@ const ModelOption = ({
       <Typography>{findTag(el, 'modelName')}</Typography>
       <Typography sx={{ opacity: '0.5' }}>
         {findTag(el, 'modelTransaction')}
-        {` (Creator: ${displayShortTxOrAddr(findTag(el, 'sequencerOwner') as string)}`}
+        {` (Creator: ${displayShortTxOrAddr(findTag(el, 'sequencerOwner') as string ?? el.node.owner.address)}`}
       </Typography>
     </MenuItem>
   );
@@ -1023,6 +1023,7 @@ const UploadCurator = () => {
                   width: '204px',
                 }}
                 variant='outlined'
+                className='plausible-event-name=Reset+to+Default+Click'
               >
                 <Typography
                   sx={{
@@ -1044,6 +1045,7 @@ const UploadCurator = () => {
                 width: '204px',
               }}
               variant='contained'
+              className={currentTab === 'create' ? 'plausible-event-name=Submit+Script+Click' : 'plausible-event-name=Update+Script+Click'}
             >
               <Typography
                 sx={{

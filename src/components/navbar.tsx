@@ -173,6 +173,7 @@ const WalletState = () => {
             paddingBottom: '11px',
           }}
           onClick={handleConnect}
+          className='plausible-event-name=Connect+Wallet+Click'
         >
           <Typography sx={{ lineHeight: '18.9px', fontSize: '14px' }}>Connect</Typography>
         </Button>

@@ -24,6 +24,7 @@ import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PaymentsIcon from '@mui/icons-material/Payments';
 import GavelIcon from '@mui/icons-material/Gavel';
+import PolicyIcon from '@mui/icons-material/Policy';
 
 type Props = {
   input: string;
@@ -63,6 +64,8 @@ const GetIcon = ({ input }: Props): JSX.Element => {
       return <AssignmentIcon></AssignmentIcon>;
     case 'Terms And Conditions':
       return <GavelIcon></GavelIcon>;
+    case 'Privacy Policy':
+      return <PolicyIcon></PolicyIcon>;
     case 'Change Wallet':
       return <SyncAltIcon></SyncAltIcon>;
     case 'View Payments':

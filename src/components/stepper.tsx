@@ -263,7 +263,7 @@ const RegisterStep = ({
         </Box>
         <Alert severity='warning' variant='outlined'>
           <Typography alignItems={'center'} display={'flex'} gap={'4px'}>
-            Uploading a model requires a fee of {OPERATOR_REGISTRATION_AR_FEE}<img width='20px' height='20px' src={U_LOGO_SRC} /> (${usdFee}) Tokens. 
+            Registering an Operator requires a fee of {OPERATOR_REGISTRATION_AR_FEE}<img width='20px' height='20px' src={U_LOGO_SRC} /> (${usdFee}) Tokens. 
           </Typography>
         </Alert>
         <Box display={'flex'} justifyContent={'space-between'}>

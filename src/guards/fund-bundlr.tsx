@@ -133,6 +133,7 @@ const FundBundlr = ({ children }: { children: ReactElement }) => {
             variant='outlined'
             color='warning'
             sx={{ width: 'fit-content' }}
+            className='plausible-event-name=Ignore+Fund+Popup'
           >
             <Typography color={theme.palette.warning.main}>Fund Later</Typography>
           </Button>
@@ -141,6 +142,7 @@ const FundBundlr = ({ children }: { children: ReactElement }) => {
             variant='contained'
             color='warning'
             sx={{ width: 'fit-content' }}
+            className='plausible-event-name=Fund+Now+Click'
           >
             <Typography color={theme.palette.primary.contrastText}>Fund Now</Typography>
           </Button>

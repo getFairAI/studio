@@ -148,6 +148,7 @@ const SwapU = ({
               variant='outlined'
               onClick={handleSwap}
               disabled={amount <= 0 || amount >= walletBalance}
+              className='plausible-event-name=Swap+Click'
             >
               Swap
             </DebounceLoadingButton>

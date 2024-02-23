@@ -170,6 +170,7 @@ export default function Layout({ children }: { children: ReactElement }) {
                   variant='contained'
                   color='warning'
                   sx={{ width: 'fit-content' }}
+                  className='plausible-event-name=Ignore+Wallet+Not+Connected'
                 >
                   <Typography color={theme.palette.primary.contrastText}>I Understand</Typography>
                 </Button>
