@@ -31,13 +31,14 @@ export interface UState {
 
 export const warp = WarpFactory.forMainnet();
 
-export const initContract = (txid: string) => warp.contract(txid).setEvaluationOptions({
-  remoteStateSyncSource: 'https://dre-u.warp.cc/contract',
-  remoteStateSyncEnabled: true,
-  unsafeClient: 'skip',
-  allowBigInt: true,
-  internalWrites: true,
-});
+export const initContract = (txid: string) =>
+  warp.contract(txid).setEvaluationOptions({
+    remoteStateSyncSource: 'https://dre-u.warp.cc/contract',
+    remoteStateSyncEnabled: true,
+    unsafeClient: 'skip',
+    allowBigInt: true,
+    internalWrites: true,
+  });
 
 export const getBalances = async (contract: Contract<unknown>) => {
   try {

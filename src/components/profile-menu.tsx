@@ -49,7 +49,7 @@ const options = [
   changeWallet,
   'Disconnect',
 ];
-const disableableOptions = [changeWallet, 'Disconnect', bundlrSettings, operatorRegistrations ];
+const disableableOptions = [changeWallet, 'Disconnect', bundlrSettings, operatorRegistrations];
 
 const ITEM_HEIGHT = 64;
 
@@ -112,7 +112,10 @@ const Option = ({
   }, [option]);
 
   return (
-    <MenuItem onClick={handleOptionClick} className={`plausible-event-name=Menu+${option.replaceAll(' ', '+')}+Click`}>
+    <MenuItem
+      onClick={handleOptionClick}
+      className={`plausible-event-name=Menu+${option.replaceAll(' ', '+')}+Click`}
+    >
       <GetIcon input={option}></GetIcon>
       <Box sx={{ marginLeft: '10px' }}>
         <Typography>{option}</Typography>

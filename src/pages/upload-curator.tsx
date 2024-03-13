@@ -254,7 +254,9 @@ const ModelOption = ({
       <Typography>{findTag(el, 'modelName')}</Typography>
       <Typography sx={{ opacity: '0.5' }}>
         {findTag(el, 'modelTransaction')}
-        {` (Creator: ${displayShortTxOrAddr(findTag(el, 'sequencerOwner') as string ?? el.node.owner.address)}`}
+        {` (Creator: ${displayShortTxOrAddr(
+          (findTag(el, 'sequencerOwner') as string) ?? el.node.owner.address,
+        )}`}
       </Typography>
     </MenuItem>
   );
@@ -330,7 +332,9 @@ const GenericSelect = ({
 
   const filterModels = (newData: IContractQueryResult) => {
     (async () => {
-      const filtered: IContractEdge[] = await FairSDKWeb.utils.modelsFilter(newData.transactions.edges);
+      const filtered: IContractEdge[] = await FairSDKWeb.utils.modelsFilter(
+        newData.transactions.edges,
+      );
       setModelData(filtered);
       checkShouldLoadMore(filtered);
     })();
@@ -339,12 +343,13 @@ const GenericSelect = ({
   const filterScripts = (newData: IContractQueryResult) => {
     (async () => {
       const uniqueScripts = FairSDKWeb.utils.filterByUniqueScriptTxId(newData.transactions.edges);
-      const filteredScritps =  FairSDKWeb.utils.filterPreviousVersions(uniqueScripts);
+      const filteredScritps = FairSDKWeb.utils.filterPreviousVersions(uniqueScripts);
       const filtered: IContractEdge[] = [];
       for (const el of filteredScritps) {
         const scriptId = FairSDKWeb.utils.findTag(el, 'scriptTransaction') as string;
-        const scriptOwner = FairSDKWeb.utils.findTag(el, 'sequencerOwner') as string ?? el.node.owner.address;
-        const sequencerId = FairSDKWeb.utils.findTag(el, 'sequencerTxId') as string ?? el.node.id;
+        const scriptOwner =
+          (FairSDKWeb.utils.findTag(el, 'sequencerOwner') as string) ?? el.node.owner.address;
+        const sequencerId = (FairSDKWeb.utils.findTag(el, 'sequencerTxId') as string) ?? el.node.id;
 
         const isValidPayment = await FairSDKWeb.utils.isUTxValid(sequencerId);
 
@@ -401,7 +406,9 @@ const GenericSelect = ({
       } else {
         title = findTag(JSON.parse(selected), 'modelName');
         mainText = findTag(JSON.parse(selected), 'modelTransaction');
-        subText = findTag(JSON.parse(selected), 'sequencerOwner') ?? JSON.parse(selected).node.owner.address;
+        subText =
+          findTag(JSON.parse(selected), 'sequencerOwner') ??
+          JSON.parse(selected).node.owner.address;
       }
 
       return (
@@ -524,8 +531,8 @@ const OutputFields = ({ control }: { control: Control<FieldValues, unknown> }) =
         <MenuItem value={'audio'}>Audio</MenuItem>
         <MenuItem value={'image'}>Image</MenuItem>
       </SelectControl>
-      {
-        showOutputConfig && <SelectControl
+      {showOutputConfig && (
+        <SelectControl
           name='outputConfiguration'
           control={control}
           rules={{ required: true }}
@@ -542,7 +549,7 @@ const OutputFields = ({ control }: { control: Control<FieldValues, unknown> }) =
           <MenuItem value={'none'}>None</MenuItem>
           <MenuItem value={'stable-diffusion'}>Stable Diffusion</MenuItem>
         </SelectControl>
-      }
+      )}
     </Box>
   );
 };
@@ -580,8 +587,8 @@ const UploadCurator = () => {
   const { currentAddress, currentUBalance, updateUBalance } = useContext(WalletContext);
   const { setOpen: setFundOpen } = useContext(FundContext);
   const [isUploading, setIsUploading] = useState(false);
-  const [ usdFee, setUsdFee ] = useState('0');
-  const [ currentTab, setCurrentTab ] = useState<'create' | 'edit'>('create');
+  const [usdFee, setUsdFee] = useState('0');
+  const [currentTab, setCurrentTab] = useState<'create' | 'edit'>('create');
 
   const disabled = useMemo(
     () =>
@@ -655,7 +662,7 @@ const UploadCurator = () => {
       showSuccessSnackbar,
     }),
     [
-      nodeBalance,      
+      nodeBalance,
       totalChunks,
       chunkUpload,
       enqueueSnackbar,
@@ -699,7 +706,7 @@ const UploadCurator = () => {
     commonTags.push({ name: TAG_NAMES.contentType, value: file.type });
     commonTags.push({ name: TAG_NAMES.scriptName, value: `${data.name}` });
     commonTags.push({ name: TAG_NAMES.output, value: data.output });
-    if (!!data.outputConfiguration  && data.outputConfiguration !== 'none') {
+    if (!!data.outputConfiguration && data.outputConfiguration !== 'none') {
       commonTags.push({ name: TAG_NAMES.outputConfiguration, value: data.outputConfiguration });
     }
     commonTags.push({
@@ -763,7 +770,8 @@ const UploadCurator = () => {
       return;
     }
 
-    const modelOwner = findTag(modelData, 'sequencerOwner') as string ?? modelData.node.owner.address;
+    const modelOwner =
+      (findTag(modelData, 'sequencerOwner') as string) ?? modelData.node.owner.address;
     const commonTags = getCommonTags(data, modelData, modelOwner);
     // add extra tags for payment save
     const uploadTags = [...commonTags];
@@ -826,143 +834,150 @@ const UploadCurator = () => {
     })();
   }, [SCRIPT_CREATION_FEE, parseCost]);
 
-  const handleTabChange = useCallback((_: SyntheticEvent, value: 'create' | 'edit') => {
-    reset();
-    setCurrentTab(value);
-  }, [ setCurrentTab, reset ]);
+  const handleTabChange = useCallback(
+    (_: SyntheticEvent, value: 'create' | 'edit') => {
+      reset();
+      setCurrentTab(value);
+    },
+    [setCurrentTab, reset],
+  );
 
   const getContent = () => {
     if (currentTab === 'create') {
-      return <>
-        <Box padding={'0px 32px'}>
-          <TextControl
-            name='name'
-            control={control}
-            rules={{ required: true }}
-            mat={{
-              variant: 'outlined',
-              InputProps: {
-                sx: {
-                  borderWidth: '1px',
-                  borderColor: theme.palette.text.primary,
+      return (
+        <>
+          <Box padding={'0px 32px'}>
+            <TextControl
+              name='name'
+              control={control}
+              rules={{ required: true }}
+              mat={{
+                variant: 'outlined',
+                InputProps: {
+                  sx: {
+                    borderWidth: '1px',
+                    borderColor: theme.palette.text.primary,
+                  },
                 },
-              },
-            }}
-            style={{ width: '100%' }}
-          />
-        </Box>
-        <Box display={'flex'} gap={'30px'} width={'100%'} padding='0px 32px'>
-          <Box width={'25%'}>
-            <AvatarControl name='avatar' control={control} />
+              }}
+              style={{ width: '100%' }}
+            />
           </Box>
-          <TextControl
-            name='description'
-            control={control}
-            mat={{
-              variant: 'outlined',
-              multiline: true,
-              margin: 'normal',
-              minRows: 6,
-              maxRows: 6,
-              InputProps: {
-                sx: {
-                  borderWidth: '1px',
-                  borderColor: theme.palette.text.primary,
-                  height: '100%',
+          <Box display={'flex'} gap={'30px'} width={'100%'} padding='0px 32px'>
+            <Box width={'25%'}>
+              <AvatarControl name='avatar' control={control} />
+            </Box>
+            <TextControl
+              name='description'
+              control={control}
+              mat={{
+                variant: 'outlined',
+                multiline: true,
+                margin: 'normal',
+                minRows: 6,
+                maxRows: 6,
+                InputProps: {
+                  sx: {
+                    borderWidth: '1px',
+                    borderColor: theme.palette.text.primary,
+                    height: '100%',
+                  },
                 },
-              },
-            }}
-            style={{ width: '100%', marginTop: 0, marginBottom: 0 }}
-          />
-        </Box>
-        <Box padding='0px 32px'>
-          <GenericSelect
-            name='model'
-            control={control}
-            data={modelsData}
-            error={modelsError}
-            loading={modelsLoading}
-            hasNextPage={hasModelsNextPage}
-            loadMore={modelsFetchMore}
-            disabled={false}
-            setValue={setValue}
-          />
-        </Box>
-        <OutputFields control={control} />
-      </>;
-    } else {
-      return <>
-        <Box padding='0px 32px' display={'flex'} flexDirection={'column'} gap={'16px'}>
-          <GenericSelect
-            name='script'
-            control={control}
-            data={scriptsData}
-            error={scriptsError}
-            loading={scriptsLoading}
-            hasNextPage={hasScriptsNextPage}
-            disabled={false}
-            loadMore={scriptsFetchMore}
-            setValue={setValue}
-          />
-          <GenericSelect
-            name='model'
-            control={control}
-            data={modelsData}
-            error={modelsError}
-            loading={modelsLoading}
-            hasNextPage={hasModelsNextPage}
-            disabled={true}
-            loadMore={modelsFetchMore}
-          />
-        </Box>
-        <Box
-          display={'flex'}
-          justifyContent={'space-between'}
-          alignItems={'center'}
-          flexGrow={1}
-          width={'100%'}
-          padding='0px 32px'
-          gap='16px'
-        >
-          <TextControl
-            name='name'
-            control={control}
-            rules={{ required: true }}
-            mat={{
-              variant: 'outlined',
-              InputProps: {
-                sx: {
-                  borderWidth: '1px',
-                  borderColor: theme.palette.text.primary,
-                },
-              },
-            }}
-            style={{ width: '100%' }}
-          />
+              }}
+              style={{ width: '100%', marginTop: 0, marginBottom: 0 }}
+            />
+          </Box>
+          <Box padding='0px 32px'>
+            <GenericSelect
+              name='model'
+              control={control}
+              data={modelsData}
+              error={modelsError}
+              loading={modelsLoading}
+              hasNextPage={hasModelsNextPage}
+              loadMore={modelsFetchMore}
+              disabled={false}
+              setValue={setValue}
+            />
+          </Box>
           <OutputFields control={control} />
-        </Box>
-        <Box padding='0px 32px'>
-          <TextControl
-            name='description'
-            control={control}
-            mat={{
-              variant: 'outlined',
-              multiline: true,
-              margin: 'normal',
-              minRows: 6,
-              maxRows: 6,
-              InputProps: {
-                sx: {
-                  borderWidth: '1px',
-                  borderColor: theme.palette.text.primary,
-                  height: '100%',
+        </>
+      );
+    } else {
+      return (
+        <>
+          <Box padding='0px 32px' display={'flex'} flexDirection={'column'} gap={'16px'}>
+            <GenericSelect
+              name='script'
+              control={control}
+              data={scriptsData}
+              error={scriptsError}
+              loading={scriptsLoading}
+              hasNextPage={hasScriptsNextPage}
+              disabled={false}
+              loadMore={scriptsFetchMore}
+              setValue={setValue}
+            />
+            <GenericSelect
+              name='model'
+              control={control}
+              data={modelsData}
+              error={modelsError}
+              loading={modelsLoading}
+              hasNextPage={hasModelsNextPage}
+              disabled={true}
+              loadMore={modelsFetchMore}
+            />
+          </Box>
+          <Box
+            display={'flex'}
+            justifyContent={'space-between'}
+            alignItems={'center'}
+            flexGrow={1}
+            width={'100%'}
+            padding='0px 32px'
+            gap='16px'
+          >
+            <TextControl
+              name='name'
+              control={control}
+              rules={{ required: true }}
+              mat={{
+                variant: 'outlined',
+                InputProps: {
+                  sx: {
+                    borderWidth: '1px',
+                    borderColor: theme.palette.text.primary,
+                  },
                 },
-              },
-            }}
-            style={{ width: '100%', marginTop: 0 }}
-          />
-        </Box>
-      </>;
+              }}
+              style={{ width: '100%' }}
+            />
+            <OutputFields control={control} />
+          </Box>
+          <Box padding='0px 32px'>
+            <TextControl
+              name='description'
+              control={control}
+              mat={{
+                variant: 'outlined',
+                multiline: true,
+                margin: 'normal',
+                minRows: 6,
+                maxRows: 6,
+                InputProps: {
+                  sx: {
+                    borderWidth: '1px',
+                    borderColor: theme.palette.text.primary,
+                    height: '100%',
+                  },
+                },
+              }}
+              style={{ width: '100%', marginTop: 0 }}
+            />
+          </Box>
+        </>
+      );
     }
   };
 
@@ -987,15 +1002,22 @@ const UploadCurator = () => {
           <Tab label='Create Script' value='create' />
           <Tab label='Update Script' value='edit' />
         </Tabs>
-        <Box role='tabpanel' sx={{ marginTop: '16px', paddingBottom: 0, gap: '32px', display: 'flex', flexDirection: 'column' }}>
+        <Box
+          role='tabpanel'
+          sx={{
+            marginTop: '16px',
+            paddingBottom: 0,
+            gap: '32px',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
           {getContent()}
           <Box padding='0px 32px'>
             <AllowGroupControl name={'allow'} control={control} />
           </Box>
           <Box padding='0px 32px'>
-            <Typography paddingLeft={'8px'}>
-              Usage Notes
-            </Typography>
+            <Typography paddingLeft={'8px'}>Usage Notes</Typography>
             <MarkdownControl props={{ control, name: 'notes', rules: { required: true } }} />
           </Box>
           <Box padding='0px 32px'>
@@ -1009,32 +1031,42 @@ const UploadCurator = () => {
           <Box padding='0px 32px'>
             <Alert severity='warning' variant='outlined'>
               <Typography alignItems={'center'} display={'flex'} gap={'4px'}>
-                Uploading a Script requires a fee of {SCRIPT_CREATION_FEE}<img width='20px' height='20px' src={U_LOGO_SRC} /> (${usdFee}) Tokens. 
+                Uploading a Script requires a fee of {SCRIPT_CREATION_FEE}
+                <img width='20px' height='20px' src={U_LOGO_SRC} /> (${usdFee}) Tokens.
               </Typography>
             </Alert>
           </Box>
-          <Box sx={{ display: 'flex', padding: '0 32px 32px 32px', justifyContent: 'flex-end', mt: '32px', width: '100%', gap: '32px' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              padding: '0 32px 32px 32px',
+              justifyContent: 'flex-end',
+              mt: '32px',
+              width: '100%',
+              gap: '32px',
+            }}
+          >
             <Button
-                onClick={() => reset()}
+              onClick={() => reset()}
+              sx={{
+                // border: `1px solid ${theme.palette.text.primary}`,
+                borderRadius: '7px',
+                height: '39px',
+                width: '204px',
+              }}
+              variant='outlined'
+              className='plausible-event-name=Reset+to+Default+Click'
+            >
+              <Typography
                 sx={{
-                  // border: `1px solid ${theme.palette.text.primary}`,
-                  borderRadius: '7px',
-                  height: '39px',
-                  width: '204px',
+                  fontStyle: 'normal',
+                  fontWeight: 500,
+                  fontSize: '15px',
+                  lineHeight: '20px',
                 }}
-                variant='outlined'
-                className='plausible-event-name=Reset+to+Default+Click'
               >
-                <Typography
-                  sx={{
-                    fontStyle: 'normal',
-                    fontWeight: 500,
-                    fontSize: '15px',
-                    lineHeight: '20px',
-                  }}
-                >
-                  Reset to Default
-                </Typography>
+                Reset to Default
+              </Typography>
             </Button>
             <DebounceButton
               onClick={handleSubmit(onSubmit)}
@@ -1045,7 +1077,11 @@ const UploadCurator = () => {
                 width: '204px',
               }}
               variant='contained'
-              className={currentTab === 'create' ? 'plausible-event-name=Submit+Script+Click' : 'plausible-event-name=Update+Script+Click'}
+              className={
+                currentTab === 'create'
+                  ? 'plausible-event-name=Submit+Script+Click'
+                  : 'plausible-event-name=Update+Script+Click'
+              }
             >
               <Typography
                 sx={{

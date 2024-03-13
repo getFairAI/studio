@@ -59,7 +59,8 @@ const TermsAgreement = ({ children }: { children: ReactElement }) => {
   useEffect(() => {
     if (!currentAddress) {
       setShowDialog(false);
-    } if (data?.transactions?.edges && data.transactions.edges.length > 0) {
+    }
+    if (data?.transactions?.edges && data.transactions.edges.length > 0) {
       // Terms agreement already signed
       setShowDialog(false);
     } else if (data?.transactions?.edges && data.transactions.edges.length === 0) {
@@ -67,7 +68,7 @@ const TermsAgreement = ({ children }: { children: ReactElement }) => {
     } else {
       // ignore while loading
     }
-  }, [ currentAddress, data, setShowDialog]);
+  }, [currentAddress, data, setShowDialog]);
 
   const handleAgreeClick = useCallback(async () => {
     const tags = [

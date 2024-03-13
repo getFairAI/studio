@@ -126,7 +126,7 @@ const asyncChangeNode = async (
     token: 'arweave',
     wallet: {
       provider: walletInstance,
-    }
+    },
   });
   try {
     await bundlr.ready();
@@ -218,7 +218,9 @@ export const BundlrProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [currentAddress]);
 
-  const retryConnection = async () => { state.bundlr?.ready(); };
+  const retryConnection = async () => {
+    state.bundlr?.ready();
+  };
 
   const getPrice = async (bytes: number, currency?: string) => {
     if (state.bundlr) {
@@ -233,7 +235,14 @@ export const BundlrProvider = ({ children }: { children: ReactNode }) => {
     return state.bundlr.upload(data, { tags });
   };
 
-  const chunkUpload: (file: File, tags: ITag[], totalChunks: MutableRefObject<number>, handleUpload: (value: ChunkInfo) => void, handleError: (e: ChunkError) => void, handleDone: (value: unknown) => void) => Promise<AxiosResponse<UploadResponse, unknown>> = async (
+  const chunkUpload: (
+    file: File,
+    tags: ITag[],
+    totalChunks: MutableRefObject<number>,
+    handleUpload: (value: ChunkInfo) => void,
+    handleError: (e: ChunkError) => void,
+    handleDone: (value: unknown) => void,
+  ) => Promise<AxiosResponse<UploadResponse, unknown>> = async (
     file: File,
     tags: ITag[],
     totalChunks: MutableRefObject<number>,
@@ -276,7 +285,16 @@ export const BundlrProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const value = useMemo(
-    () => ({ ...state, ...actions, retryConnection, getPrice, upload, chunkUpload, fundNode, withdrawNode }),
+    () => ({
+      ...state,
+      ...actions,
+      retryConnection,
+      getPrice,
+      upload,
+      chunkUpload,
+      fundNode,
+      withdrawNode,
+    }),
     [state, actions],
   );
 

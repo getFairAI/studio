@@ -87,7 +87,7 @@ export const sendU = async (to: string, amount: string | number, tags: ITag[]) =
       target: to,
       qty: amount,
     },
-    { tags: tags as Tag[], strict: true, },
+    { tags: tags as Tag[], strict: true },
   );
 
   return result?.originalTxId;

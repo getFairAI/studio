@@ -17,9 +17,7 @@
  */
 
 import { ApolloProvider } from '@apollo/client';
-import {
-  CssBaseline,
-} from '@mui/material';
+import { CssBaseline } from '@mui/material';
 import { SnackbarProvider } from 'notistack';
 import { Outlet } from 'react-router-dom';
 import Layout from './components/layout';
@@ -39,7 +37,7 @@ const App = () => {
         <FundProvider>
           <ChooseWalletProvider>
             <SwapProvider>
-              <Layout>  
+              <Layout>
                 <Outlet />
               </Layout>
             </SwapProvider>

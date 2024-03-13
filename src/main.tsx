@@ -41,10 +41,11 @@ const router = createHashRouter([
     children: [
       {
         path: '',
-        element: 
+        element: (
           <TermsAgreement>
             <Operators />
-          </TermsAgreement>,
+          </TermsAgreement>
+        ),
         children: [
           {
             path: 'register/:txid/',
@@ -56,21 +57,27 @@ const router = createHashRouter([
       },
       {
         path: 'models',
-        element: <TermsAgreement>
-          <Models />
-        </TermsAgreement>
+        element: (
+          <TermsAgreement>
+            <Models />
+          </TermsAgreement>
+        ),
       },
       {
         path: 'upload-creator',
-        element: <TermsAgreement>
-          <UploadCreator />
-        </TermsAgreement>
+        element: (
+          <TermsAgreement>
+            <UploadCreator />
+          </TermsAgreement>
+        ),
       },
       {
         path: 'upload-curator',
-        element: <TermsAgreement>
-          <UploadCurator />
-        </TermsAgreement>
+        element: (
+          <TermsAgreement>
+            <UploadCurator />
+          </TermsAgreement>
+        ),
       },
       {
         path: 'registrations',

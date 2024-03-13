@@ -31,7 +31,17 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { SyntheticEvent, UIEvent, MouseEvent, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  SyntheticEvent,
+  UIEvent,
+  MouseEvent,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { FieldValues, UseFormSetValue, useForm, useWatch } from 'react-hook-form';
 import TextControl from '@/components/text-control';
 import MarkdownControl from '@/components/md-control';
@@ -65,7 +75,14 @@ import DebounceButton from '@/components/debounce-button';
 import { sendU } from '@/utils/u';
 import { AdvancedConfiguration } from '@/components/advanced-configuration';
 import { LicenseForm } from '@/interfaces/common';
-import { addAssetTags, addLicenseTags, commonUpdateQuery, displayShortTxOrAddr, findTag, parseCost } from '@/utils/common';
+import {
+  addAssetTags,
+  addLicenseTags,
+  commonUpdateQuery,
+  displayShortTxOrAddr,
+  findTag,
+  parseCost,
+} from '@/utils/common';
 import { WarpFactory } from 'warp-contracts';
 import { DeployPlugin } from 'warp-contracts-plugin-deploy';
 import SelectControl from '@/components/select-control';
@@ -125,7 +142,7 @@ const UploadCreator = () => {
       notes: '',
       avatar: '',
       file: '',
-      category: ''
+      category: '',
     },
   } as FieldValues);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -139,12 +156,12 @@ const UploadCreator = () => {
   const { currentAddress, currentUBalance, updateUBalance } = useContext(WalletContext);
   const { setOpen: setFundOpen } = useContext(FundContext);
   const [isUploading, setIsUploading] = useState(false);
-  const [ usdFee, setUsdFee ] = useState('0');
-  const [ currentTab, setCurrentTab ] = useState<'create' | 'edit'>('create');
+  const [usdFee, setUsdFee] = useState('0');
+  const [currentTab, setCurrentTab] = useState<'create' | 'edit'>('create');
   const [selectAnchorEl, setSelectAnchorEl] = useState<null | HTMLElement>(null);
   const selectOpen = useMemo(() => Boolean(selectAnchorEl), [selectAnchorEl]);
   const [models, setModels] = useState<IContractEdge[]>([]);
- 
+
   const disabled = useMemo(
     () =>
       (!control._formState.isValid && control._formState.isDirty) || !currentAddress || isUploading,
@@ -160,7 +177,11 @@ const UploadCreator = () => {
       paymentMode: '',
     },
   } as FieldValues);
-  const { control: updateControl, handleSubmit: handleUpdateSubmit, setValue: setUpdateValue } = useForm({
+  const {
+    control: updateControl,
+    handleSubmit: handleUpdateSubmit,
+    setValue: setUpdateValue,
+  } = useForm({
     defaultValues: {
       currentModel: '',
       name: '',
@@ -168,7 +189,7 @@ const UploadCreator = () => {
       notes: '',
       avatar: '',
       file: '',
-      category: ''
+      category: '',
     },
   } as FieldValues);
   const modelChanged = useWatch({ name: 'currentModel', control: updateControl });
@@ -184,15 +205,15 @@ const UploadCreator = () => {
       ...queryObject.variables,
       tags: [
         ...queryObject.variables.tags,
-        { name: TAG_NAMES.sequencerOwner, values: [ currentAddress ] },
+        { name: TAG_NAMES.sequencerOwner, values: [currentAddress] },
       ],
     },
     skip: !currentAddress,
     notifyOnNetworkStatusChange: true,
   });
 
-  const [ fetchAvatar, { data: avatarData }] = useLazyQuery(GET_LATEST_MODEL_ATTACHMENTS);
-  const [ fetchNotes, { data: notesData }] = useLazyQuery(GET_LATEST_MODEL_ATTACHMENTS);
+  const [fetchAvatar, { data: avatarData }] = useLazyQuery(GET_LATEST_MODEL_ATTACHMENTS);
+  const [fetchNotes, { data: notesData }] = useLazyQuery(GET_LATEST_MODEL_ATTACHMENTS);
 
   useEffect(() => {
     const txString = localStorage.getItem('model');
@@ -201,13 +222,13 @@ const UploadCreator = () => {
       setCurrentTab('edit');
       localStorage.removeItem('model');
     }
-  }, [ setUpdateValue, setCurrentTab ]);
+  }, [setUpdateValue, setCurrentTab]);
 
   useEffect(() => {
     if (modelsData) {
       setModels(FairSDKWeb.utils.filterByUniqueModelTxId(modelsData.transactions.edges));
     }
-  }, [ modelsData ]);
+  }, [modelsData]);
 
   useEffect(() => {
     if (modelChanged) {
@@ -221,47 +242,51 @@ const UploadCreator = () => {
       setUpdateValue('name', name);
       setUpdateValue('description', description);
       setUpdateValue('category', category);
-      fetchAvatar({ variables: {
-        tags: [
-          { name: TAG_NAMES.operationName, values: [MODEL_ATTACHMENT] },
-          { name: TAG_NAMES.attachmentRole, values: [AVATAR_ATTACHMENT] },
-          { name: TAG_NAMES.modelTransaction, values: [ modelId ] },
-        ],
-        owner: currentAddress
-      }});
-      fetchNotes({ variables: {
-        tags: [
-          { name: TAG_NAMES.operationName, values: [MODEL_ATTACHMENT] },
-          { name: TAG_NAMES.attachmentRole, values: [NOTES_ATTACHMENT] },
-          { name: TAG_NAMES.modelTransaction, values: [ modelId ] },
-        ],
-        owner: currentAddress
-      }});
+      fetchAvatar({
+        variables: {
+          tags: [
+            { name: TAG_NAMES.operationName, values: [MODEL_ATTACHMENT] },
+            { name: TAG_NAMES.attachmentRole, values: [AVATAR_ATTACHMENT] },
+            { name: TAG_NAMES.modelTransaction, values: [modelId] },
+          ],
+          owner: currentAddress,
+        },
+      });
+      fetchNotes({
+        variables: {
+          tags: [
+            { name: TAG_NAMES.operationName, values: [MODEL_ATTACHMENT] },
+            { name: TAG_NAMES.attachmentRole, values: [NOTES_ATTACHMENT] },
+            { name: TAG_NAMES.modelTransaction, values: [modelId] },
+          ],
+          owner: currentAddress,
+        },
+      });
     }
-  }, [ modelChanged, updateControl, currentAddress, setUpdateValue ]);
+  }, [modelChanged, updateControl, currentAddress, setUpdateValue]);
 
   useEffect(() => {
     const avatarTxId = avatarData?.transactions?.edges[0]?.node.id ?? '';
-    
+
     if (avatarTxId) {
       setUpdateValue('avatar', avatarTxId);
     } else {
       setUpdateValue('avatar', '');
     }
-  }, [ avatarData, setUpdateValue ]);
+  }, [avatarData, setUpdateValue]);
 
   useEffect(() => {
     const notesTxId = notesData?.transactions?.edges[0]?.node.id ?? '';
-    
+
     if (notesTxId) {
       (async () => {
-        const notesContent = await getData(notesTxId) as string;
+        const notesContent = (await getData(notesTxId)) as string;
         setUpdateValue('notes', notesContent);
       })();
     } else {
       setUpdateValue('notes', '');
     }
-  }, [ notesData ]);
+  }, [notesData]);
 
   const onSubmit = async (data: FieldValues) => {
     await updateBalance();
@@ -276,102 +301,118 @@ const UploadCreator = () => {
     }
   };
 
-  const onUpdateSubmit = useCallback(async (data: FieldValues) => {
-    if (currentUBalance < parseInt(MARKETPLACE_FEE, 10)) {
-      enqueueSnackbar('Not Enough Balance in your Wallet to pay MarketPlace Fee', {
-        variant: 'error',
-      });
-      return;
-    } else {
-      setIsUploading(true);
-      try {
-        const parsedCurrentModel = JSON.parse(data.currentModel);
-        const modelId = findTag(parsedCurrentModel, 'modelTransaction') ?? '';
-        const previousVersions = findTag(parsedCurrentModel, 'previousVersions') ?? '';
-        const previousData = {
-          name: findTag(parsedCurrentModel, 'modelName'),
-          description: findTag(parsedCurrentModel, 'description'),
-          category: findTag(parsedCurrentModel, 'modelCategory'),
-        };
-        const currentData = {
-          name: data.name,
-          description: data.description,
-          category: data.category,
-        };
-
-        if (!_.isEqual(previousData, currentData)) {
-          const parsedUFee = parseFloat(MARKETPLACE_FEE) * U_DIVIDER;
-    
-          const paymentTags = [
-            { name: TAG_NAMES.protocolName, value: PROTOCOL_NAME },
-            { name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION },
-            { name: TAG_NAMES.operationName, value: MODEL_CREATION_PAYMENT },
-            { name: TAG_NAMES.modelName, value: data.name },
-            { name: TAG_NAMES.modelCategory, value: data.category },
-            { name: TAG_NAMES.modelTransaction, value: modelId },
-            { name: TAG_NAMES.updateFor, value: modelId },
-            { name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() },
-          ];
-
-          if (previousVersions) {
-            const prevVersions: string[] = JSON.parse(
-              previousVersions
-            );
-            prevVersions.push(modelId);
-            paymentTags.push({ name: TAG_NAMES.previousVersions, value: JSON.stringify(prevVersions) });
-          } else {
-            paymentTags.push({
-              name: TAG_NAMES.previousVersions,
-              value: JSON.stringify([ modelId ]),
-            });
-          }
-    
-          if (data.description) {
-            paymentTags.push({ name: TAG_NAMES.description, value: data.description });
-          }
-    
-          const paymentId = await sendU(VAULT_ADDRESS, parsedUFee.toString(), paymentTags);
-          await updateUBalance();
-          enqueueSnackbar(
-            <>
-              Model Updated
-              <br></br>
-              <a
-                href={`https://viewblock.io/arweave/tx/${paymentId}`}
-                target={'_blank'}
-                rel='noreferrer'
-              >
-                <u>View Transaction in Explorer</u>
-              </a>
-            </>,
-            { variant: 'success' },
-          );
-        }
-
-        const avatarTxId = avatarData?.transactions?.edges[0]?.node.id ?? '';
-        const notesTxId = notesData?.transactions?.edges[0]?.node.id ?? '';
-        const notesContent = await getData(notesTxId) as string;
-        
+  const onUpdateSubmit = useCallback(
+    async (data: FieldValues) => {
+      if (currentUBalance < parseInt(MARKETPLACE_FEE, 10)) {
+        enqueueSnackbar('Not Enough Balance in your Wallet to pay MarketPlace Fee', {
+          variant: 'error',
+        });
+        return;
+      } else {
+        setIsUploading(true);
         try {
-          if (data.notes !== notesContent) {
-            await uploadUsageNotes(modelId, data.name, data.notes);
+          const parsedCurrentModel = JSON.parse(data.currentModel);
+          const modelId = findTag(parsedCurrentModel, 'modelTransaction') ?? '';
+          const previousVersions = findTag(parsedCurrentModel, 'previousVersions') ?? '';
+          const previousData = {
+            name: findTag(parsedCurrentModel, 'modelName'),
+            description: findTag(parsedCurrentModel, 'description'),
+            category: findTag(parsedCurrentModel, 'modelCategory'),
+          };
+          const currentData = {
+            name: data.name,
+            description: data.description,
+            category: data.category,
+          };
+
+          if (!_.isEqual(previousData, currentData)) {
+            const parsedUFee = parseFloat(MARKETPLACE_FEE) * U_DIVIDER;
+
+            const paymentTags = [
+              { name: TAG_NAMES.protocolName, value: PROTOCOL_NAME },
+              { name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION },
+              { name: TAG_NAMES.operationName, value: MODEL_CREATION_PAYMENT },
+              { name: TAG_NAMES.modelName, value: data.name },
+              { name: TAG_NAMES.modelCategory, value: data.category },
+              { name: TAG_NAMES.modelTransaction, value: modelId },
+              { name: TAG_NAMES.updateFor, value: modelId },
+              { name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() },
+            ];
+
+            if (previousVersions) {
+              const prevVersions: string[] = JSON.parse(previousVersions);
+              prevVersions.push(modelId);
+              paymentTags.push({
+                name: TAG_NAMES.previousVersions,
+                value: JSON.stringify(prevVersions),
+              });
+            } else {
+              paymentTags.push({
+                name: TAG_NAMES.previousVersions,
+                value: JSON.stringify([modelId]),
+              });
+            }
+
+            if (data.description) {
+              paymentTags.push({ name: TAG_NAMES.description, value: data.description });
+            }
+
+            const paymentId = await sendU(VAULT_ADDRESS, parsedUFee.toString(), paymentTags);
+            await updateUBalance();
+            enqueueSnackbar(
+              <>
+                Model Updated
+                <br></br>
+                <a
+                  href={`https://viewblock.io/arweave/tx/${paymentId}`}
+                  target={'_blank'}
+                  rel='noreferrer'
+                >
+                  <u>View Transaction in Explorer</u>
+                </a>
+              </>,
+              { variant: 'success' },
+            );
           }
-          if (data.avatar !== avatarTxId) {
-            await uploadAvatarImage(modelId, data.avatar);
+
+          const avatarTxId = avatarData?.transactions?.edges[0]?.node.id ?? '';
+          const notesTxId = notesData?.transactions?.edges[0]?.node.id ?? '';
+          const notesContent = (await getData(notesTxId)) as string;
+
+          try {
+            if (data.notes !== notesContent) {
+              await uploadUsageNotes(modelId, data.name, data.notes);
+            }
+            if (data.avatar !== avatarTxId) {
+              await uploadAvatarImage(modelId, data.avatar);
+            }
+          } catch (error) {
+            enqueueSnackbar('Error Uploading An Attchment', { variant: 'error' });
+            // error uploading attachments
           }
         } catch (error) {
-          enqueueSnackbar('Error Uploading An Attchment', { variant: 'error' });
-          // error uploading attachments
+          setSnackbarOpen(false);
+          setProgress(0);
+          setMessage('Upload error ');
+          enqueueSnackbar('An Error Occured.', { variant: 'error' });
         }
-      } catch (error) {
-        setSnackbarOpen(false);
-        setProgress(0);
-        setMessage('Upload error ');
-        enqueueSnackbar('An Error Occured.', { variant: 'error' });
+        setIsUploading(false);
       }
-      setIsUploading(false);
-    }
-  }, [ nodeBalance, currentUBalance, avatarData, notesData, enqueueSnackbar, updateUBalance, setFundOpen, setProgress, setMessage, setSnackbarOpen, setIsUploading ]);
+    },
+    [
+      nodeBalance,
+      currentUBalance,
+      avatarData,
+      notesData,
+      enqueueSnackbar,
+      updateUBalance,
+      setFundOpen,
+      setProgress,
+      setMessage,
+      setSnackbarOpen,
+      setIsUploading,
+    ],
+  );
 
   const bundlrUpload = async (fileToUpload: File, tags: ITag[], successMessage: string) => {
     const filePrice = await getPrice(fileToUpload.size);
@@ -586,28 +627,34 @@ const UploadCreator = () => {
     })();
   }, [MARKETPLACE_FEE, parseCost]);
 
-  const handleTabChange = useCallback((_: SyntheticEvent, value: 'create' | 'edit') => setCurrentTab(value), [ setCurrentTab ]);
+  const handleTabChange = useCallback(
+    (_: SyntheticEvent, value: 'create' | 'edit') => setCurrentTab(value),
+    [setCurrentTab],
+  );
 
-  const selectLoadMore = useCallback((event: UIEvent<HTMLDivElement>) => {
-    const bottomOffset = 100;
-    const bottom =
-      event.currentTarget.scrollHeight - event.currentTarget.scrollTop <=
-      event.currentTarget.clientHeight + bottomOffset;
-    
-    const hasNextPage = modelsData?.transactions?.pageInfo?.hasNextPage;
-    if (bottom && hasNextPage) {
-      // user is at the end of the list so load more items
-      modelsFetchMore({
-        variables: {
-          after:
-            modelsData && modelsData.transactions.edges.length > 0
-              ? modelsData.transactions.edges[modelsData.transactions.edges.length - 1].cursor
-              : undefined,
-        },
-        updateQuery: commonUpdateQuery,
-      });
-    }
-  }, [ modelsData, commonUpdateQuery ]);
+  const selectLoadMore = useCallback(
+    (event: UIEvent<HTMLDivElement>) => {
+      const bottomOffset = 100;
+      const bottom =
+        event.currentTarget.scrollHeight - event.currentTarget.scrollTop <=
+        event.currentTarget.clientHeight + bottomOffset;
+
+      const hasNextPage = modelsData?.transactions?.pageInfo?.hasNextPage;
+      if (bottom && hasNextPage) {
+        // user is at the end of the list so load more items
+        modelsFetchMore({
+          variables: {
+            after:
+              modelsData && modelsData.transactions.edges.length > 0
+                ? modelsData.transactions.edges[modelsData.transactions.edges.length - 1].cursor
+                : undefined,
+          },
+          updateQuery: commonUpdateQuery,
+        });
+      }
+    },
+    [modelsData, commonUpdateQuery],
+  );
 
   const handleSelected = useCallback(
     (event: MouseEvent<HTMLElement>) => {
@@ -620,34 +667,31 @@ const UploadCreator = () => {
     [selectAnchorEl, setSelectAnchorEl],
   );
 
-  const renderValueFn = useCallback(
-    (selected: unknown) => {
-      if (typeof selected !== 'string') {
-        return '';
-      }
+  const renderValueFn = useCallback((selected: unknown) => {
+    if (typeof selected !== 'string') {
+      return '';
+    }
 
-      const title = findTag(JSON.parse(selected), 'modelName');
-      const mainText = findTag(JSON.parse(selected), 'modelTransaction');
-      const subText = findTag(JSON.parse(selected), 'sequencerOwner') ?? JSON.parse(selected).node.owner.address;
+    const title = findTag(JSON.parse(selected), 'modelName');
+    const mainText = findTag(JSON.parse(selected), 'modelTransaction');
+    const subText =
+      findTag(JSON.parse(selected), 'sequencerOwner') ?? JSON.parse(selected).node.owner.address;
 
-      return (
-        <Box
-          sx={{
-            display: 'flex',
-            gap: '16px',
-          }}
-        >
-          <Typography>{title}</Typography>
-          <Typography sx={{ opacity: '0.5' }}>
-            {mainText}
-            {` (Creator: ${displayShortTxOrAddr(subText as string)}) `}
-          </Typography>
-        </Box>
-      );
-    },
-    [],
-  );
-
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          gap: '16px',
+        }}
+      >
+        <Typography>{title}</Typography>
+        <Typography sx={{ opacity: '0.5' }}>
+          {mainText}
+          {` (Creator: ${displayShortTxOrAddr(subText as string)}) `}
+        </Typography>
+      </Box>
+    );
+  }, []);
 
   return (
     <Container
@@ -665,13 +709,28 @@ const UploadCreator = () => {
         },
       }}
     >
-        <Container maxWidth={'lg'}>
-          <Tabs value={currentTab} onChange={handleTabChange}>
-            <Tab label='Create Model' value='create' />
-            <Tab label='Update Model' value='edit' />
-          </Tabs>
-          <Box role='tabpanel' hidden={currentTab !== 'create'} display={'flex'} flexDirection={'column'} gap={'16px'}>
-            { currentTab === 'create' && <Box sx={{ marginTop: '16px', paddingBottom: 0, gap: '32px', display: 'flex', flexDirection: 'column' }}>
+      <Container maxWidth={'lg'}>
+        <Tabs value={currentTab} onChange={handleTabChange}>
+          <Tab label='Create Model' value='create' />
+          <Tab label='Update Model' value='edit' />
+        </Tabs>
+        <Box
+          role='tabpanel'
+          hidden={currentTab !== 'create'}
+          display={'flex'}
+          flexDirection={'column'}
+          gap={'16px'}
+        >
+          {currentTab === 'create' && (
+            <Box
+              sx={{
+                marginTop: '16px',
+                paddingBottom: 0,
+                gap: '32px',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
               <Box padding={'0px 32px'}>
                 <TextControl
                   name='name'
@@ -735,11 +794,9 @@ const UploadCreator = () => {
                   />
                 </Box>
               </Box>
-              
+
               <Box padding='0px 32px'>
-                <Typography paddingLeft={'8px'}>
-                  Usage Notes
-                </Typography>
+                <Typography paddingLeft={'8px'}>Usage Notes</Typography>
                 <MarkdownControl props={{ name: 'notes', control, rules: { required: true } }} />
               </Box>
               <Box padding='0px 32px'>
@@ -753,11 +810,21 @@ const UploadCreator = () => {
               <Box padding='0px 32px'>
                 <Alert severity='warning' variant='outlined'>
                   <Typography alignItems={'center'} display={'flex'} gap={'4px'}>
-                    Uploading a model requires a fee of {MARKETPLACE_FEE}<img width='20px' height='20px' src={U_LOGO_SRC} /> (${usdFee}) Tokens. 
+                    Uploading a model requires a fee of {MARKETPLACE_FEE}
+                    <img width='20px' height='20px' src={U_LOGO_SRC} /> (${usdFee}) Tokens.
                   </Typography>
                 </Alert>
               </Box>
-              <Box sx={{ display: 'flex', padding: '0 32px 32px 32px', justifyContent: 'flex-end', mt: '32px', width: '100%', gap: '32px' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  padding: '0 32px 32px 32px',
+                  justifyContent: 'flex-end',
+                  mt: '32px',
+                  width: '100%',
+                  gap: '32px',
+                }}
+              >
                 <Button
                   onClick={handleReset}
                   sx={{
@@ -801,10 +868,26 @@ const UploadCreator = () => {
                   </Typography>
                 </DebounceButton>
               </Box>
-            </Box>}
-          </Box>
-          <Box role='tabpanel' hidden={currentTab !== 'edit'} display={'flex'} flexDirection={'column'} gap={'16px'}>
-            { currentTab === 'edit' && <Box sx={{ marginTop: '16px', paddingBottom: 0, gap: '32px', display: 'flex', flexDirection: 'column' }}>
+            </Box>
+          )}
+        </Box>
+        <Box
+          role='tabpanel'
+          hidden={currentTab !== 'edit'}
+          display={'flex'}
+          flexDirection={'column'}
+          gap={'16px'}
+        >
+          {currentTab === 'edit' && (
+            <Box
+              sx={{
+                marginTop: '16px',
+                paddingBottom: 0,
+                gap: '32px',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
               <Box padding={'0px 32px'}>
                 <SelectControl
                   name={'currentModel'}
@@ -852,9 +935,7 @@ const UploadCreator = () => {
                   )}
                   {modelsError && (
                     <Box>
-                      <Typography>
-                        {'Could Not Fetch Available Models'}
-                      </Typography>
+                      <Typography>{'Could Not Fetch Available Models'}</Typography>
                     </Box>
                   )}
 
@@ -865,9 +946,7 @@ const UploadCreator = () => {
 
                   {models.length === 0 && (
                     <Box>
-                      <Typography>
-                        {'There Are no Available Models'}
-                      </Typography>
+                      <Typography>{'There Are no Available Models'}</Typography>
                     </Box>
                   )}
                 </SelectControl>
@@ -935,21 +1014,31 @@ const UploadCreator = () => {
                   />
                 </Box>
               </Box>
-                
+
               <Box padding='0px 32px'>
-                <Typography paddingLeft={'8px'}>
-                  Usage Notes
-                </Typography>
-                <MarkdownControl props={{ name: 'notes', control: updateControl, rules: { required: true } }} />
+                <Typography paddingLeft={'8px'}>Usage Notes</Typography>
+                <MarkdownControl
+                  props={{ name: 'notes', control: updateControl, rules: { required: true } }}
+                />
               </Box>
               <Box padding='0px 32px'>
                 <Alert severity='warning' variant='outlined'>
                   <Typography alignItems={'center'} display={'flex'} gap={'4px'}>
-                    Updating a model requires a fee of {MARKETPLACE_FEE}<img width='20px' height='20px' src={U_LOGO_SRC} /> (${usdFee}) Tokens. 
+                    Updating a model requires a fee of {MARKETPLACE_FEE}
+                    <img width='20px' height='20px' src={U_LOGO_SRC} /> (${usdFee}) Tokens.
                   </Typography>
                 </Alert>
               </Box>
-              <Box sx={{ display: 'flex', padding: '0 32px 32px 32px', justifyContent: 'flex-end', mt: '32px', width: '100%', gap: '32px' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  padding: '0 32px 32px 32px',
+                  justifyContent: 'flex-end',
+                  mt: '32px',
+                  width: '100%',
+                  gap: '32px',
+                }}
+              >
                 <DebounceButton
                   onClick={handleUpdateSubmit(onUpdateSubmit)}
                   disabled={disabled}
@@ -972,25 +1061,29 @@ const UploadCreator = () => {
                   </Typography>
                 </DebounceButton>
               </Box>
-            </Box>}
-          </Box>
-          <Snackbar
-            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-            open={snackbarOpen}
-            onClose={handleCloseSnackbar}
-            ClickAwayListenerProps={{ onClickAway: () => null }}
-          >
-            <Alert severity='info' sx={{
+            </Box>
+          )}
+        </Box>
+        <Snackbar
+          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+          open={snackbarOpen}
+          onClose={handleCloseSnackbar}
+          ClickAwayListenerProps={{ onClickAway: () => null }}
+        >
+          <Alert
+            severity='info'
+            sx={{
               minWidth: '300px',
               '.MuiAlert-message': {
                 width: '100%',
-              }
-            }}>
-              Uploading...
-              <CustomProgress value={progress}></CustomProgress>
-            </Alert>
-          </Snackbar>
-        </Container>
+              },
+            }}
+          >
+            Uploading...
+            <CustomProgress value={progress}></CustomProgress>
+          </Alert>
+        </Snackbar>
+      </Container>
     </Container>
   );
 };

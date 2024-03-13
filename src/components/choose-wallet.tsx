@@ -137,7 +137,12 @@ const ChooseWallet = ({
           paddingBottom: '20px',
         }}
       >
-        <Button variant='outlined' onClick={handleClose} sx={{ width: 'fit-content' }} className='plausible-event-name=Close+Choose+Wallet+Popup'>
+        <Button
+          variant='outlined'
+          onClick={handleClose}
+          sx={{ width: 'fit-content' }}
+          className='plausible-event-name=Close+Choose+Wallet+Popup'
+        >
           <Typography>Close</Typography>
         </Button>
       </DialogActions>

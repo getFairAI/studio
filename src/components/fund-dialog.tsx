@@ -38,7 +38,17 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { ChangeEvent, Dispatch, SetStateAction, SyntheticEvent, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  ChangeEvent,
+  Dispatch,
+  SetStateAction,
+  SyntheticEvent,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { useSnackbar } from 'notistack';
 import { WalletContext } from '@/context/wallet';
@@ -80,12 +90,18 @@ const valueLabelFormat = (val: number) => `${val}%`;
 const WithdrawPanel = ({ currentTab }: { currentTab: tabOptions }) => {
   const { enqueueSnackbar } = useSnackbar();
   const { withdrawNode, nodeBalance } = useContext(BundlrContext);
-  const [ percentage, setPercentage ] = useState(0);
-  const [ withdrawAmount, setWithdrawAmount ] = useState(0);
-  const [ loading, setLoading ] = useState(false);
-  const parsedNodeBalance = useMemo(() => Number(arweave.ar.winstonToAr(nodeBalance.toString())), [ nodeBalance ]);
+  const [percentage, setPercentage] = useState(0);
+  const [withdrawAmount, setWithdrawAmount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const parsedNodeBalance = useMemo(
+    () => Number(arweave.ar.winstonToAr(nodeBalance.toString())),
+    [nodeBalance],
+  );
 
-  const handleMaxClick = useCallback(() => setWithdrawAmount(parsedNodeBalance), [setWithdrawAmount, parsedNodeBalance]);
+  const handleMaxClick = useCallback(
+    () => setWithdrawAmount(parsedNodeBalance),
+    [setWithdrawAmount, parsedNodeBalance],
+  );
 
   const isAllowed = useCallback(
     (val: NumberFormatValues) => !val.floatValue || val?.floatValue <= parsedNodeBalance,
@@ -118,7 +134,7 @@ const WithdrawPanel = ({ currentTab }: { currentTab: tabOptions }) => {
     try {
       setLoading(true);
       const winstonAmount = arweave.ar.arToWinston(withdrawAmount.toString());
-  
+
       const res = await withdrawNode(winstonAmount);
       setWithdrawAmount(0);
       setPercentage(0);
@@ -126,7 +142,11 @@ const WithdrawPanel = ({ currentTab }: { currentTab: tabOptions }) => {
         <>
           Withdrew Balance from Irys Node: {arweave.ar.winstonToAr(res.requested.toString())} AR.
           <br></br>
-          <a href={`https://viewblock.io/arweave/tx/${res.tx_id}`} target={'_blank'} rel='noreferrer'>
+          <a
+            href={`https://viewblock.io/arweave/tx/${res.tx_id}`}
+            target={'_blank'}
+            rel='noreferrer'
+          >
             <u>View Transaction in Explorer</u>
           </a>
         </>,
@@ -137,56 +157,66 @@ const WithdrawPanel = ({ currentTab }: { currentTab: tabOptions }) => {
       setLoading(false);
       enqueueSnackbar(`Error: ${error}`, { variant: 'error' });
     }
-  }, [ arweave, withdrawAmount, setLoading, setWithdrawAmount, enqueueSnackbar, withdrawNode ]);
+  }, [arweave, withdrawAmount, setLoading, setWithdrawAmount, enqueueSnackbar, withdrawNode]);
 
-  return <Box role='tabpanel' hidden={currentTab !== 'withdraw'} display={'flex'} flexDirection={'column'} gap={'16px'}>
-    {currentTab === 'withdraw' && (<>
-      <Box display={'flex'} padding={'0 16px'} gap={'24px'} alignItems={'center'}>
-        <Slider
-          onChange={handleSliderChange}
-          disabled={nodeBalance <= 0}
-          marks={marks}
-          value={percentage}
-          step={1}
-          min={0}
-          getAriaValueText={valueLabelFormat}
-          valueLabelFormat={valueLabelFormat}
-          valueLabelDisplay='auto'
-        />
-        <NumericFormat
-          label='Amount to Withdraw'
-          placeholder='Amount to Withdraw'
-          value={withdrawAmount}
-          onChange={handleAmountChange}
-          customInput={TextField}
-          helperText={
-            <Typography sx={{ cursor: 'pointer' }} variant='caption'>
-              <u>Max: {parsedNodeBalance.toFixed(4)}</u>
-            </Typography>
-          }
-          FormHelperTextProps={{
-            onClick: handleMaxClick,
-          }}
-          allowNegative={false}
-          isAllowed={isAllowed}
-          margin='dense'
-          decimalScale={4}
-          disabled={nodeBalance <= 0}
-        />
-      </Box>
-      <Box>
-        <DebounceLoadingButton
-          loading={loading}
-          variant='outlined'
-          onClick={handleWithdraw}
-          disabled={withdrawAmount <= 0 || withdrawAmount >= nodeBalance}
-          className='plausible-event-name=Withdraw+From+Irys+Click'
-        >
-          Withdraw
-        </DebounceLoadingButton>
-      </Box>
-    </>)}
-  </Box>;
+  return (
+    <Box
+      role='tabpanel'
+      hidden={currentTab !== 'withdraw'}
+      display={'flex'}
+      flexDirection={'column'}
+      gap={'16px'}
+    >
+      {currentTab === 'withdraw' && (
+        <>
+          <Box display={'flex'} padding={'0 16px'} gap={'24px'} alignItems={'center'}>
+            <Slider
+              onChange={handleSliderChange}
+              disabled={nodeBalance <= 0}
+              marks={marks}
+              value={percentage}
+              step={1}
+              min={0}
+              getAriaValueText={valueLabelFormat}
+              valueLabelFormat={valueLabelFormat}
+              valueLabelDisplay='auto'
+            />
+            <NumericFormat
+              label='Amount to Withdraw'
+              placeholder='Amount to Withdraw'
+              value={withdrawAmount}
+              onChange={handleAmountChange}
+              customInput={TextField}
+              helperText={
+                <Typography sx={{ cursor: 'pointer' }} variant='caption'>
+                  <u>Max: {parsedNodeBalance.toFixed(4)}</u>
+                </Typography>
+              }
+              FormHelperTextProps={{
+                onClick: handleMaxClick,
+              }}
+              allowNegative={false}
+              isAllowed={isAllowed}
+              margin='dense'
+              decimalScale={4}
+              disabled={nodeBalance <= 0}
+            />
+          </Box>
+          <Box>
+            <DebounceLoadingButton
+              loading={loading}
+              variant='outlined'
+              onClick={handleWithdraw}
+              disabled={withdrawAmount <= 0 || withdrawAmount >= nodeBalance}
+              className='plausible-event-name=Withdraw+From+Irys+Click'
+            >
+              Withdraw
+            </DebounceLoadingButton>
+          </Box>
+        </>
+      )}
+    </Box>
+  );
 };
 
 const FundDialog = ({
@@ -205,7 +235,7 @@ const FundDialog = ({
   const { nodeBalance, fundNode, updateBalance, changeNode } = useContext(BundlrContext);
   const { currentBalance: walletBalance, updateBalance: updateWalletBalance } =
     useContext(WalletContext);
-  const [ currentTab, setCurrentTab ] = useState<'fund' | 'withdraw'>('fund');
+  const [currentTab, setCurrentTab] = useState<'fund' | 'withdraw'>('fund');
 
   const handleChange = async (event: SelectChangeEvent) => {
     setNode(event.target.value as bundlrNodeUrl);
@@ -262,9 +292,12 @@ const FundDialog = ({
     }
   };
 
-  const handleTabChange = useCallback((_: SyntheticEvent, value: 'fund' | 'withdraw') => {
-    setCurrentTab(value);
-  }, [ setCurrentTab ]);
+  const handleTabChange = useCallback(
+    (_: SyntheticEvent, value: 'fund' | 'withdraw') => {
+      setCurrentTab(value);
+    },
+    [setCurrentTab],
+  );
 
   return (
     <>
@@ -283,8 +316,8 @@ const FundDialog = ({
         <DialogContent>
           <Alert variant='outlined' severity='info' sx={{ marginBottom: '16px' }}>
             <Typography>
-              Funding or Withdrawing balances from a Node can take up to 40 minutes. Current Pending transactions will not
-              be reflected on the node balance until they are confirmed.
+              Funding or Withdrawing balances from a Node can take up to 40 minutes. Current Pending
+              transactions will not be reflected on the node balance until they are confirmed.
               <br />
               You can view Irys Node transactions at:
             </Typography>
@@ -313,11 +346,7 @@ const FundDialog = ({
               </ListItem>
             </List>
           </Alert>
-          <Box
-            display={'flex'}
-            flexDirection={'column'}
-            justifyContent={'space-evenly'}
-          >
+          <Box display={'flex'} flexDirection={'column'} justifyContent={'space-evenly'}>
             <FormControl fullWidth margin='dense'>
               <InputLabel id='select-label'>Irys Node</InputLabel>
               <Select
@@ -338,7 +367,10 @@ const FundDialog = ({
               InputProps={{
                 endAdornment: (
                   <InputAdornment position='start'>
-                    <IconButton onClick={asyncGetNodeBalance} className='plausible-event-name=Refresh+Irys+Balance'>
+                    <IconButton
+                      onClick={asyncGetNodeBalance}
+                      className='plausible-event-name=Refresh+Irys+Balance'
+                    >
                       <RefreshIcon />
                     </IconButton>
                   </InputAdornment>
@@ -349,53 +381,61 @@ const FundDialog = ({
               <Tab label='Fund' value='fund' />
               <Tab label='Withdraw' value='withdraw' />
             </Tabs>
-            <Box role='tabpanel' hidden={currentTab !== 'fund'} display={'flex'} flexDirection={'column'} gap={'16px'}>
-              {currentTab === 'fund' && (<>
-                <NumericFormat
-                  value={amount}
-                  onChange={handleAmountChange}
-                  customInput={TextField}
-                  helperText={
-                    <Typography sx={{ cursor: 'pointer' }} variant='caption'>
-                      <u>Max: {walletBalance.toFixed(4)}</u>
-                    </Typography>
-                  }
-                  FormHelperTextProps={{
-                    onClick: () => setAmount(walletBalance),
-                  }}
-                  allowNegative={false}
-                  margin='dense'
-                  decimalScale={4}
-                  isAllowed={(val) => !val.floatValue || val?.floatValue < walletBalance}
-                  decimalSeparator={'.'}
-                  sx={{
-                    width: '100%'
-                  }}
-                />
-                <Box>
-                  <DebounceLoadingButton
-                    loading={loading}
-                    variant='outlined'
-                    onClick={handleFund}
-                    disabled={amount <= 0 || amount >= walletBalance}
-                    className='plausible-event-name=Fund+Irys+Node+Click'
-                  >
-                    Fund
-                  </DebounceLoadingButton>
-                  {handleFundFinished && (
-                    <Button
-                      onClick={() => handleFundFinished(node)}
-                      variant='contained'
-                      disabled={nodeBalance <= 0}
-                      className='plausible-event-name=Upload+After+Fund+Click'
+            <Box
+              role='tabpanel'
+              hidden={currentTab !== 'fund'}
+              display={'flex'}
+              flexDirection={'column'}
+              gap={'16px'}
+            >
+              {currentTab === 'fund' && (
+                <>
+                  <NumericFormat
+                    value={amount}
+                    onChange={handleAmountChange}
+                    customInput={TextField}
+                    helperText={
+                      <Typography sx={{ cursor: 'pointer' }} variant='caption'>
+                        <u>Max: {walletBalance.toFixed(4)}</u>
+                      </Typography>
+                    }
+                    FormHelperTextProps={{
+                      onClick: () => setAmount(walletBalance),
+                    }}
+                    allowNegative={false}
+                    margin='dense'
+                    decimalScale={4}
+                    isAllowed={(val) => !val.floatValue || val?.floatValue < walletBalance}
+                    decimalSeparator={'.'}
+                    sx={{
+                      width: '100%',
+                    }}
+                  />
+                  <Box>
+                    <DebounceLoadingButton
+                      loading={loading}
+                      variant='outlined'
+                      onClick={handleFund}
+                      disabled={amount <= 0 || amount >= walletBalance}
+                      className='plausible-event-name=Fund+Irys+Node+Click'
                     >
-                      Continue
-                    </Button>
-                  )}
-                </Box>
-              </>)}
+                      Fund
+                    </DebounceLoadingButton>
+                    {handleFundFinished && (
+                      <Button
+                        onClick={() => handleFundFinished(node)}
+                        variant='contained'
+                        disabled={nodeBalance <= 0}
+                        className='plausible-event-name=Upload+After+Fund+Click'
+                      >
+                        Continue
+                      </Button>
+                    )}
+                  </Box>
+                </>
+              )}
             </Box>
-            <WithdrawPanel currentTab={currentTab}/>
+            <WithdrawPanel currentTab={currentTab} />
           </Box>
         </DialogContent>
       </Dialog>
