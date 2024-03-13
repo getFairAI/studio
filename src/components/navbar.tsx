@@ -31,15 +31,7 @@ import {
   useEffect,
   useState,
 } from 'react';
-import {
-  Button,
-  Icon,
-  InputBase,
-  MenuItem,
-  Select,
-  Tooltip,
-  useTheme,
-} from '@mui/material';
+import { Button, Icon, InputBase, MenuItem, Select, Tooltip, useTheme } from '@mui/material';
 import { WalletContext } from '@/context/wallet';
 import { ChooseWalletContext } from '@/context/choose-wallet';
 import { Timeout } from 'react-number-format/types/types';
@@ -334,35 +326,35 @@ const Navbar = ({
               flexGrow: { sm: 1, md: 0 },
             }}
           >
-              <Typography
-                component={NavLink}
-                to='/models'
-                className='navbar-links'
-                sx={navbarLinkStyles}
-              >
-                My Models
-              </Typography>
-              <Typography
-                component={NavLink}
-                to='/upload-creator'
-                className='navbar-links'
-                sx={navbarLinkStyles}
-              >
-                Creators
-              </Typography>
-              <Typography
-                component={NavLink}
-                to='/upload-curator'
-                className='navbar-links'
-                sx={navbarLinkStyles}
-              >
-                Curators
-              </Typography>
-              <Typography component={NavLink} to='/' className='navbar-links' sx={navbarLinkStyles}>
-                Operators
-              </Typography>
-              <NavigationMenu navStyles={navbarLinkStyles} />
-              <WalletState />
+            <Typography
+              component={NavLink}
+              to='/models'
+              className='navbar-links'
+              sx={navbarLinkStyles}
+            >
+              My Models
+            </Typography>
+            <Typography
+              component={NavLink}
+              to='/upload-creator'
+              className='navbar-links'
+              sx={navbarLinkStyles}
+            >
+              Creators
+            </Typography>
+            <Typography
+              component={NavLink}
+              to='/upload-curator'
+              className='navbar-links'
+              sx={navbarLinkStyles}
+            >
+              Curators
+            </Typography>
+            <Typography component={NavLink} to='/' className='navbar-links' sx={navbarLinkStyles}>
+              Operators
+            </Typography>
+            <NavigationMenu navStyles={navbarLinkStyles} />
+            <WalletState />
           </Box>
         </Toolbar>
       </AppBar>

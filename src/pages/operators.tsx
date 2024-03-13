@@ -65,7 +65,6 @@ const ListLoadingCard = () => {
   );
 };
 
-
 const Operators = () => {
   const [txs, setTxs] = useState<IContractEdge[]>([]);
   const [filtering, setFiltering] = useState(false);
@@ -77,18 +76,13 @@ const Operators = () => {
   const theme = useTheme();
   const mockArray = genLoadingArray(elementsPerPage);
   const queryObject = FairSDKWeb.utils.getScriptsQuery();
-  const {
-    data,
-    previousData,
-    loading,
-    error,
-    networkStatus,
-    refetch,
-    fetchMore,
-  } = useQuery(queryObject.query, {
-    variables: queryObject.variables,
-    notifyOnNetworkStatusChange: true,
-  });
+  const { data, previousData, loading, error, networkStatus, refetch, fetchMore } = useQuery(
+    queryObject.query,
+    {
+      variables: queryObject.variables,
+      notifyOnNetworkStatusChange: true,
+    },
+  );
 
   const loadingOrFiltering = useMemo(() => loading || filtering, [loading, filtering]);
 
@@ -119,15 +113,17 @@ const Operators = () => {
     if (data && networkStatus === NetworkStatus.ready && !_.isEqual(data, previousData)) {
       (async () => {
         const uniqueScripts = FairSDKWeb.utils.filterByUniqueScriptTxId(data.transactions.edges);
-        const filteredScritps =  FairSDKWeb.utils.filterPreviousVersions(uniqueScripts);
+        const filteredScritps = FairSDKWeb.utils.filterPreviousVersions(uniqueScripts);
         const filtered: IContractEdge[] = [];
         for (const el of filteredScritps) {
           const scriptId = FairSDKWeb.utils.findTag(el, 'scriptTransaction') as string;
-          const scriptOwner = FairSDKWeb.utils.findTag(el, 'sequencerOwner') as string ?? el.node.owner.address;
-          const sequencerId = FairSDKWeb.utils.findTag(el, 'sequencerTxId') as string ?? el.node.id;
-  
+          const scriptOwner =
+            (FairSDKWeb.utils.findTag(el, 'sequencerOwner') as string) ?? el.node.owner.address;
+          const sequencerId =
+            (FairSDKWeb.utils.findTag(el, 'sequencerTxId') as string) ?? el.node.id;
+
           const isValidPayment = await FairSDKWeb.utils.isUTxValid(sequencerId);
-  
+
           if (!isValidPayment) {
             // ignore
           } else if (!scriptOwner || !scriptId) {
@@ -138,7 +134,7 @@ const Operators = () => {
             filtered.push(el as IContractEdge);
           }
         }
-        
+
         setHasNextPage(data.transactions.pageInfo.hasNextPage);
         setFiltering(false);
         setTxs(filtered);
@@ -370,10 +366,7 @@ const Operators = () => {
             ) : (
               txs.map((el, idx) => <ScriptCard scriptTx={el} key={el.node.id} index={idx} />)
             )}
-            {loadingOrFiltering &&
-              mockArray.map((val) => (
-                <ListLoadingCard key={val} />
-              ))}
+            {loadingOrFiltering && mockArray.map((val) => <ListLoadingCard key={val} />)}
           </Stack>
           <Box ref={target} sx={{ paddingBottom: '16px' }}></Box>
         </Box>

@@ -148,7 +148,7 @@ const RegisterStep = ({
   const [operatorName, setOperatorName] = useState('');
   const [rate, setRate] = useState(0);
   const { currentAddress } = useContext(WalletContext);
-  const [ usdFee, setUsdFee ] = useState('0');
+  const [usdFee, setUsdFee] = useState('0');
 
   const scriptTxid = useMemo(() => findTag(tx, 'scriptTransaction'), [tx]);
 
@@ -198,7 +198,7 @@ const RegisterStep = ({
   const handleFinish = useCallback(async () => {
     await handleSubmit(rate.toString(), operatorName, handleNext);
   }, [rate, operatorName, handleNext, handleSubmit]);
-  
+
   useEffect(() => {
     (async () => {
       const nDigits = 4;
@@ -263,7 +263,8 @@ const RegisterStep = ({
         </Box>
         <Alert severity='warning' variant='outlined'>
           <Typography alignItems={'center'} display={'flex'} gap={'4px'}>
-            Registering an Operator requires a fee of {OPERATOR_REGISTRATION_AR_FEE}<img width='20px' height='20px' src={U_LOGO_SRC} /> (${usdFee}) Tokens. 
+            Registering an Operator requires a fee of {OPERATOR_REGISTRATION_AR_FEE}
+            <img width='20px' height='20px' src={U_LOGO_SRC} /> (${usdFee}) Tokens.
           </Typography>
         </Alert>
         <Box display={'flex'} justifyContent={'space-between'}>

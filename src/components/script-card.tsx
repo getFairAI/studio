@@ -194,14 +194,12 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
   const scriptName = findTag(scriptTx as IEdge, 'scriptName');
   const scriptCurator = findTag(scriptTx as IEdge, 'sequencerOwner');
 
-  const queryObject = FairSDKWeb.utils.getOperatorQueryForScript(scriptId, scriptName, scriptCurator);
-  const {
-    data,
-    loading,
-    error,
-    refetch,
-    fetchMore,
-  } = useQuery(queryObject.query, {
+  const queryObject = FairSDKWeb.utils.getOperatorQueryForScript(
+    scriptId,
+    scriptName,
+    scriptCurator,
+  );
+  const { data, loading, error, refetch, fetchMore } = useQuery(queryObject.query, {
     variables: queryObject.variables,
     notifyOnNetworkStatusChange: true,
   });
@@ -261,9 +259,7 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
     } else if (data?.transactions) {
       // use immediately invoked function to be able to call async operations in useEffect
       (async () => {
-        const filtered = await FairSDKWeb.utils.operatorsFilter(
-          data.transactions.edges,
-        );
+        const filtered = await FairSDKWeb.utils.operatorsFilter(data.transactions.edges);
         parseScriptData(filtered, scriptTx, setCardData, owner);
       })();
     } else {
@@ -271,14 +267,12 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
     }
   }, [data]); // data changes
 
-  const txid = useMemo(()=> findTag(scriptTx, 'scriptTransaction') as string, [scriptTx]);
-  const handleCardClick = useCallback(
-    () => {
-      navigate(`/register/${encodeURIComponent(txid ?? 'error')}`, {
-        state: scriptTx,
-      });
-    }, [txid, scriptTx, navigate],
-  );
+  const txid = useMemo(() => findTag(scriptTx, 'scriptTransaction') as string, [scriptTx]);
+  const handleCardClick = useCallback(() => {
+    navigate(`/register/${encodeURIComponent(txid ?? 'error')}`, {
+      state: scriptTx,
+    });
+  }, [txid, scriptTx, navigate]);
 
   const getTimePassed = () => {
     const timestamp = findTag(scriptTx, 'unixTime');

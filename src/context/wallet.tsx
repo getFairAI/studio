@@ -127,11 +127,10 @@ const asyncArConnectWallet = async (dispatch: Dispatch<WalletAction>) => {
       warp,
       arweave,
       wallet: window.arweaveWallet,
-      dre: 'https://dre-u.warp.cc/contract', 
-      graphql: 'https://arweave.net/graphql' 
+      dre: 'https://dre-u.warp.cc/contract',
+      graphql: 'https://arweave.net/graphql',
     });
     dispatch({ type: 'stamp_instance_set', stampInstance });
-  
   } catch (error) {
     // manually remove arconnect overlay
     const overlays: NodeListOf<HTMLDivElement> = document.querySelectorAll(
@@ -166,8 +165,8 @@ const asyncArweaveAppConnect = async (dispatch: Dispatch<WalletAction>) => {
       warp,
       arweave,
       wallet: walletInstance,
-      dre: 'https://dre-u.warp.cc/contract', 
-      graphql: 'https://arweave.net/graphql' 
+      dre: 'https://dre-u.warp.cc/contract',
+      graphql: 'https://arweave.net/graphql',
     });
     dispatch({ type: 'stamp_instance_set', stampInstance });
   } catch (error) {
