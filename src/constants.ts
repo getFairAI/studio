@@ -32,13 +32,17 @@ export const CREATIVEML_M_ID = 'mR-ehDm3Gok5deOEGcskeNOxmDLp2h52KHZdSI1I3YI';
 export const MIT_ID = '5nreaPQMmB6mTx_q1be49wjF_LIdAlXKEv81wEHNeek';
 export const ATOMIC_ASSET_CONTRACT_SOURCE_ID = 'h9v17KHV4SXwdW2-JHU6a23f6R0YtbXZJJht8LfP8QM';
 
-export const PROTOCOL_NAME = 'Fair Protocol';
+export const PROTOCOL_NAME = 'FairAI';
+export const PROTOCOL_VERSION = '2.0';
+export const OLD_PROTOCOL_NAME = 'Fair Protocol';
 export const PREVIOUS_VERSIONS = ['0.1', '0.3'];
-export const PROTOCOL_VERSION = '1.0';
+export const OLD_PROTOCOL_VERSION = '1.0';
 
 export const MARKETPLACE_FEE = '0.5'; // u
 export const SCRIPT_CREATION_FEE = '0.5'; // u
 export const OPERATOR_REGISTRATION_AR_FEE = '0.05'; // u
+export const OPERATOR_USDC_FEE = 1;
+export const MARKETPLACE_EVM_ADDRESS = '0x611dEe04f236BbC45e3a6De266ABe2B2b32eab31'; // placeholder
 
 export const TAG_NAMES = {
   protocolName: 'Protocol-Name',
@@ -175,8 +179,8 @@ export const N_PREVIOUS_BLOCKS = 7;
 export const MIN_CONFIRMATIONS = 7;
 
 export const DEFAULT_TAGS = [
-  { name: TAG_NAMES.protocolName, values: [PROTOCOL_NAME] },
-  { name: TAG_NAMES.protocolVersion, values: [PROTOCOL_VERSION] },
+  { name: TAG_NAMES.protocolName, values: [OLD_PROTOCOL_NAME] },
+  { name: TAG_NAMES.protocolVersion, values: [OLD_PROTOCOL_VERSION] },
 ];
 
 // add smartWeaveContract tags so atomic tokens can be picked up

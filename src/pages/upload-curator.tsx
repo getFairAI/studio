@@ -73,8 +73,8 @@ import {
   VAULT_ADDRESS,
   SCRIPT_CREATION_PAYMENT_TAGS,
   DEFAULT_TAGS,
-  PROTOCOL_NAME,
-  PROTOCOL_VERSION,
+  OLD_PROTOCOL_NAME,
+  OLD_PROTOCOL_VERSION,
   U_LOGO_SRC,
 } from '@/constants';
 import { BundlrContext } from '@/context/bundlr';
@@ -701,8 +701,8 @@ const UploadCurator = () => {
   const getCommonTags = (data: CreateForm, modelData: IContractEdge, modelOwner: string) => {
     const file = data.file;
     const commonTags = [];
-    commonTags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
-    commonTags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
+    commonTags.push({ name: TAG_NAMES.protocolName, value: OLD_PROTOCOL_NAME });
+    commonTags.push({ name: TAG_NAMES.protocolVersion, value: OLD_PROTOCOL_VERSION });
     commonTags.push({ name: TAG_NAMES.contentType, value: file.type });
     commonTags.push({ name: TAG_NAMES.scriptName, value: `${data.name}` });
     commonTags.push({ name: TAG_NAMES.output, value: data.output });

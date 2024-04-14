@@ -1,65 +1,48 @@
 import { CustomStepper } from '@/components/stepper';
 import {
-  VAULT_ADDRESS,
   TAG_NAMES,
   REGISTER_OPERATION,
-  OPERATOR_REGISTRATION_AR_FEE,
   secondInMS,
-  U_DIVIDER,
-  PROTOCOL_NAME,
+  OPERATOR_USDC_FEE,
+  MARKETPLACE_EVM_ADDRESS,
   PROTOCOL_VERSION,
+  PROTOCOL_NAME,
 } from '@/constants';
 import { IEdge } from '@/interfaces/arweave';
-import { RouteLoaderResult } from '@/interfaces/router';
-import { displayShortTxOrAddr, findTag } from '@/utils/common';
+import { findTag } from '@/utils/common';
 import {
-  Box,
   Typography,
   DialogContent,
   Dialog,
   DialogTitle,
   IconButton,
-  CardContent,
   useTheme,
-  Button,
 } from '@mui/material';
-import { toSvg } from 'jdenticon';
 import { useSnackbar } from 'notistack';
-import { useCallback, useContext, useMemo, useState } from 'react';
-import { useLoaderData, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useCallback, useContext, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import '@/styles/ui.css';
 import { WalletContext } from '@/context/wallet';
-import { sendU } from '@/utils/u';
-import { ContentCopy } from '@mui/icons-material';
+import Close from '@mui/icons-material/Close';
+import { EVMWalletContext } from '@/context/evm-wallet';
+import arweave from '@/utils/arweave';
+import { sendUSDC } from '@fairai/evm-sdk';
 
 const Register = () => {
-  const { txid: scriptTxId } = useParams();
-  const { avatarTxId } = (useLoaderData() as RouteLoaderResult) || {};
   const { state }: { state: IEdge } = useLocation();
   const [isRegistered, setIsRegistered] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
   const theme = useTheme();
-  const { currentUBalance, updateUBalance } = useContext(WalletContext);
+  const { dispatchTx } = useContext(WalletContext);
+  const { usdcBalance } = useContext(EVMWalletContext);
 
-  const imgUrl = useMemo(() => {
-    if (avatarTxId) {
-      return `https://arweave.net/${avatarTxId}`;
-    }
-    const img = toSvg(findTag(state, 'scriptTransaction'), 100);
-    const svg = new Blob([img], { type: 'image/svg+xml' });
-    return URL.createObjectURL(svg);
-  }, [state, avatarTxId]);
-
-  const handleRegister = async (rate: string, operatorName: string, handleNext: () => void) => {
+  const handleRegister = async (fee: string, operatorName: string, handleNext: () => void) => {
     try {
-      if (currentUBalance < parseFloat(OPERATOR_REGISTRATION_AR_FEE)) {
-        enqueueSnackbar('Insufficient $U Balance', { variant: 'error' });
+      if (usdcBalance < OPERATOR_USDC_FEE) {
+        enqueueSnackbar('Insufficient USDC Balance', { variant: 'error' });
         return;
       }
-
-      const parsedUFee = parseFloat(OPERATOR_REGISTRATION_AR_FEE) * U_DIVIDER;
-      const parsedOpFee = parseFloat(rate) * U_DIVIDER;
 
       const tags = [];
       tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
@@ -76,20 +59,40 @@ const Register = () => {
         name: TAG_NAMES.scriptTransaction,
         value: findTag(state, 'scriptTransaction') as string,
       });
-      tags.push({ name: TAG_NAMES.operatorFee, value: parsedOpFee.toString() });
+      tags.push({ name: TAG_NAMES.operatorFee, value: fee });
       tags.push({ name: TAG_NAMES.operationName, value: REGISTER_OPERATION });
       tags.push({ name: TAG_NAMES.operatorName, value: operatorName });
       tags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
       // tags.push({ name: TAG_NAMES.saveTransaction, values: saveResult.id as string });
 
-      const paymentId = await sendU(VAULT_ADDRESS, parsedUFee.toString(), tags);
-      await updateUBalance();
+      const tx = await arweave.createTransaction({ data: 'Operator Registered' });
+      tags.forEach(tag => tx.addTag(tag.name, tag.value));
+      const { id: arweaveTxId } = await dispatchTx(tx);
+      if (!arweaveTxId) {
+        enqueueSnackbar('Something went Wrong. Please Try again...', { variant: 'error' });
+        return;
+      }
+      const paymentHash = await sendUSDC(MARKETPLACE_EVM_ADDRESS, OPERATOR_USDC_FEE, arweaveTxId);
       enqueueSnackbar(
         <>
           Operator Registration Submitted.
           <br></br>
           <a
-            href={`https://viewblock.io/arweave/tx/${paymentId}`}
+            href={`https://viewblock.io/arweave/tx/${arweaveTxId}`}
+            target={'_blank'}
+            rel='noreferrer'
+          >
+            <u>View Transaction in Explorer</u>
+          </a>
+        </>,
+        { variant: 'success' },
+      );
+      enqueueSnackbar(
+        <>
+          Operator Payment Submitted.
+          <br></br>
+          <a
+            href={`https://sepolia.arbiscan.io/tx/${paymentHash}`}
             target={'_blank'}
             rel='noreferrer'
           >
@@ -106,15 +109,6 @@ const Register = () => {
   };
 
   const handleClose = useCallback(() => navigate(-1), [navigate]);
-
-  const handleCopy = useCallback(() => {
-    if (scriptTxId) {
-      (async () => {
-        await navigator.clipboard.writeText(scriptTxId);
-        enqueueSnackbar('Copied to clipboard', { variant: 'info' });
-      })();
-    }
-  }, [scriptTxId]);
 
   return (
     <Dialog
@@ -147,118 +141,13 @@ const Register = () => {
           Register Operator
         </Typography>
         <IconButton
-          onClick={handleClose}
-          sx={{
-            background: theme.palette.primary.main,
-            '&:hover': {
-              background: theme.palette.primary.main,
-              opacity: 0.8,
-            },
-          }}
-        >
-          <img src='./close-icon.svg' />
-        </IconButton>
+            onClick={handleClose}
+            size='small'
+            className='plausible-event-name=Close+Model+Click'
+          >
+            <Close />
+          </IconButton>
       </DialogTitle>
-      <CardContent
-        sx={{
-          display: 'flex',
-          gap: '48px',
-          padding: '0px 32px',
-          width: '100%',
-        }}
-      >
-        <Box
-          sx={{
-            borderRadius: '23px',
-            width: '317px',
-            height: '352px',
-            background: `url(${imgUrl ? imgUrl : ''})`,
-            // backgroundPosition: 'center',s
-            backgroundRepeat: 'no-repeat',
-            backgroundSize: 'cover' /* <------ */,
-            backgroundPosition: 'center',
-          }}
-        />
-        <Box display={'flex'} flexDirection={'column'} gap={'30px'} width={'30%'}>
-          <Box>
-            <Typography
-              sx={{
-                fontStyle: 'normal',
-                fontWeight: 700,
-                fontSize: '23px',
-                lineHeight: '31px',
-                display: 'flex',
-                alignItems: 'center',
-                textAlign: 'center',
-              }}
-            >
-              Name
-            </Typography>
-            <Typography
-              sx={{
-                fontStyle: 'normal',
-                fontWeight: 400,
-                fontSize: '23px',
-                lineHeight: '31px',
-                display: 'flex',
-                alignItems: 'center',
-                textAlign: 'center',
-              }}
-            >
-              {findTag(state, 'scriptName')}
-            </Typography>
-          </Box>
-          <Box>
-            <Typography
-              sx={{
-                fontStyle: 'normal',
-                fontWeight: 700,
-                fontSize: '23px',
-                lineHeight: '31px',
-                display: 'flex',
-                alignItems: 'center',
-                textAlign: 'center',
-              }}
-            >
-              Output Type
-            </Typography>
-            <Typography
-              sx={{
-                fontStyle: 'normal',
-                fontWeight: 400,
-                fontSize: '23px',
-                lineHeight: '31px',
-                display: 'flex',
-                alignItems: 'center',
-                textAlign: 'center',
-              }}
-            >
-              {findTag(state, 'output')}
-            </Typography>
-          </Box>
-        </Box>
-        <Box display={'flex'} flexDirection={'column'} gap={'16px'} width={'45%'}>
-          <Box>
-            <Typography
-              sx={{
-                fontStyle: 'normal',
-                fontWeight: 700,
-                fontSize: '23px',
-                lineHeight: '31px',
-                display: 'flex',
-                alignItems: 'center',
-                textAlign: 'center',
-              }}
-            >
-              Description
-            </Typography>
-            <Typography>{findTag(state, 'description') || 'No Description Available'}</Typography>
-          </Box>
-          <Button variant='outlined' endIcon={<ContentCopy />} onClick={handleCopy}>
-            <Typography>Copy Tx Id ({displayShortTxOrAddr(scriptTxId as string)})</Typography>
-          </Button>
-        </Box>
-      </CardContent>
       <DialogContent sx={{ padding: '20px 32px' }}>
         <CustomStepper
           data={state}

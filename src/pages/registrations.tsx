@@ -35,8 +35,8 @@ import {
   secondInMS,
   OPERATOR_REGISTRATION_PAYMENT_TAGS,
   U_LOGO_SRC,
-  PROTOCOL_NAME,
-  PROTOCOL_VERSION,
+  OLD_PROTOCOL_NAME,
+  OLD_PROTOCOL_VERSION,
   DEFAULT_TAGS,
 } from '@/constants';
 import { IEdge, ITransactions } from '@/interfaces/arweave';
@@ -265,8 +265,8 @@ const RegistrationCard = ({ tx }: { tx: IEdge }) => {
         const cancelTx = await arweave.createTransaction({
           data: 'Cancel Transaction',
         });
-        cancelTx.addTag(TAG_NAMES.protocolName, PROTOCOL_NAME);
-        cancelTx.addTag(TAG_NAMES.protocolVersion, PROTOCOL_VERSION);
+        cancelTx.addTag(TAG_NAMES.protocolName, OLD_PROTOCOL_NAME);
+        cancelTx.addTag(TAG_NAMES.protocolVersion, OLD_PROTOCOL_VERSION);
         cancelTx.addTag(TAG_NAMES.operationName, CANCEL_OPERATION);
         cancelTx.addTag(TAG_NAMES.registrationTransaction, id);
         cancelTx.addTag(TAG_NAMES.scriptName, registration.scriptName);

@@ -18,12 +18,14 @@
 
 import { WalletContext } from '@/context/wallet';
 import {
+  Alert,
   Avatar,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   List,
   ListItem,
   ListItemAvatar,
@@ -33,6 +35,43 @@ import {
 } from '@mui/material';
 import { Dispatch, SetStateAction, useCallback, useContext, useEffect, useRef } from 'react';
 import PowerIcon from '@mui/icons-material/Power';
+import { EIP1193Provider } from 'viem';
+import { EIP6963ProviderDetail } from '@/interfaces/evm';
+import { EVMWalletContext } from '@/context/evm-wallet';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { InfoOutlined } from '@mui/icons-material';
+
+const ProviderElement = ({ provider, setOpen }: { provider: EIP6963ProviderDetail, setOpen: Dispatch<SetStateAction<boolean>> }) => {
+  const { currentAddress, connect } = useContext(EVMWalletContext);
+  const { updateStorageValue } = useLocalStorage('evmProvider');
+
+  const handleEvmConnect = useCallback(async () => {
+    await connect(provider.provider as EIP1193Provider);
+    updateStorageValue(provider.info.name);
+    setOpen(false);
+  }, [ connect ]);
+
+  return <ListItem
+    key={provider.info.uuid}
+    secondaryAction={
+      <Button
+        aria-label='connect'
+        variant='contained'
+        onClick={handleEvmConnect}
+        disabled={!!currentAddress}
+        endIcon={<PowerIcon />}
+        className='plausible-event-name=EVM+Connected'
+      >
+        <Typography>{currentAddress ? 'Connected' : 'Connect'}</Typography>
+      </Button>
+    }
+  >
+    <ListItemAvatar>
+      <Avatar src={provider.info.icon} alt='provider.info.name' />
+    </ListItemAvatar>
+    <ListItemText primary={provider.info.name} />
+  </ListItem>;
+};
 
 const ChooseWallet = ({
   open,
@@ -43,7 +82,8 @@ const ChooseWallet = ({
 }) => {
   // components/layout.js
   const theme = useTheme();
-  const { isArConnectAvailable, connectWallet } = useContext(WalletContext);
+  const { isArConnectAvailable, connectWallet, currentAddress } = useContext(WalletContext);
+  const { providers } = useContext(EVMWalletContext);
   const forceDisable = true;
 
   const handleClose = useCallback(() => setOpen(false), [setOpen]);
@@ -72,8 +112,8 @@ const ChooseWallet = ({
             theme.palette.mode === 'dark'
               ? 'rgba(61, 61, 61, 0.9)'
               : theme.palette.background.default,
-          borderRadius: '30px',
         },
+        borderRadius: '10px'
       }}
     >
       <DialogTitle>
@@ -88,6 +128,11 @@ const ChooseWallet = ({
         </Typography>
       </DialogTitle>
       <DialogContent>
+        <Divider textAlign='left'>
+          <Typography>
+            {'Arweave Wallets'}
+          </Typography>
+        </Divider>
         <List>
           <ListItem
             secondaryAction={
@@ -99,7 +144,7 @@ const ChooseWallet = ({
                 endIcon={<PowerIcon />}
                 className='plausible-event-name=ArConnect+Connect+Click'
               >
-                <Typography>Connect</Typography>
+                <Typography>{currentAddress ? 'Connected' : !isArConnectAvailable || localStorage.getItem('wallet') === 'arconnect' ? 'Not Available' : 'Connect'}</Typography>
               </Button>
             }
           >
@@ -118,7 +163,7 @@ const ChooseWallet = ({
                 endIcon={<PowerIcon />}
                 className='plausible-event-name=ArweaveApp+Connect+Click'
               >
-                <Typography fontStyle={'bold'}>Connect</Typography>
+                <Typography fontStyle={'bold'}>{'Not Available'}</Typography>
               </Button>
             }
           >
@@ -128,6 +173,33 @@ const ChooseWallet = ({
             <ListItemText primary='Arweave.app' />
           </ListItem>
         </List>
+        <Divider textAlign='left'>
+          <Typography>
+            {'EVM Wallets'}
+          </Typography>
+        </Divider>
+        <List>
+          {providers.map((provider) => (
+            <ProviderElement key={provider.info.uuid} provider={provider} setOpen={setOpen} />
+          ))}
+        </List>
+        <Alert
+          /* onClose={() => setOpen(false)} */
+          variant='outlined'
+          severity='info'
+          sx={{
+            borderRadius: '10px',
+            display: 'flex',
+            alignItems: 'center'
+          }}
+          icon={<InfoOutlined />}
+        >
+          <Typography>
+            {
+              'Operators will need to connect both an Arweave and EVM wallet to access all functionalities.'
+            }
+          </Typography>
+        </Alert>
       </DialogContent>
       <DialogActions
         sx={{

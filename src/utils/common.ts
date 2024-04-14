@@ -28,8 +28,8 @@ import {
   MODEL_DELETION,
   NET_ARWEAVE_URL,
   NOTES_ATTACHMENT,
-  PROTOCOL_NAME,
-  PROTOCOL_VERSION,
+  OLD_PROTOCOL_NAME,
+  OLD_PROTOCOL_VERSION,
   SCRIPT_DELETION,
   TAG_NAMES,
   UDL_ID,
@@ -297,8 +297,8 @@ export const uploadAvatarImage = async (
 
   // upload the file
   const tags = [];
-  tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
-  tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
+  tags.push({ name: TAG_NAMES.protocolName, value: OLD_PROTOCOL_NAME });
+  tags.push({ name: TAG_NAMES.protocolVersion, value: OLD_PROTOCOL_VERSION });
   tags.push({ name: TAG_NAMES.contentType, value: image.type });
   tags.push({ name: TAG_NAMES.operationName, value: MODEL_ATTACHMENT });
   tags.push({ name: TAG_NAMES.attachmentName, value: image.name });
@@ -351,8 +351,8 @@ export const uploadUsageNotes = async (
 
   // upload the file
   const tags = [];
-  tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
-  tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
+  tags.push({ name: TAG_NAMES.protocolName, value: OLD_PROTOCOL_NAME });
+  tags.push({ name: TAG_NAMES.protocolVersion, value: OLD_PROTOCOL_VERSION });
   tags.push({ name: TAG_NAMES.contentType, value: file.type });
   tags.push({ name: TAG_NAMES.operationName, value: MODEL_ATTACHMENT });
   tags.push({ name: TAG_NAMES.attachmentName, value: file.name });

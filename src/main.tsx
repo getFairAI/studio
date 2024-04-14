@@ -51,7 +51,7 @@ const router = createHashRouter([
             path: 'register/:txid/',
             id: 'register',
             loader: getScriptAttachments,
-            element: <Register />,
+            element: <Register />
           },
         ],
       },
