@@ -41,7 +41,7 @@ export const OLD_PROTOCOL_VERSION = '1.0';
 export const MARKETPLACE_FEE = '0.5'; // u
 export const SCRIPT_CREATION_FEE = '0.5'; // u
 export const OPERATOR_REGISTRATION_AR_FEE = '0.05'; // u
-export const OPERATOR_USDC_FEE = 1;
+export const OPERATOR_USDC_FEE = 0.5;
 export const MARKETPLACE_EVM_ADDRESS = '0x611dEe04f236BbC45e3a6De266ABe2B2b32eab31'; // placeholder
 
 export const TAG_NAMES = {

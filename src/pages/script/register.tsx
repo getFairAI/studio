@@ -92,7 +92,7 @@ const Register = () => {
           Operator Payment Submitted.
           <br></br>
           <a
-            href={`https://sepolia.arbiscan.io/tx/${paymentHash}`}
+            href={`https://arbiscan.io/tx/${paymentHash}`}
             target={'_blank'}
             rel='noreferrer'
           >

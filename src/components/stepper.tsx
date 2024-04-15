@@ -154,11 +154,11 @@ const RegisterStep = ({
 
   const scriptTxid = useMemo(() => findTag(tx, 'scriptTransaction'), [tx]);
 
-  const { data, loading } = useQuery(findByTagsAndOwnersDocument, {
+  const { data, loading, refetch } = useQuery(findByTagsAndOwnersDocument, {
     variables: {
       tags: [
-        { name: TAG_NAMES.protocolName, values: [ OLD_PROTOCOL_NAME, PROTOCOL_NAME ]},
-        { name: TAG_NAMES.protocolVersion, values: [OLD_PROTOCOL_VERSION, PROTOCOL_VERSION ]},
+        { name: TAG_NAMES.protocolName, values: [ PROTOCOL_NAME ]},
+        { name: TAG_NAMES.protocolVersion, values: [ PROTOCOL_VERSION ]},
         { name: TAG_NAMES.scriptTransaction, values: [ scriptTxid! ] },
         { name: TAG_NAMES.operationName, values: [ 'Operator Registration' ]},
       ],
@@ -169,7 +169,7 @@ const RegisterStep = ({
   });
 
   const registrationId = useMemo(
-    () => data?.transactions?.edges[0].node.id ?? '',
+    () => data?.transactions?.edges[0]?.node.id ?? '',
     [data],
   );
   const registrationName = useMemo(
@@ -235,16 +235,21 @@ const RegisterStep = ({
     setOperatorName(event.target.value);
   };
 
+  const handleNextAndUpdate = useCallback(() => {
+    refetch();
+    handleNext();
+  }, [ refetch, handleNext ]);
+
   const handleFinish = useCallback(async () => {
-    await handleSubmit(rate.toString(), operatorName, handleNext);
-  }, [rate, operatorName, handleNext, handleSubmit]);
+    await handleSubmit(rate.toString(), operatorName, handleNextAndUpdate);
+  }, [rate, operatorName, handleNextAndUpdate, handleSubmit]);
 
   const viewTx = useCallback(() => {
     window.open(`https://viewblock.io/arweave/tx/${registrationId}`, '_blank');
   },[registrationId]);
 
   const viewEVMTx = useCallback(() => {
-    window.open(`https://sepolia.arbiscan.io/tx/${paymentHash}`, '_blank');
+    window.open(`https://arbiscan.io/tx/${paymentHash}`, '_blank');
   },[paymentHash]);
 
   const handleRetryNow = useCallback(async () => {

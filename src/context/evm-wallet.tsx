@@ -19,7 +19,7 @@
 import 'viem/window';
 import { createContext, Dispatch, ReactNode, useEffect, useMemo, useReducer, useState } from 'react';
 import { EIP1193Provider } from 'viem';
-import { arbitrumSepolia } from 'viem/chains';
+import { arbitrum } from 'viem/chains';
 import { getConnectedAddress, getEthBalance, getUsdcBalance, setProvider, countStamps, switchChain, getCurrentChain, startConversation, setIrys, postOnArweave, prompt } from '@fairai/evm-sdk';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useEvmProviders } from '@/hooks/useEvmProviders';
@@ -102,8 +102,8 @@ const asyncEvmWalletconnect = async (dispatch: Dispatch<EVMWalletAction>, provid
   try {
     await setProvider(provider as EIP1193Provider);
     await setIrys(window?.ethereum as EIP1193Provider);
-    if (getCurrentChain() !== arbitrumSepolia) {
-      switchChain(arbitrumSepolia);
+    if (getCurrentChain() !== arbitrum) {
+      switchChain(arbitrum);
     }
     const address = getConnectedAddress();
     const ethBalance = await getEthBalance();
