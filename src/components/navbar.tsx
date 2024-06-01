@@ -29,62 +29,29 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useState,
 } from 'react';
-import { Button, Icon, InputBase, MenuItem, Select, Tooltip, useTheme } from '@mui/material';
+import { Button, Icon, InputBase, Tooltip, useTheme } from '@mui/material';
 import { WalletContext } from '@/context/wallet';
 import { ChooseWalletContext } from '@/context/choose-wallet';
 import { Timeout } from 'react-number-format/types/types';
-import { defaultDecimalPlaces, U_LOGO_SRC } from '@/constants';
+import { defaultDecimalPlaces } from '@/constants';
 import { usePollingEffect } from '@/hooks/usePollingEffect';
 import Logo from './logo';
 import NavigationMenu from './navigation-menu';
 
-const CustomDropDownIcon = () => (
-  <Icon
-    sx={{
-      pointerEvents: 'none',
-      position: 'absolute',
-      right: '7px',
-    }}
-  >
-    <img src='./chevron-bottom.svg' />
-  </Icon>
-);
-
 const CurrencyMenu = () => {
   const pollingTimeout = 10000;
-  const spaceBetween = 'space-between';
 
-  const [selected, setSelected] = useState<'AR' | 'U'>('U');
-  const { currentAddress, currentBalance, currentUBalance, updateBalance, updateUBalance } =
+  const { currentAddress, currentBalance, updateBalance } =
     useContext(WalletContext);
 
-  const pollingFn = () => {
-    if (selected === 'AR') {
-      return updateBalance();
-    } else {
-      return updateUBalance();
-    }
-  };
+  const pollingFn = () => updateBalance();
 
   const [startPolling, stopPolling] = usePollingEffect(
     pollingFn,
-    [currentAddress, selected],
+    [currentAddress],
     pollingTimeout,
   );
-
-  const handleArClick = useCallback(() => {
-    stopPolling();
-    setSelected('AR');
-    startPolling();
-  }, [setSelected, startPolling, stopPolling]);
-
-  const handleUClick = useCallback(() => {
-    stopPolling();
-    setSelected('U');
-    startPolling();
-  }, [setSelected, startPolling, stopPolling]);
 
   useEffect(() => {
     if (!currentAddress) {
@@ -96,45 +63,12 @@ const CurrencyMenu = () => {
   }, [currentAddress]);
 
   return (
-    <>
-      <Select
-        sx={{
-          '& .MuiInputBase-input': {
-            display: 'flex',
-            alignItems: 'center',
-            border: 'none',
-            textTransform: 'none',
-            padding: 0,
-          },
-          '& .MuiOutlinedInput-notchedOutline': {
-            border: 'none',
-          },
-        }}
-        IconComponent={CustomDropDownIcon}
-        value={selected}
-      >
-        <MenuItem
-          value={'AR'}
-          onClick={handleArClick}
-          sx={{ display: 'flex', justifyContent: spaceBetween }}
-        >
-          <Typography sx={{ paddingRight: '6px', paddingLeft: '23px', lineHeight: '1.7' }}>
-            {currentBalance.toFixed(defaultDecimalPlaces)}
-          </Typography>
-          <img width='20px' height='20px' src='./arweave-logo-for-light.png' />
-        </MenuItem>
-        <MenuItem
-          value={'U'}
-          onClick={handleUClick}
-          sx={{ display: 'flex', justifyContent: spaceBetween }}
-        >
-          <Typography sx={{ paddingRight: '6px', paddingLeft: '16px', lineHeight: '1.7' }}>
-            {currentUBalance.toFixed(defaultDecimalPlaces)}
-          </Typography>
-          <img width='20px' height='20px' src={U_LOGO_SRC} />
-        </MenuItem>
-      </Select>
-    </>
+    <Box display={'flex'} alignItems={'center'}>
+      <Typography sx={{ paddingRight: '6px', paddingLeft: '8px' }}>
+        {currentBalance.toFixed(defaultDecimalPlaces)}
+      </Typography>
+      <img width='20px' height='20px' src='./arweave-logo-for-light.png' />
+    </Box>
   );
 };
 
@@ -205,9 +139,9 @@ const WalletState = () => {
         >
           <Tooltip title={currentAddress} placement={'left-start'}>
             <Typography
-              sx={{ color: theme.palette.text.primary, lineHeight: '20.25px', fontSize: '15px' }}
+              sx={{ color: theme.palette.text.primary, lineHeight: '20.25px', fontSize: '15px', textWrap: 'nowrap' }}
             >
-              {currentAddress.slice(0, 10)}...{currentAddress.slice(-3)}
+              {currentAddress.slice(0, 6)}...{currentAddress.slice(-4)}
             </Typography>
           </Tooltip>
           {isWalletVouched && (
@@ -328,31 +262,18 @@ const Navbar = ({
           >
             <Typography
               component={NavLink}
-              to='/models'
-              className='navbar-links'
-              sx={navbarLinkStyles}
-            >
-              My Models
-            </Typography>
-            <Typography
-              component={NavLink}
-              to='/upload-creator'
-              className='navbar-links'
-              sx={navbarLinkStyles}
-            >
-              Creators
-            </Typography>
-            <Typography
-              component={NavLink}
               to='/upload-curator'
               className='navbar-links'
               sx={navbarLinkStyles}
             >
-              Curators
+              Solutions
             </Typography>
             <Typography component={NavLink} to='/' className='navbar-links' sx={navbarLinkStyles}>
               Operators
             </Typography>
+            <Link to='/upload-creator' style={{ border: `0.5px solid ${theme.palette.terciary.main}`, borderRadius: '8px'  }}>
+              <Typography padding={'9.5px 15px'} textTransform={'uppercase'} lineHeight={1.3} sx={{ textWrap: 'nowrap' }}>Store on Arweave</Typography>
+            </Link>
             <NavigationMenu navStyles={navbarLinkStyles} />
             <WalletState />
           </Box>

@@ -17,23 +17,29 @@
  */
 
 import {
-  Alert,
+  Autocomplete,
   Backdrop,
   Box,
   Button,
   Checkbox,
   CircularProgress,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   FormControl,
   FormControlLabel,
   FormGroup,
   FormHelperText,
   FormLabel,
   MenuItem,
-  Snackbar,
   Tab,
   Tabs,
+  TextField,
   Typography,
+  createFilterOptions,
   useTheme,
 } from '@mui/material';
 import {
@@ -47,6 +53,7 @@ import {
   useState,
   MouseEvent,
   SyntheticEvent,
+  FormEvent,
 } from 'react';
 import {
   Control,
@@ -62,62 +69,284 @@ import SelectControl from '@/components/select-control';
 import MarkdownControl from '@/components/md-control';
 import FileControl from '@/components/file-control';
 import AvatarControl from '@/components/avatar-control';
-import CustomProgress from '@/components/progress';
 import {
   TAG_NAMES,
-  SCRIPT_CREATION,
-  SCRIPT_CREATION_PAYMENT,
   secondInMS,
-  U_DIVIDER,
-  SCRIPT_CREATION_FEE,
-  VAULT_ADDRESS,
-  SCRIPT_CREATION_PAYMENT_TAGS,
-  DEFAULT_TAGS,
   OLD_PROTOCOL_NAME,
   OLD_PROTOCOL_VERSION,
-  U_LOGO_SRC,
+  PROTOCOL_NAME,
+  PROTOCOL_VERSION,
+  MODEL_CREATION,
+  MODEL_DELETION,
+  MARKETPLACE_ADDRESS,
+  MODEL_ATTACHMENT,
+  NOTES_ATTACHMENT,
+  AVATAR_ATTACHMENT,
+  SOLUTION_DELETION,
+  SOLUTION_CREATION,
 } from '@/constants';
-import { BundlrContext } from '@/context/bundlr';
 import { useSnackbar } from 'notistack';
-import { WalletContext } from '@/context/wallet';
-import { FundContext } from '@/context/fund';
-import { ApolloError, useQuery } from '@apollo/client';
-import { FIND_BY_TAGS } from '@/queries/graphql';
+import { ApolloError, useLazyQuery, useQuery } from '@apollo/client';
+import { FIND_BY_TAGS, FIND_BY_TAGS_WITH_OWNERS, GET_LATEST_MODEL_ATTACHMENTS, IRYS_FIND_BY_TAGS } from '@/queries/graphql';
 import { IContractEdge, IContractQueryResult } from '@/interfaces/arweave';
 import {
   addAssetTags,
   addLicenseTags,
-  bundlrUpload,
   commonUpdateQuery,
   displayShortTxOrAddr,
   findTag,
-  isFakeDeleted,
-  parseCost,
-  uploadAvatarImage,
-  uploadUsageNotes,
 } from '@/utils/common';
 import DebounceButton from '@/components/debounce-button';
-import { sendU } from '@/utils/u';
-import { fetchMoreFn } from '@/utils/apollo';
+import { client, fetchMoreFn } from '@/utils/apollo';
 import { AdvancedConfiguration } from '@/components/advanced-configuration';
 import { LicenseForm } from '@/interfaces/common';
 import { WarpFactory } from 'warp-contracts';
 import { DeployPlugin } from 'warp-contracts-plugin-deploy';
-import FairSDKWeb from '@fair-protocol/sdk/web';
+import { WalletContext } from '@/context/wallet';
+import { FundContext } from '@/context/fund';
+import { BundlrContext } from '@/context/bundlr';
+import { findByTagsAndOwnersDocument, findByTagsAndOwnersQuery, findByTagsQuery } from '@fairai/evm-sdk';
+import { getData } from '@/utils/arweave';
 
 export interface CreateForm extends FieldValues {
   name: string;
-  fee: number;
   output: string;
   outputConfiguration: string;
   notes: string;
   file: File;
-  model: string;
-  script: string;
+  codeUrl: string;
+  availableModels: string[];
+  solutionRequestId: string;
+  solution: string;
   description?: string;
   avatar?: File;
   allow: { allowFiles: boolean; allowText: boolean };
+  rewardsEvmAddress: `0x${string}`;
 }
+interface SupportedModelOption {
+  name: string;
+  url: string;
+}
+
+interface IrysTx {
+  id: string;
+  tags: {
+    name: string;
+    value: string;
+  }[];
+  address: string;
+}
+
+interface RequestData {
+  title: string;
+  description: string;
+  keywords: string[];
+  id: string;
+  owner: string;
+  timestamp: string;
+}
+
+const filter = createFilterOptions<SupportedModelOption>();
+
+const SupportedModelsPick = ({
+  data,
+  name,
+  control,
+  loadMore
+}: {
+  data: IContractQueryResult;
+  name: string;
+  control: Control<FieldValues, unknown>;
+  error?: ApolloError;
+  loading?: boolean;
+  loadMore: fetchMoreFn;
+}) => {
+  const [ options, setOptions ] = useState<SupportedModelOption[]>([]);
+  const [value, setValue] = useState<SupportedModelOption[]>([]);
+  const [open, toggleOpen] = useState(false);
+  const [dialogValue, setDialogValue] = useState({
+    name: '',
+    url: '',
+  });
+  const { field } = useController({ name, control });
+
+  const handleClose = () => {
+    setDialogValue({
+      name: '',
+      url: '',
+    });
+    toggleOpen(false);
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setValue(prev => [ ...prev, {
+      name: dialogValue.name,
+      url: dialogValue.url,
+    }]);
+    handleClose();
+  };
+
+  useEffect(() => {
+    if (data?.transactions?.edges && data?.transactions?.pageInfo?.hasNextPage) {
+      loadMore({
+        variables: {
+          after:
+            data && data.transactions.edges.length > 0
+              ? data.transactions.edges[data.transactions.edges.length - 1].cursor
+              : undefined,
+        },
+        updateQuery: commonUpdateQuery,
+      });
+    } else  if (data?.transactions?.edges) {
+      (async () => {
+        const owners = data.transactions.edges.map((el: IContractEdge) => el.node.owner.address);
+        const { data: deletedData } = await client.query({ query: FIND_BY_TAGS_WITH_OWNERS, variables: {
+          tags: [
+            { name: TAG_NAMES.protocolName, values: [OLD_PROTOCOL_NAME, PROTOCOL_NAME] },
+            { name: TAG_NAMES.protocolVersion, values: [OLD_PROTOCOL_VERSION, PROTOCOL_VERSION ] },
+            { name: TAG_NAMES.operationName, values: [ MODEL_DELETION ]}
+          ],
+          owners,
+          first: 100
+        }});
+        const filtered = [ ...data.transactions.edges ]; // coppy array
+        for (const el of deletedData.transactions.edges) {
+          const deletedModelid = findTag(el, 'modelTransaction') as string;
+          const deletedModelOwner = el.node.owner.address;
+
+          const idx = data.transactions.edges.findIndex((el: IContractEdge) => {
+            const modelId = findTag(el, 'modelTransaction') as string;
+            const modelOwner = el.node.owner.address;
+            return modelId === deletedModelid && (modelOwner === deletedModelOwner || deletedModelOwner === MARKETPLACE_ADDRESS);
+          });
+
+          if (idx !== -1) {
+            filtered.splice(idx, 1);
+          }
+        }
+        
+        const opts = filtered.map((el: IContractEdge) => {
+          return {
+            name: findTag(el, 'modelName') as string,
+            url: `https://arweave.net/${el.node.id}`,
+          };
+        });
+        setOptions(opts);
+      })();
+    }
+  }, [ data, setOptions ]);
+
+  useEffect(() => {
+    field.onChange(value);
+  }, [ value ]);
+
+  return (
+    <>
+      <Autocomplete
+        value={value}
+        multiple
+        onChange={(_, newValue) => {
+          const lastEl = [ ...newValue ].pop();
+          if (lastEl && (typeof lastEl === 'string' || (!lastEl.url))) {
+            setDialogValue({
+              name: (lastEl as SupportedModelOption).name.replace(/Add "/, '').replace(/"$/, ''),
+              url: '',
+            });
+            toggleOpen(true);
+          } else if (lastEl && newValue.length > value.length) {
+            setValue((prev) => [...prev, lastEl as SupportedModelOption]);
+          } else {
+            setValue(newValue as SupportedModelOption[]);
+          }
+        }}
+        filterOptions={(options, params) => {
+          const filtered = filter(options, params);
+
+          if (params.inputValue !== '') {
+            filtered.push({
+              name: `Add "${params.inputValue}"`,
+              url: ''
+            });
+          }
+
+          return filtered;
+        }}
+        options={options}
+        getOptionLabel={(option) => {
+          // for example value selected with enter, right from the input
+          if (typeof option === 'string') {
+            return option;
+          } else {
+            return option.name;
+          }
+        }}
+        selectOnFocus
+        clearOnBlur
+        handleHomeEndKeys
+        disableCloseOnSelect
+        renderOption={(props, option, { selected }) => <MenuItem
+          selected={selected}
+          {...props}
+          sx={{
+            display: 'flex',
+            gap: '16px',
+          }}
+        >
+          <Checkbox checked={selected} />
+          <Typography>{option.name}</Typography>
+          <Typography sx={{ opacity: '0.5' }}>
+            {option.url}
+          </Typography>
+        </MenuItem>}
+        sx={{ width: '100%' }}
+        freeSolo
+        renderInput={(params) => <TextField {...params} label='Choose Supported Models, or Add new ones' />}
+      />
+      <Dialog open={open} onClose={handleClose}>
+        <form onSubmit={handleSubmit}>
+          <DialogTitle>Add a new Supported Model</DialogTitle>
+          <DialogContent sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center'}}>
+            <DialogContentText>
+              Please add the name and the URL of the model you want to support
+            </DialogContentText>
+            <TextField
+              autoFocus
+              id='name'
+              value={dialogValue.name}
+              onChange={(event) =>
+                setDialogValue({
+                  ...dialogValue,
+                  name: event.target.value,
+                })
+              }
+              label='name'
+              type='text'
+              variant='standard'
+            />
+            <TextField
+              id='url'
+              error
+              value={dialogValue.url}
+              onChange={(event) =>
+                setDialogValue({
+                  ...dialogValue,
+                  url: event.target.value,
+                })
+              }
+              label='url'
+              variant='standard'
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClose}>Cancel</Button>
+            <Button type="submit" disabled={!dialogValue.name || !dialogValue.url}>Add</Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+    </>
+  );
+};
 
 const AllowGroupControl = (props: UseControllerProps) => {
   const { field } = useController(props);
@@ -186,29 +415,21 @@ const AllowGroupControl = (props: UseControllerProps) => {
 const ScriptOption = ({
   el,
   setValue,
-  modelsData,
 }: {
   el: IContractEdge;
   setValue?: UseFormSetValue<FieldValues>;
-  modelsData?: IContractEdge[];
 }) => {
   const handleScriptChoice = useCallback(async () => {
-    if (!setValue || !modelsData) {
+    if (!setValue) {
       return;
     } else {
-      const scriptModel = await FairSDKWeb.utils.getById(findTag(el, 'modelTransaction') as string);
-      setValue('model', JSON.stringify(scriptModel), {
-        shouldDirty: true,
-        shouldTouch: true,
-        shouldValidate: true,
-      });
-      setValue('script', JSON.stringify(el), {
+      setValue('solution', JSON.stringify(el), {
         shouldDirty: true,
         shouldTouch: true,
         shouldValidate: true,
       });
     }
-  }, [el, modelsData, setValue]);
+  }, [el, setValue]);
 
   return (
     <MenuItem
@@ -218,45 +439,10 @@ const ScriptOption = ({
         gap: '16px',
       }}
     >
-      <Typography>{findTag(el, 'scriptName')}</Typography>
+      <Typography>{findTag(el, 'solutionName')}</Typography>
       <Typography sx={{ opacity: '0.5' }}>
-        {findTag(el, 'scriptTransaction')}
-        {` (Creator: ${displayShortTxOrAddr(findTag(el, 'sequencerOwner') as string)}`}
-      </Typography>
-    </MenuItem>
-  );
-};
-
-const ModelOption = ({
-  el,
-  setValue,
-}: {
-  el: IContractEdge;
-  setValue?: UseFormSetValue<FieldValues>;
-}) => {
-  const handleModelChoice = useCallback(() => {
-    if (setValue) {
-      setValue('model', JSON.stringify(el), {
-        shouldDirty: true,
-        shouldTouch: true,
-        shouldValidate: true,
-      });
-    }
-  }, [el, setValue]);
-  return (
-    <MenuItem
-      onClick={handleModelChoice}
-      sx={{
-        display: 'flex',
-        gap: '16px',
-      }}
-    >
-      <Typography>{findTag(el, 'modelName')}</Typography>
-      <Typography sx={{ opacity: '0.5' }}>
-        {findTag(el, 'modelTransaction')}
-        {` (Creator: ${displayShortTxOrAddr(
-          (findTag(el, 'sequencerOwner') as string) ?? el.node.owner.address,
-        )}`}
+        {findTag(el, 'solutionTransaction')}
+        {` (Creator: ${displayShortTxOrAddr(el.node.owner.address as string)}`}
       </Typography>
     </MenuItem>
   );
@@ -275,13 +461,13 @@ const GenericSelect = ({
 }: {
   name: string;
   control: Control<FieldValues, unknown>;
-  data: IContractQueryResult;
+  data?: findByTagsAndOwnersQuery;
   error?: ApolloError;
   loading: boolean;
   hasNextPage: boolean;
   disabled?: boolean;
   setValue?: UseFormSetValue<FieldValues>;
-  loadMore: fetchMoreFn;
+  loadMore: () => void;
 }) => {
   const theme = useTheme();
   const [selectAnchorEl, setSelectAnchorEl] = useState<null | HTMLElement>(null);
@@ -294,90 +480,69 @@ const GenericSelect = ({
       event.currentTarget.clientHeight + bottomOffset;
     if (bottom && hasNextPage) {
       // user is at the end of the list so load more items
-      loadMore({
-        variables: {
-          after:
-            data && data.transactions.edges.length > 0
-              ? data.transactions.edges[data.transactions.edges.length - 1].cursor
-              : undefined,
-        },
-        updateQuery: commonUpdateQuery,
-      });
+      loadMore();
     }
   };
-  const isScript = useMemo(() => name === 'script', [name]);
   const hasNoData = useMemo(
     () => !error && !loading && data?.transactions?.edges?.length === 0,
     [error, loading, data],
   );
-  const [scriptData, setScriptData] = useState<IContractEdge[]>([]);
-  const [modelData, setModelData] = useState<IContractEdge[]>([]);
+  const [ solutionsData, setSolutionsData ] = useState<IContractEdge[]>([]);
 
   const checkShouldLoadMore = (filtered: IContractEdge[]) => {
     const selectRowHeight = 36;
     const maxHeight = 144;
-    if (filtered.length * selectRowHeight < maxHeight && data.transactions.pageInfo.hasNextPage) {
+    if (filtered.length * selectRowHeight < maxHeight && data && data.transactions.pageInfo.hasNextPage) {
       // if there are not enough elements to show scroll & has next pºage, force load more
-      loadMore({
-        variables: {
-          after:
-            data && data.transactions.edges.length > 0
-              ? data.transactions.edges[data.transactions.edges.length - 1].cursor
-              : undefined,
-        },
-        updateQuery: commonUpdateQuery,
-      });
+      loadMore();
     }
-  };
-
-  const filterModels = (newData: IContractQueryResult) => {
-    (async () => {
-      const filtered: IContractEdge[] = await FairSDKWeb.utils.modelsFilter(
-        newData.transactions.edges,
-      );
-      setModelData(filtered);
-      checkShouldLoadMore(filtered);
-    })();
-  };
-
-  const filterScripts = (newData: IContractQueryResult) => {
-    (async () => {
-      const uniqueScripts = FairSDKWeb.utils.filterByUniqueScriptTxId(newData.transactions.edges);
-      const filteredScritps = FairSDKWeb.utils.filterPreviousVersions(uniqueScripts);
-      const filtered: IContractEdge[] = [];
-      for (const el of filteredScritps) {
-        const scriptId = FairSDKWeb.utils.findTag(el, 'scriptTransaction') as string;
-        const scriptOwner =
-          (FairSDKWeb.utils.findTag(el, 'sequencerOwner') as string) ?? el.node.owner.address;
-        const sequencerId = (FairSDKWeb.utils.findTag(el, 'sequencerTxId') as string) ?? el.node.id;
-
-        const isValidPayment = await FairSDKWeb.utils.isUTxValid(sequencerId);
-
-        if (!isValidPayment) {
-          // ignore
-        } else if (!scriptOwner || !scriptId) {
-          // ignore
-        } else if (await isFakeDeleted(scriptId, scriptOwner, 'script')) {
-          // if fake deleted ignore
-        } else {
-          filtered.push(el as IContractEdge);
-        }
-      }
-
-      setScriptData(filtered);
-      checkShouldLoadMore(filtered);
-    })();
   };
 
   useEffect(() => {
-    if (isScript && data?.transactions?.edges?.length > 0) {
-      filterScripts(data);
-    } else if (data?.transactions?.edges?.length > 0) {
-      filterModels(data);
-    } else {
-      setScriptData([]);
+    if (data && data?.transactions?.edges?.length > 0) {
+      (async () => {
+        const txs = [ ...data.transactions.edges ]; // mutable copy of txs
+        const filtered = txs.reduce((acc, el) => {
+          acc.push(el);
+          // find previousVersionsTag
+          const previousVersions= findTag(el, 'previousVersions');
+          if (previousVersions) {
+            const versionsArray: string[] = JSON.parse(previousVersions);
+            // remove previous versions from accumulator array
+            const newAcc = acc.filter((el) => !versionsArray.includes(el.node.id));
+            return newAcc;
+          }
+  
+          return acc;
+        }, [] as findByTagsQuery['transactions']['edges']);
+  
+        const filteredCopy = [ ...filtered ];
+        for (const tx of filteredCopy) {
+          const deleteTags = [
+            { name: TAG_NAMES.operationName, values: [ SOLUTION_DELETION ] },
+            { name: TAG_NAMES.solutionTransaction, values: [ tx.node.id ] },
+          ];
+        
+          const owners = [ MARKETPLACE_ADDRESS, tx.node.owner.address ];
+        
+          const data = await client.query({
+            query: findByTagsAndOwnersDocument,
+            variables: {
+              tags: deleteTags, first: filteredCopy.length ,owners,
+            }
+          });
+        
+          if (data.data.transactions.edges.length > 0) {
+            // remove scripts with cancellations
+            filtered.splice(filtered.findIndex((el: IContractEdge) => el.node.id === tx.node.id), 1);
+          }
+        }
+  
+        setSolutionsData(filtered);
+        checkShouldLoadMore(filtered);
+      })();
     }
-  }, [isScript, data]);
+  }, [ data]);
 
   const handleSelected = useCallback(
     (event: MouseEvent<HTMLElement>) => {
@@ -393,23 +558,12 @@ const GenericSelect = ({
   );
   const renderValueFn = useCallback(
     (selected: unknown) => {
-      let title;
-      let mainText;
-      let subText;
       if (typeof selected !== 'string') {
         return '';
       }
-      if (isScript) {
-        title = findTag(JSON.parse(selected), 'scriptName');
-        mainText = findTag(JSON.parse(selected), 'scriptTransaction');
-        subText = findTag(JSON.parse(selected), 'sequencerOwner');
-      } else {
-        title = findTag(JSON.parse(selected), 'modelName');
-        mainText = findTag(JSON.parse(selected), 'modelTransaction');
-        subText =
-          findTag(JSON.parse(selected), 'sequencerOwner') ??
-          JSON.parse(selected).node.owner.address;
-      }
+      const title = findTag(JSON.parse(selected), 'solutionName');
+      const mainText = findTag(JSON.parse(selected), 'solutionTransaction');
+      const subText = JSON.parse(selected).node.owner.address;
 
       return (
         <Box
@@ -426,7 +580,7 @@ const GenericSelect = ({
         </Box>
       );
     },
-    [isScript],
+    [],
   );
 
   return (
@@ -437,7 +591,7 @@ const GenericSelect = ({
       disabled={disabled}
       mat={{
         onClick: handleSelected,
-        placeholder: isScript ? 'Choose a Script' : 'Choose a Model',
+        placeholder: 'Choose a Solution',
         sx: {
           borderWidth: '1px',
           borderColor: theme.palette.text.primary,
@@ -476,29 +630,20 @@ const GenericSelect = ({
       {error && (
         <Box>
           <Typography>
-            {isScript
-              ? 'Could not fetch available scripts for the current address'
-              : 'Could Not Fetch Available Models'}
+            {'Could not fetch available Solutions for the current address'}
           </Typography>
         </Box>
       )}
 
-      {modelData.length > 0 &&
-        modelData.map((el: IContractEdge) => (
-          <ModelOption key={el.node.id} el={el} setValue={setValue} />
-        ))}
-
-      {scriptData.length > 0 &&
-        scriptData.map((el: IContractEdge) => (
-          <ScriptOption key={el.node.id} el={el} setValue={setValue} modelsData={modelData} />
+      {solutionsData.length > 0 &&
+        solutionsData.map((el: IContractEdge) => (
+          <ScriptOption key={el.node.id} el={el} setValue={setValue} />
         ))}
 
       {hasNoData && (
         <Box>
           <Typography>
-            {isScript
-              ? 'There are no Scripts created with the current address'
-              : 'There Are no Available Models'}
+            {'There are no Solutions created with the current address'}
           </Typography>
         </Box>
       )}
@@ -559,41 +704,41 @@ const UploadCurator = () => {
   const { handleSubmit, reset, control, setValue } = useForm({
     defaultValues: {
       name: '',
-      fee: 0,
       output: 'text',
       outputConfiguration: 'none',
       description: '',
       notes: '',
       avatar: '',
       file: '',
-      model: '',
-      script: '',
+      codeUrl: '',
+      availableModels: [],
+      solutionRequestId: 'none',
+      solution: '',
       allow: {
         allowFiles: false,
         allowText: true,
       },
+      rewardsEvmAddress: '',
     },
   } as FieldValues);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [ requests, setRequests ] = useState<RequestData[]>([]);
+  const [ showUrl, setShowUrl ] = useState(false);
   const [, setMessage] = useState('');
-  const [formData, setFormData] = useState<CreateForm | undefined>(undefined);
-  const [hasModelsNextPage, setHasModelsNextPage] = useState(false);
   const [hasScriptsNextPage, setHasScriptsNextPage] = useState(false);
-  const totalChunks = useRef(0);
-  const { nodeBalance, getPrice, chunkUpload, updateBalance } = useContext(BundlrContext);
   const { enqueueSnackbar } = useSnackbar();
   const theme = useTheme();
-  const { currentAddress, currentUBalance, updateUBalance } = useContext(WalletContext);
+  const { currentAddress } = useContext(WalletContext);
+  const { nodeBalance, upload } = useContext(BundlrContext);
   const { setOpen: setFundOpen } = useContext(FundContext);
-  const [isUploading, setIsUploading] = useState(false);
-  const [usdFee, setUsdFee] = useState('0');
   const [currentTab, setCurrentTab] = useState<'create' | 'edit'>('create');
+
+  const [fetchAvatar, { data: avatarData }] = useLazyQuery(GET_LATEST_MODEL_ATTACHMENTS);
+  const [fetchNotes, { data: notesData }] = useLazyQuery(GET_LATEST_MODEL_ATTACHMENTS);
 
   const disabled = useMemo(
     () =>
-      (!control._formState.isValid && control._formState.isDirty) || !currentAddress || isUploading,
-    [control._formState.isValid, control._formState.isDirty, currentAddress, isUploading],
+      (!control._formState.isValid && control._formState.isDirty) || !currentAddress,
+    [control._formState.isValid, control._formState.isDirty, currentAddress],
   );
 
   const licenseRef = useRef<HTMLInputElement>(null);
@@ -607,36 +752,80 @@ const UploadCurator = () => {
   } as FieldValues);
 
   const {
-    data: scriptsData,
-    loading: scriptsLoading,
-    error: scriptsError,
-    fetchMore: scriptsFetchMore,
-  } = useQuery(FIND_BY_TAGS, {
+    data: solutionsData,
+    loading: solutionsLoading,
+    error: solutionsError,
+    fetchMore: solutionsFetchMore,
+  } = useQuery(findByTagsAndOwnersDocument, {
     variables: {
       tags: [
-        ...DEFAULT_TAGS,
-        ...SCRIPT_CREATION_PAYMENT_TAGS,
-        {
-          name: TAG_NAMES.sequencerOwner,
-          values: [currentAddress],
-        },
+        { name: TAG_NAMES.protocolName, values: [ PROTOCOL_NAME ]}, // keep Fair Protocol in tags to keep retrocompatibility
+        { name: TAG_NAMES.protocolVersion, values: [ PROTOCOL_VERSION ]},
+        { name: TAG_NAMES.operationName, values: [ SOLUTION_CREATION ]},
+        /*  { name: TAG_NAMES.modelTransaction, values: [ state.modelTransaction ]}, */
       ],
       first: elementsPerPage,
+      owners: [ currentAddress ]
     },
-    notifyOnNetworkStatusChange: true,
     skip: !currentAddress,
+    notifyOnNetworkStatusChange: true,
   });
 
-  const queryObject = FairSDKWeb.utils.getModelsQuery();
   const {
     data: modelsData,
     loading: modelsLoading,
     error: modelsError,
     fetchMore: modelsFetchMore,
-  } = useQuery(queryObject.query, {
-    variables: queryObject.variables,
+  } = useQuery(FIND_BY_TAGS, {
+    variables: {
+      tags: [
+        { name: TAG_NAMES.protocolName, values: [OLD_PROTOCOL_NAME, PROTOCOL_NAME] },
+        { name: TAG_NAMES.protocolVersion, values: [OLD_PROTOCOL_VERSION, PROTOCOL_VERSION ] },
+        { name: TAG_NAMES.operationName, values: [ MODEL_CREATION ]},
+        /* { name: TAG_NAMES.modelCategory, values: [ outputValue ] }, */
+      ],
+      first: 100
+    },
     notifyOnNetworkStatusChange: true,
   });
+
+  const { data: solutionRequestsData } = useQuery(IRYS_FIND_BY_TAGS, {
+    variables: {
+      tags: [
+        { name: TAG_NAMES.protocolName, values: [PROTOCOL_NAME] },
+        { name: TAG_NAMES.protocolVersion, values: [ PROTOCOL_VERSION ] },
+        { name: TAG_NAMES.operationName, values: ['Request-Solution'] },
+      ],
+      first: 100
+    },
+    context: {
+      clientName: 'irys'
+    },
+  });
+
+  const solutionChanged = useWatch({ name: 'solution', control });
+  const codeUrlValue = useWatch({ name: 'codeUrl', control });
+
+  useEffect(() => {
+    (async () => {
+      const txs: { node: IrysTx}[] = solutionRequestsData?.transactions?.edges ?? [];
+
+      const txsData: RequestData[] = [];
+      for (const tx of txs) {
+        const response = await fetch(`https://arweave.net/${tx.node.id}`);
+        const json = await response.json();
+
+        txsData.push({
+          ...json,
+          id: tx.node.id,
+          owner: tx.node.address,
+          timestamp: tx.node.tags.find((tag) => tag.name === TAG_NAMES.unixTime)?.value ?? '',
+        } as RequestData);
+      }
+
+      setRequests(txsData);
+    })();
+  }, [solutionRequestsData]);
 
   const showSuccessSnackbar = (id: string, message: string) => {
     enqueueSnackbar(
@@ -650,168 +839,205 @@ const UploadCurator = () => {
     );
   };
 
-  const commonUploadProps = useMemo(
-    () => ({
-      nodeBalance,
-      totalChunks,
-      chunkUpload,
-      enqueueSnackbar,
-      setSnackbarOpen,
-      setProgress,
-      getPrice,
-      showSuccessSnackbar,
-    }),
-    [
-      nodeBalance,
-      totalChunks,
-      chunkUpload,
-      enqueueSnackbar,
-      setSnackbarOpen,
-      setProgress,
-      getPrice,
-      showSuccessSnackbar,
-    ],
-  );
+  useEffect(() => {
+    if (solutionsData) {
+      setHasScriptsNextPage(solutionsData?.transactions?.pageInfo?.hasNextPage || false);
+    }
+  }, [solutionsData]);
 
   useEffect(() => {
-    if (modelsData) {
-      setHasModelsNextPage(modelsData?.transactions?.pageInfo?.hasNextPage || false);
+    if (solutionChanged) {
+      const tx = JSON.parse(solutionChanged);
+      const name = findTag(tx, 'solutionName') ?? '';
+      const description = findTag(tx, 'description') ?? '';
+      /* const notes = findTag(tx, '');
+      const avatar = findTag(tx, 'avatar'); */
+      const output = findTag(tx, 'output') ?? '';
+      const outputConfiguration = findTag(tx, 'outputConfiguration') ?? '';
+
+      setValue('name', name);
+      setValue('description', description);
+      setValue('output', output);
+      setValue('outputConfiguration', outputConfiguration);
+      setValue('rewardsEvmAddress', findTag(tx, 'rewardsEvmAddress') ?? '');
+      setValue('solutionRequestId', findTag(tx, 'solutionRequestId') ?? 'none');
+      setValue('availableModels', JSON.parse(findTag(tx, 'supportedModels') ?? '[]'));
+      setValue('allow.allowFiles', findTag(tx, 'allowFiles') === 'true');
+      setValue('allow.allowText', findTag(tx, 'allowText') === 'true');
+      fetchAvatar({
+        variables: {
+          tags: [
+            { name: TAG_NAMES.operationName, values: [MODEL_ATTACHMENT] },
+            { name: TAG_NAMES.attachmentRole, values: [AVATAR_ATTACHMENT] },
+            { name: TAG_NAMES.solutionTransaction, values: [tx.node.id] },
+          ],
+          owner: currentAddress,
+        },
+      });
+      fetchNotes({
+        variables: {
+          tags: [
+            { name: TAG_NAMES.operationName, values: [MODEL_ATTACHMENT] },
+            { name: TAG_NAMES.attachmentRole, values: [NOTES_ATTACHMENT] },
+            { name: TAG_NAMES.solutionTransaction, values: [tx.node.id] },
+          ],
+          owner: currentAddress,
+        },
+      });
+      (async () => {
+        const res = await getData(tx.node.id);
+        if (res instanceof File) {
+          setValue('file', res);
+        } else {
+          setValue('codeUrl', res);
+        }
+      })();
     }
-  }, [modelsData]);
+  }, [ solutionChanged, currentAddress, setValue ]);
 
   useEffect(() => {
-    if (scriptsData) {
-      setHasScriptsNextPage(scriptsData?.transactions?.pageInfo?.hasNextPage || false);
+    const avatarTxId = avatarData?.transactions?.edges[0]?.node.id ?? '';
+
+    if (avatarTxId) {
+      setValue('avatar', avatarTxId);
+    } else {
+      setValue('avatar', '');
     }
-  }, [scriptsData]);
+  }, [avatarData, setValue]);
+
+  useEffect(() => {
+    const notesTxId = notesData?.transactions?.edges[0]?.node.id ?? '';
+
+    if (notesTxId) {
+      (async () => {
+        const notesContent = (await getData(notesTxId)) as string;
+        setValue('notes', notesContent);
+      })();
+    } else {
+      setValue('notes', '');
+    }
+  }, [notesData, setValue]);
 
   const onSubmit = async (data: FieldValues) => {
-    await updateBalance();
-    setFormData(data as CreateForm);
-
     if (nodeBalance <= 0) {
       setFundOpen(true);
     } else {
-      setIsUploading(true);
       await handleFundFinished(data as CreateForm); // use default node
-      setIsUploading(false);
     }
   };
 
-  const getCommonTags = (data: CreateForm, modelData: IContractEdge, modelOwner: string) => {
-    const file = data.file;
+  const getCommonTags = (data: CreateForm) => {
     const commonTags = [];
-    commonTags.push({ name: TAG_NAMES.protocolName, value: OLD_PROTOCOL_NAME });
-    commonTags.push({ name: TAG_NAMES.protocolVersion, value: OLD_PROTOCOL_VERSION });
-    commonTags.push({ name: TAG_NAMES.contentType, value: file.type });
-    commonTags.push({ name: TAG_NAMES.scriptName, value: `${data.name}` });
+    commonTags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
+    commonTags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
+    commonTags.push({ name: TAG_NAMES.contentType, value: data.file ? data.file.type : 'text/url-list'});
+    commonTags.push({ name: TAG_NAMES.solutionName, value: `${data.name}` });
     commonTags.push({ name: TAG_NAMES.output, value: data.output });
+    commonTags.push({ name: TAG_NAMES.rewardsEvmAddress, value: data.rewardsEvmAddress });
     if (!!data.outputConfiguration && data.outputConfiguration !== 'none') {
       commonTags.push({ name: TAG_NAMES.outputConfiguration, value: data.outputConfiguration });
     }
-    commonTags.push({
-      name: TAG_NAMES.modelName,
-      value: findTag(modelData, 'modelName') as string,
-    });
-    commonTags.push({ name: TAG_NAMES.modelCreator, value: modelOwner });
-    commonTags.push({
-      name: TAG_NAMES.modelTransaction,
-      value: findTag(modelData, 'modelTransaction') as string,
-    });
     if (data.description) {
       commonTags.push({ name: TAG_NAMES.description, value: data.description });
     }
     commonTags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
     commonTags.push({ name: TAG_NAMES.allowFiles, value: `${data.allow.allowFiles}` });
     commonTags.push({ name: TAG_NAMES.allowText, value: `${data.allow.allowText}` });
+    if (data.solutionRequestId !== 'none') {
+      commonTags.push({ name: 'Solution-Request-Id', value: data.solutionRequestId });
+    }
+    commonTags.push({ name: 'Supported-Models', value: JSON.stringify(data.availableModels) });
 
     if (currentTab === 'edit') {
-      const scriptData = JSON.parse(data.script) as IContractEdge;
-      const currentScriptId = findTag(scriptData, 'scriptTransaction') as string;
-      commonTags.push({ name: TAG_NAMES.updateFor, value: currentScriptId });
-      if (findTag(scriptData, 'previousVersions')) {
+      const solutionData = JSON.parse(data.solution) as IContractEdge;
+      const currentSolutionId = solutionData.node.id;
+      commonTags.push({ name: TAG_NAMES.updateFor, value: currentSolutionId });
+      if (findTag(solutionData, 'previousVersions')) {
         const prevVersions: string[] = JSON.parse(
-          findTag(scriptData, 'previousVersions') as string,
+          findTag(solutionData, 'previousVersions') as string,
         );
-        prevVersions.push(currentScriptId);
+        prevVersions.push(currentSolutionId);
         commonTags.push({ name: TAG_NAMES.previousVersions, value: JSON.stringify(prevVersions) });
       } else {
         commonTags.push({
           name: TAG_NAMES.previousVersions,
-          value: JSON.stringify([currentScriptId]),
+          value: JSON.stringify([currentSolutionId]),
         });
       }
     }
     return commonTags;
   };
 
-  const handleFundFinished = async (data?: CreateForm) => {
-    setFundOpen(false);
-    if (!data) {
-      data = formData;
+  const handleFundFinished = async (data: CreateForm) => {
+    if (!data.file && !data.codeUrl) {
+      enqueueSnackbar('No File Or Source code Url Provided', { variant: 'error' });
+      return;
     }
 
-    if (!data?.file) {
-      enqueueSnackbar('No File Selected', { variant: 'error' });
+    const kb = 1024;
+    const maxBytes = 100;
+
+    if (!!data.file && data.file.size < maxBytes * kb) {
+      enqueueSnackbar('File Size is too large', { variant: 'error' });
       return;
     }
 
     const file = data.file;
 
-    // upload the file
-    const modelData = JSON.parse(data.model) as IContractEdge;
-    const uFee = parseFloat(SCRIPT_CREATION_FEE) * U_DIVIDER;
-
-    if (currentUBalance < parseFloat(SCRIPT_CREATION_FEE)) {
-      enqueueSnackbar(
-        `Not Enough Balance in your Wallet to pay Script Creation Fee (${SCRIPT_CREATION_FEE} $U)`,
-        { variant: 'error' },
-      );
-      return;
-    }
-
-    const modelOwner =
-      (findTag(modelData, 'sequencerOwner') as string) ?? modelData.node.owner.address;
-    const commonTags = getCommonTags(data, modelData, modelOwner);
+    const commonTags = getCommonTags(data);
     // add extra tags for payment save
     const uploadTags = [...commonTags];
-    uploadTags.push({ name: TAG_NAMES.paymentQuantity, value: uFee.toString() });
-    uploadTags.push({ name: TAG_NAMES.paymentTarget, value: VAULT_ADDRESS });
-    uploadTags.push({ name: TAG_NAMES.operationName, value: SCRIPT_CREATION });
+    uploadTags.push({ name: TAG_NAMES.operationName, value: 'Solution Creation' });
     addAssetTags(uploadTags, currentAddress);
     addLicenseTags(uploadTags, licenseControl._formValues, licenseRef.current?.value);
 
-    setSnackbarOpen(true);
     try {
-      const res = await bundlrUpload({
+      /* const res = await bundlrUpload({
         ...commonUploadProps,
         tags: uploadTags,
         fileToUpload: file,
         successMessage: 'Script Uploaded Successfully',
-      });
+      }); */
+      const res = await upload(file || data.codeUrl, uploadTags);
 
+      showSuccessSnackbar(res.id, 'Solution Uploaded Successfully');
       // register the model asset  in the warp contract
       const warp = await WarpFactory.forMainnet().use(new DeployPlugin());
-      warp.register(res.data.id, 'arweave');
+      warp.register(res.id, 'node1');
 
-      const paymentTags = [
-        ...commonTags,
-        { name: TAG_NAMES.scriptTransaction, value: res.data.id },
-        { name: TAG_NAMES.operationName, value: SCRIPT_CREATION_PAYMENT },
-      ];
-
-      const paymentId = await sendU(VAULT_ADDRESS, uFee.toString(), paymentTags);
-      await updateUBalance();
-
-      showSuccessSnackbar(
-        paymentId as string,
-        `Paid Script Creation Fee ${SCRIPT_CREATION_FEE} $U.`,
-      );
 
       try {
-        await uploadUsageNotes(res.data.id, data.name, data.notes, commonUploadProps, 'script');
-        if (currentTab === 'create') {
-          await uploadAvatarImage(res.data.id, commonUploadProps, 'script', data.avatar);
+        const usageFile = new File([data.notes], `${data.name}-usage.md`, {
+          type: 'text/markdown',
+        });
+      
+        // upload the file
+        const usageNoteTags = [];
+        usageNoteTags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
+        usageNoteTags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
+        usageNoteTags.push({ name: TAG_NAMES.contentType, value: usageFile.type });
+        usageNoteTags.push({ name: TAG_NAMES.operationName, value: MODEL_ATTACHMENT });
+        usageNoteTags.push({ name: TAG_NAMES.attachmentName, value: usageFile.name });
+        usageNoteTags.push({ name: TAG_NAMES.attachmentRole, value: NOTES_ATTACHMENT });
+        usageNoteTags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
+        usageNoteTags.push({ name: TAG_NAMES.solutionTransaction, value: res.id });
+      
+        await upload(usageFile, usageNoteTags);
+        
+        if (data.avatar) {
+          // upload the file
+          const imageTags = [];
+          imageTags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
+          imageTags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
+          imageTags.push({ name: TAG_NAMES.contentType, value: data.avatar.type });
+          imageTags.push({ name: TAG_NAMES.operationName, value: MODEL_ATTACHMENT });
+          imageTags.push({ name: TAG_NAMES.attachmentName, value: data.avatar.name });
+          imageTags.push({ name: TAG_NAMES.attachmentRole, value: AVATAR_ATTACHMENT });
+          imageTags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
+
+          imageTags.push({ name: TAG_NAMES.solutionTransaction, value: res.id });
+          
+          await upload(data.avatar, imageTags);
         }
       } catch (error) {
         enqueueSnackbar('Error Uploading An Attchment', { variant: 'error' });
@@ -819,20 +1045,10 @@ const UploadCurator = () => {
       }
       reset(); // reset form
     } catch (error) {
-      setSnackbarOpen(false);
-      setProgress(0);
       setMessage('Upload error ');
       enqueueSnackbar('An Error Occured.', { variant: 'error' });
     }
   };
-
-  useEffect(() => {
-    (async () => {
-      const nDigits = 4;
-      const usdCost = await parseCost(parseFloat(SCRIPT_CREATION_FEE));
-      setUsdFee(usdCost.toFixed(nDigits));
-    })();
-  }, [SCRIPT_CREATION_FEE, parseCost]);
 
   const handleTabChange = useCallback(
     (_: SyntheticEvent, value: 'create' | 'edit') => {
@@ -841,6 +1057,29 @@ const UploadCurator = () => {
     },
     [setCurrentTab, reset],
   );
+
+  const loadMore = () => {
+    solutionsFetchMore({
+      variables: {
+        after:
+          solutionsData && solutionsData.transactions.edges.length > 0
+            ? solutionsData.transactions.edges[solutionsData.transactions.edges.length - 1].cursor
+            : undefined,
+      },
+      updateQuery: (prev: findByTagsQuery, { fetchMoreResult }) => {
+        if (!fetchMoreResult) {
+          return prev;
+        }
+
+        return Object.assign({}, prev, {
+          transactions: {
+            edges: [...prev.transactions.edges, ...fetchMoreResult.transactions.edges],
+            pageInfo: fetchMoreResult.transactions.pageInfo,
+          },
+        });
+      },
+    });
+  };
 
   const getContent = () => {
     if (currentTab === 'create') {
@@ -862,6 +1101,30 @@ const UploadCurator = () => {
               }}
               style={{ width: '100%' }}
             />
+          </Box>
+          <Box padding={'0px 32px'}>
+            <SelectControl
+              name='solutionRequestId'
+              control={control}
+              defaultValue={'none'}
+              mat={{
+                sx: {
+                  borderWidth: '1px',
+                  borderColor: theme.palette.text.primary,
+                  borderRadius: '16px',
+                },
+                placeholder: 'Link a Solution Request ID',
+              }}
+            >
+              {requests.map((el: RequestData) => 
+                <MenuItem key={el.id} value={el.id}>
+                  {el.title}
+                </MenuItem>
+              )}
+              <MenuItem value={'none'}>
+                No Solution Request
+              </MenuItem>
+            </SelectControl>
           </Box>
           <Box display={'flex'} gap={'30px'} width={'100%'} padding='0px 32px'>
             <Box width={'25%'}>
@@ -888,16 +1151,13 @@ const UploadCurator = () => {
             />
           </Box>
           <Box padding='0px 32px'>
-            <GenericSelect
-              name='model'
+            <SupportedModelsPick
+              name={'availableModels'}
               control={control}
               data={modelsData}
               error={modelsError}
               loading={modelsLoading}
-              hasNextPage={hasModelsNextPage}
               loadMore={modelsFetchMore}
-              disabled={false}
-              setValue={setValue}
             />
           </Box>
           <OutputFields control={control} />
@@ -908,25 +1168,15 @@ const UploadCurator = () => {
         <>
           <Box padding='0px 32px' display={'flex'} flexDirection={'column'} gap={'16px'}>
             <GenericSelect
-              name='script'
+              name='solution'
               control={control}
-              data={scriptsData}
-              error={scriptsError}
-              loading={scriptsLoading}
+              data={solutionsData}
+              error={solutionsError}
+              loading={solutionsLoading}
               hasNextPage={hasScriptsNextPage}
               disabled={false}
-              loadMore={scriptsFetchMore}
+              loadMore={loadMore}
               setValue={setValue}
-            />
-            <GenericSelect
-              name='model'
-              control={control}
-              data={modelsData}
-              error={modelsError}
-              loading={modelsLoading}
-              hasNextPage={hasModelsNextPage}
-              disabled={true}
-              loadMore={modelsFetchMore}
             />
           </Box>
           <Box
@@ -955,7 +1205,10 @@ const UploadCurator = () => {
             />
             <OutputFields control={control} />
           </Box>
-          <Box padding='0px 32px'>
+          <Box display={'flex'} gap={'30px'} width={'100%'} padding='0px 32px'>
+            <Box width={'25%'}>
+              <AvatarControl name='avatar' control={control} />
+            </Box>
             <TextControl
               name='description'
               control={control}
@@ -974,6 +1227,16 @@ const UploadCurator = () => {
                 },
               }}
               style={{ width: '100%', marginTop: 0 }}
+            />
+          </Box>
+          <Box padding='0px 32px'>
+            <SupportedModelsPick
+              name={'availableModels'}
+              control={control}
+              data={modelsData}
+              error={modelsError}
+              loading={modelsLoading}
+              loadMore={modelsFetchMore}
             />
           </Box>
         </>
@@ -1017,32 +1280,57 @@ const UploadCurator = () => {
             <AllowGroupControl name={'allow'} control={control} />
           </Box>
           <Box padding='0px 32px'>
-            <Typography paddingLeft={'8px'}>Usage Notes</Typography>
+            <FormLabel>Usage Notes: *</FormLabel>
             <MarkdownControl props={{ control, name: 'notes', rules: { required: true } }} />
           </Box>
+          <Box padding='0px 32px' mb={'8px'}>
+            <FileControl name='file' control={control} rules={{ required: !codeUrlValue }} />
+            {!showUrl && <Typography variant='caption' textAlign={'center'} display={'flex'} justifyContent={'center'}>{'You can Also'} <u style={{ cursor: 'pointer', paddingLeft: '2px' }} onClick={() => setShowUrl(true)}>{'provide a link to a code repository.'}</u></Typography>}
+            {showUrl && <Box display={'flex'} width={'100%'} gap={'16px'}>
+              <TextControl
+                name='codeUrl'
+                control={control}
+                mat={{
+                  label: 'Code Repository URL',
+                  variant: 'outlined',
+                  size: 'small',
+                  sx: {
+                    width: '100%',
+                  }
+                }}
+              />
+              <Button variant='text' onClick={() => setShowUrl(false)}>Cancel</Button>
+            </Box>}
+          </Box>
           <Box padding='0px 32px'>
-            <FileControl name='file' control={control} rules={{ required: true }} />
+            <TextControl
+              name='rewardsEvmAddress'
+              control={control}
+              mat={{
+                variant: 'outlined',
+                label: 'Rewards Arbitrum Address',
+                InputProps: {
+                  sx: {
+                    borderWidth: '1px',
+                    borderColor: theme.palette.text.primary,
+                  },
+                },
+              }}
+              style={{ width: '100%' }}
+            />
           </Box>
           <AdvancedConfiguration
             licenseRef={licenseRef}
             licenseControl={licenseControl}
             resetLicenseForm={resetLicenseForm}
           />
-          <Box padding='0px 32px'>
-            <Alert severity='warning' variant='outlined'>
-              <Typography alignItems={'center'} display={'flex'} gap={'4px'}>
-                Uploading a Script requires a fee of {SCRIPT_CREATION_FEE}
-                <img width='20px' height='20px' src={U_LOGO_SRC} /> (${usdFee}) Tokens.
-              </Typography>
-            </Alert>
-          </Box>
           <Box
             sx={{
               display: 'flex',
               padding: '0 32px 32px 32px',
               justifyContent: 'flex-end',
               mt: '32px',
-              width: '100%',
+              width: '100%', 
               gap: '32px',
             }}
           >
@@ -1096,17 +1384,6 @@ const UploadCurator = () => {
             </DebounceButton>
           </Box>
         </Box>
-        <Snackbar
-          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-          open={snackbarOpen}
-          onClose={() => setSnackbarOpen(false)}
-          ClickAwayListenerProps={{ onClickAway: () => null }}
-        >
-          <Alert severity='info' sx={{ width: '100%', minWidth: '300px' }}>
-            Uploading...
-            <CustomProgress value={progress}></CustomProgress>
-          </Alert>
-        </Snackbar>
       </Container>
     </Container>
   );

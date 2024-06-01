@@ -71,68 +71,6 @@ import ContentCopy from '@mui/icons-material/ContentCopy';
 import { findByTagsAndOwnersDocument, getUsdcSentLogs, decodeTxMemo, sendUSDC } from '@fairai/evm-sdk';
 import { OpenInNew } from '@mui/icons-material';
 import { EVMWalletContext } from '@/context/evm-wallet';
-/*
-const ColorlibConnector = styled(StepConnector)(({ theme }) => ({
-  [`&.${stepConnectorClasses.alternativeLabel}`]: {
-    top: 22,
-  },
-  [`&.${stepConnectorClasses.active}`]: {
-    [`& .${stepConnectorClasses.line}`]: {
-      backgroundImage: `linear-gradient(170.66deg, ${theme.palette.primary.main} -38.15%, ${theme.palette.primary.main} 30.33%)`,
-    },
-  },
-  [`&.${stepConnectorClasses.completed}`]: {
-    [`& .${stepConnectorClasses.line}`]: {
-      backgroundImage: `linear-gradient(170.66deg, ${theme.palette.primary.main} -38.15%, ${theme.palette.primary.main} 30.33%)`,
-    },
-  },
-  [`& .${stepConnectorClasses.line}`]: {
-    height: 3,
-    border: 0,
-    backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#eaeaf0',
-    borderRadius: '8px',
-  },
-}));
-
-const ColorlibStepIconRoot = styled('div')<{
-  ownerState: { completed?: boolean; active?: boolean };
-}>(({ theme, ownerState }) => ({
-  backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[700] : '#ccc',
-  zIndex: 1,
-  color: theme.palette.text.primary,
-  width: 40,
-  height: 40,
-  display: 'flex',
-  borderRadius: '8px',
-  justifyContent: 'center',
-  alignItems: 'center',
-  ...(ownerState.active && {
-    backgroundImage: `linear-gradient(170.66deg, ${theme.palette.primary.main} -38.15%, ${theme.palette.primary.main} 30.33%)`,
-    boxShadow: '0 4px 10px 0 rgba(0,0,0,.25)',
-    color: theme.palette.primary.contrastText,
-  }),
-  ...(ownerState.completed && {
-    backgroundImage: `linear-gradient(170.66deg, ${theme.palette.primary.main} -38.15%, ${theme.palette.primary.main} 30.33%)`,
-    color: theme.palette.primary.contrastText,
-  }),
-}));
-
- const ColorlibStepIcon = (props: StepIconProps) => {
-  const { active, completed, className } = props;
-
-  const icons: { [index: string]: ReactElement } = {
-    1: <InfoOutlinedIcon />,
-    2: <SettingsIcon />,
-    3: <PaymentIcon />,
-  };
-
-  return (
-    <ColorlibStepIconRoot ownerState={{ completed, active }} className={className}>
-      {icons[String(props.icon)]}
-    </ColorlibStepIconRoot>
-  );
-};
- */
 
 const RegisterStep = ({
   tx,
@@ -152,14 +90,14 @@ const RegisterStep = ({
   const theme = useTheme();
   const [ paymentHash, setPaymentHash ] = useState('');
 
-  const scriptTxid = useMemo(() => findTag(tx, 'scriptTransaction'), [tx]);
+  const scriptTxid = useMemo(() => tx.node.id, [tx]);
 
   const { data, loading, refetch } = useQuery(findByTagsAndOwnersDocument, {
     variables: {
       tags: [
         { name: TAG_NAMES.protocolName, values: [ PROTOCOL_NAME ]},
-        { name: TAG_NAMES.protocolVersion, values: [ PROTOCOL_VERSION ]},
-        { name: TAG_NAMES.scriptTransaction, values: [ scriptTxid! ] },
+        { name: TAG_NAMES.protocolVersion, values: [ PROTOCOL_VERSION, ]},
+        { name: TAG_NAMES.solutionTransaction, values: [ scriptTxid! ] },
         { name: TAG_NAMES.operationName, values: [ 'Operator Registration' ]},
       ],
       owners: [ currentAddress ],
@@ -170,6 +108,10 @@ const RegisterStep = ({
 
   const registrationId = useMemo(
     () => data?.transactions?.edges[0]?.node.id ?? '',
+    [data],
+  );
+  const registrationTx = useMemo(
+    () => data?.transactions?.edges[0] ?? null,
     [data],
   );
   const registrationName = useMemo(
@@ -208,9 +150,10 @@ const RegisterStep = ({
   const isLoading = useMemo(() => loading || cancelLoading, [loading, cancelLoading]);
 
   useEffect(() => {
-    if (registrationId) {
+    if (registrationTx) {
       (async () => {
-        const logs = await getUsdcSentLogs(evmWallet as `0x${string}`, MARKETPLACE_EVM_ADDRESS, OPERATOR_USDC_FEE);
+        const timestamp = await findTag(registrationTx, 'unixTime');
+        const logs = await getUsdcSentLogs(evmWallet as `0x${string}`, MARKETPLACE_EVM_ADDRESS, OPERATOR_USDC_FEE, parseFloat(timestamp ?? ''));
 
         for (const log of logs) {
           const arweaveTx = await decodeTxMemo(log.transactionHash);
@@ -222,7 +165,8 @@ const RegisterStep = ({
         }
       })();
     }
-  }, [ registrationId ]);
+  }, [ registrationTx ]);
+
   const handleRateChange = (event: ChangeEvent<HTMLInputElement>) => {
     const newNumber = parseFloat(event.target.value);
 
@@ -407,13 +351,12 @@ export const CustomStepper = (props: {
   isRegistered: boolean;
 }) => {
   const { txid: scriptTxId } = useParams();
-  const { notesTxId, modelTxId, modelName } =
+  const { notesTxId } =
     (useRouteLoaderData('register') as RouteLoaderResult) || {};
   const [activeStep, setActiveStep] = useState(0);
   const [skipped, setSkipped] = useState(new Set<number>());
   const [completed, setCompleted] = useState(new Set<number>());
   const [fileSize, setFileSize] = useState(0);
-  const [modelFileSize, setModelFileSize] = useState(0);
   const [notes, setNotes] = useState('');
   const { avatarTxId } = (useLoaderData() as RouteLoaderResult) || {};
   const { state }: { state: IEdge } = useLocation();
@@ -426,7 +369,7 @@ export const CustomStepper = (props: {
     if (avatarTxId) {
       return `https://arweave.net/${avatarTxId}`;
     }
-    const img = toSvg(findTag(state, 'scriptTransaction'), 100);
+    const img = toSvg(findTag(state, 'solutionTransaction'), 100);
     const svg = new Blob([img], { type: 'image/svg+xml' });
     return URL.createObjectURL(svg);
   }, [state, avatarTxId]);
@@ -456,6 +399,7 @@ export const CustomStepper = (props: {
     const a = document.createElement('a');
     a.href = `${NET_ARWEAVE_URL}/${id}`;
     a.download = name || id;
+    a.target = '_blank';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -465,7 +409,7 @@ export const CustomStepper = (props: {
     (async () => {
       try {
         const response = await fetch(
-          `${NET_ARWEAVE_URL}/${findTag(props.data, 'scriptTransaction')}`,
+          `${NET_ARWEAVE_URL}/${props.data.node.id}`,
           { method: 'HEAD' },
         );
         setFileSize(parseInt(response.headers.get('Content-Length') ?? '', 10));
@@ -476,17 +420,6 @@ export const CustomStepper = (props: {
   }, [props.data]);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const response = await fetch(`${NET_ARWEAVE_URL}/${modelTxId}`, { method: 'HEAD' });
-        setModelFileSize(parseInt(response.headers.get('Content-Length') ?? '', 10));
-      } catch (e) {
-        // do nothing
-      }
-    })();
-  }, [modelTxId]);
-
-  useEffect(() => {
     if (notesTxId) {
       (async () => {
         setNotes((await getData(notesTxId)) as string);
@@ -494,21 +427,9 @@ export const CustomStepper = (props: {
     }
   }, [notesTxId]);
 
-  /* useEffect(() => {
-    if (!hasScrolledDown && isOnScreen) {
-      setHasScrollDown(true);
-    }
-  }, [isOnScreen]); */
-
-  const handleModelDownload = useCallback(() => {
-    if (modelTxId) {
-      download(modelTxId, modelName);
-    }
-  }, [download, modelTxId, modelName]);
-
   const handleSriptDownload = useCallback(() => {
-    const id = findTag(props.data, 'scriptTransaction');
-    const name = findTag(props.data, 'scriptName');
+    const id = props.data.node.id;
+    const name = findTag(props.data, 'solutionName');
     if (id) {
       download(id, name);
     }
@@ -581,7 +502,7 @@ export const CustomStepper = (props: {
                       textAlign: 'center',
                     }}
                   >
-                    {findTag(state, 'scriptName')}
+                    {findTag(state, 'solutionName')}
                   </Typography>
                 </Box>
                 <Box>
@@ -693,7 +614,7 @@ export const CustomStepper = (props: {
                   multiline
                   disabled
                   minRows={1}
-                  value={findTag(props.data, 'scriptName')}
+                  value={findTag(props.data, 'solutionName')}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position='start'>
@@ -704,33 +625,6 @@ export const CustomStepper = (props: {
                     ),
                     endAdornment: (
                       <InputAdornment position='start'>{printSize(fileSize)}</InputAdornment>
-                    ),
-                    readOnly: true,
-                    sx: {
-                      borderWidth: '1px',
-                      borderColor: '#FFF',
-                    },
-                  }}
-                />
-              </FormControl>
-            </Box>
-            <Box>
-              <FormControl variant='outlined' fullWidth>
-                <TextField
-                  multiline
-                  disabled
-                  minRows={1}
-                  value={modelName}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position='start'>
-                        <IconButton aria-label='download' onClick={handleModelDownload}>
-                          <DownloadIcon />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position='start'>{printSize(modelFileSize)}</InputAdornment>
                     ),
                     readOnly: true,
                     sx: {

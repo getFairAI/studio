@@ -286,7 +286,7 @@ const UploadCreator = () => {
     } else {
       setUpdateValue('notes', '');
     }
-  }, [notesData]);
+  }, [notesData, setUpdateValue]);
 
   const onSubmit = async (data: FieldValues) => {
     await updateBalance();

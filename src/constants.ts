@@ -39,7 +39,6 @@ export const PREVIOUS_VERSIONS = ['0.1', '0.3'];
 export const OLD_PROTOCOL_VERSION = '1.0';
 
 export const MARKETPLACE_FEE = '0.5'; // u
-export const SCRIPT_CREATION_FEE = '0.5'; // u
 export const OPERATOR_REGISTRATION_AR_FEE = '0.05'; // u
 export const OPERATOR_USDC_FEE = 0.5;
 export const MARKETPLACE_EVM_ADDRESS = '0x611dEe04f236BbC45e3a6De266ABe2B2b32eab31'; // placeholder
@@ -72,11 +71,6 @@ export const TAG_NAMES = {
   saveTransaction: 'Save-Transaction',
   paymentQuantity: 'Payment-Quantity',
   paymentTarget: 'Payment-Target',
-  scriptTransaction: 'Script-Transaction',
-  scriptName: 'Script-Name',
-  scriptCurator: 'Script-Curator',
-  scriptOperator: 'Script-Operator',
-  scriptUser: 'Script-User',
   voteFor: 'Vote-For',
   votedTransaction: 'Voted-Transaction',
   fileName: 'File-Name',
@@ -104,6 +98,14 @@ export const TAG_NAMES = {
   paymentMode: 'Payment-Mode',
   renderWith: 'Render-With',
   termsVersion: 'Terms-Version',
+  solutionTransaction: 'Solution-Transaction',
+  solutionName: 'Solution-Name',
+  solutionCreator: 'Solution-Creator',
+  solutionOperator: 'Solution-Operator',
+  solutionUser: 'Solution-User',
+  solutionRequestId: 'Solution-Request-Id',
+  supportedModels: 'Supported-Models',
+  rewardsEvmAddress: 'Rewards-Evm-Address',
 };
 
 // Operation Names
@@ -111,11 +113,9 @@ export const MODEL_CREATION = 'Model Creation';
 
 export const MODEL_DELETION = 'Model Deletion';
 
-export const SCRIPT_CREATION = 'Script Creation';
+export const SOLUTION_CREATION = 'Solution Creation';
 
-export const SCRIPT_DELETION = 'Script Deletion';
-
-export const SCRIPT_CREATION_PAYMENT = 'Script Creation Payment';
+export const SOLUTION_DELETION = 'Solution Deletion';
 
 export const MODEL_ATTACHMENT = 'Model Attachment';
 
@@ -133,27 +133,21 @@ export const MODEL_FEE_PAYMENT = 'Model Fee Payment';
 
 export const MODEL_FEE_PAYMENT_SAVE = 'Model Fee Payment Save';
 
-export const SCRIPT_INFERENCE_REQUEST = 'Script Inference Request';
+export const INFERENCE_REQUEST = 'Inference Request';
 
 export const INFERENCE_PAYMENT = 'Inference Payment';
 
-export const SCRIPT_INFERENCE_RESPONSE = 'Script Inference Response';
+export const INFERENCE_RESPONSE = 'Inference Response';
 
 export const INFERENCE_PAYMENT_DISTRIBUTION = 'Fee Redistribution';
 
 export const CONVERSATION_START = 'Conversation Start';
-
-export const SCRIPT_FEE_PAYMENT = 'Script Fee Payment';
-
-export const SCRIPT_FEE_PAYMENT_SAVE = 'Script Fee Payment Save';
 
 export const UP_VOTE = 'Up Vote';
 
 export const DOWN_VOTE = 'Down Vote';
 
 export const VOTE_FOR_MODEL = 'Vote For Model';
-
-export const VOTE_FOR_SCRIPT = 'Vote For Script';
 
 export const VOTE_FOR_OPERATOR = 'Vote For Operator';
 
@@ -226,18 +220,6 @@ export const modelPaymentInputNumber = JSON.stringify({
   qty: parseFloat(MARKETPLACE_FEE) * U_DIVIDER,
 });
 
-export const scriptPaymentInputStr = JSON.stringify({
-  function: 'transfer',
-  target: VAULT_ADDRESS,
-  qty: (parseFloat(SCRIPT_CREATION_FEE) * U_DIVIDER).toString(),
-});
-
-export const scriptPaymentInputNumber = JSON.stringify({
-  function: 'transfer',
-  target: VAULT_ADDRESS,
-  qty: parseFloat(SCRIPT_CREATION_FEE) * U_DIVIDER,
-});
-
 export const operatorPaymentInputStr = JSON.stringify({
   function: 'transfer',
   target: VAULT_ADDRESS,
@@ -254,12 +236,6 @@ export const MODEL_CREATION_PAYMENT_TAGS = [
   { name: TAG_NAMES.operationName, values: [MODEL_CREATION_PAYMENT] },
   { name: TAG_NAMES.contract, values: [U_CONTRACT_ID] },
   { name: TAG_NAMES.input, values: [modelPaymentInputStr, modelPaymentInputNumber] },
-];
-
-export const SCRIPT_CREATION_PAYMENT_TAGS = [
-  { name: TAG_NAMES.operationName, values: [SCRIPT_CREATION_PAYMENT] },
-  { name: TAG_NAMES.contract, values: [U_CONTRACT_ID] },
-  { name: TAG_NAMES.input, values: [scriptPaymentInputStr, scriptPaymentInputNumber] },
 ];
 
 export const OPERATOR_REGISTRATION_PAYMENT_TAGS = [

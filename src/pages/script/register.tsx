@@ -5,8 +5,8 @@ import {
   secondInMS,
   OPERATOR_USDC_FEE,
   MARKETPLACE_EVM_ADDRESS,
-  PROTOCOL_VERSION,
   PROTOCOL_NAME,
+  PROTOCOL_VERSION,
 } from '@/constants';
 import { IEdge } from '@/interfaces/arweave';
 import { findTag } from '@/utils/common';
@@ -48,16 +48,16 @@ const Register = () => {
       tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
       tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
       tags.push({
-        name: TAG_NAMES.scriptName,
-        value: findTag(state, 'scriptName') ?? '',
+        name: TAG_NAMES.solutionName,
+        value: findTag(state, 'solutionName') ?? '',
       });
       tags.push({
-        name: TAG_NAMES.scriptCurator,
-        value: (findTag(state, 'sequencerOwner') as string) ?? state.node.owner.address,
+        name: TAG_NAMES.solutionCreator,
+        value: state.node.owner.address,
       });
       tags.push({
-        name: TAG_NAMES.scriptTransaction,
-        value: findTag(state, 'scriptTransaction') as string,
+        name: TAG_NAMES.solutionTransaction,
+        value: state.node.id,
       });
       tags.push({ name: TAG_NAMES.operatorFee, value: fee });
       tags.push({ name: TAG_NAMES.operationName, value: REGISTER_OPERATION });

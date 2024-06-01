@@ -88,7 +88,7 @@ interface BundlrContext {
   withdrawNode: (value: string) => Promise<WithdrawalResponse>;
   retryConnection: () => Promise<void>;
   getPrice: (bytes: number, currency?: string) => Promise<BigNumber>;
-  upload: (data: string, tags: ITag[]) => Promise<UploadResponse>;
+  upload: (data: string | File, tags: ITag[]) => Promise<UploadResponse>;
 
   chunkUpload: (
     file: File,
@@ -230,9 +230,18 @@ export const BundlrProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const upload = async (data: string, tags: ITag[]) => {
-    if (!state.bundlr) throw new Error('Bundlr not Initialized');
-    return state.bundlr.upload(data, { tags });
+  const upload = async (data: string | File, tags: ITag[]) => {
+    if (!state.bundlr) {
+      throw new Error('Bundlr not Initialized');
+    }
+
+    if (typeof data === 'string') {
+      return state.bundlr.upload(data, { tags });
+    }else {
+      const buffer = Buffer.from(await data.arrayBuffer());
+      return state.bundlr.upload(buffer, { tags });
+    }
+    
   };
 
   const chunkUpload: (
