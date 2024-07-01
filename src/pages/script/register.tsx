@@ -66,7 +66,7 @@ const Register = () => {
       // tags.push({ name: TAG_NAMES.saveTransaction, values: saveResult.id as string });
 
       const tx = await arweave.createTransaction({ data: 'Operator Registered' });
-      tags.forEach(tag => tx.addTag(tag.name, tag.value));
+      tags.forEach((tag) => tx.addTag(tag.name, tag.value));
       const { id: arweaveTxId } = await dispatchTx(tx);
       if (!arweaveTxId) {
         enqueueSnackbar('Something went Wrong. Please Try again...', { variant: 'error' });
@@ -91,11 +91,7 @@ const Register = () => {
         <>
           Operator Payment Submitted.
           <br></br>
-          <a
-            href={`https://arbiscan.io/tx/${paymentHash}`}
-            target={'_blank'}
-            rel='noreferrer'
-          >
+          <a href={`https://arbiscan.io/tx/${paymentHash}`} target={'_blank'} rel='noreferrer'>
             <u>View Transaction in Explorer</u>
           </a>
         </>,
@@ -141,12 +137,12 @@ const Register = () => {
           Register Operator
         </Typography>
         <IconButton
-            onClick={handleClose}
-            size='small'
-            className='plausible-event-name=Close+Model+Click'
-          >
-            <Close />
-          </IconButton>
+          onClick={handleClose}
+          size='small'
+          className='plausible-event-name=Close+Model+Click'
+        >
+          <Close />
+        </IconButton>
       </DialogTitle>
       <DialogContent sx={{ padding: '20px 32px' }}>
         <CustomStepper

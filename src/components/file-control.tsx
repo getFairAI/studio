@@ -111,7 +111,7 @@ const FileControl = (props: FileControlProps) => {
       setFile(undefined);
       return;
     } else if (field.value instanceof File) {
-     (async () => simulateFilePrice((file && file.size) || 0))();
+      (async () => simulateFilePrice((file && file.size) || 0))();
     } else {
       // ignore
     }
@@ -191,7 +191,9 @@ const FileControl = (props: FileControlProps) => {
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
-          onClick={() => (document.querySelector(`input[name=${field.name}`) as HTMLButtonElement)?.click()}
+          onClick={() =>
+            (document.querySelector(`input[name=${field.name}`) as HTMLButtonElement)?.click()
+          }
         />
         {showError()}
       </FormControl>

@@ -50,8 +50,8 @@ export const getScriptAttachments = async ({
   }
   // get attachments transactions
   const attachmentAvatarTags = [
-    { name: TAG_NAMES.protocolName, values: [ PROTOCOL_NAME ]}, // keep Fair Protocol in tags to keep retrocompatibility
-    { name: TAG_NAMES.protocolVersion, values: [ PROTOCOL_VERSION ]},
+    { name: TAG_NAMES.protocolName, values: [PROTOCOL_NAME] }, // keep Fair Protocol in tags to keep retrocompatibility
+    { name: TAG_NAMES.protocolVersion, values: [PROTOCOL_VERSION] },
     { name: TAG_NAMES.operationName, values: [MODEL_ATTACHMENT] },
     { name: TAG_NAMES.attachmentRole, values: [AVATAR_ATTACHMENT] },
     { name: TAG_NAMES.solutionTransaction, values: [firstScriptVersionTx, params.txid] },
@@ -71,8 +71,8 @@ export const getScriptAttachments = async ({
       : '';
 
   const attachmentNotestTags = [
-    { name: TAG_NAMES.protocolName, values: [ PROTOCOL_NAME ]}, // keep Fair Protocol in tags to keep retrocompatibility
-    { name: TAG_NAMES.protocolVersion, values: [ PROTOCOL_VERSION ]},
+    { name: TAG_NAMES.protocolName, values: [PROTOCOL_NAME] }, // keep Fair Protocol in tags to keep retrocompatibility
+    { name: TAG_NAMES.protocolVersion, values: [PROTOCOL_VERSION] },
     { name: TAG_NAMES.operationName, values: [MODEL_ATTACHMENT] },
     { name: TAG_NAMES.attachmentRole, values: [NOTES_ATTACHMENT] },
     { name: TAG_NAMES.solutionTransaction, values: [params.txid] },

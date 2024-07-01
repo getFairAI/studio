@@ -237,11 +237,10 @@ export const BundlrProvider = ({ children }: { children: ReactNode }) => {
 
     if (typeof data === 'string') {
       return state.bundlr.upload(data, { tags });
-    }else {
+    } else {
       const buffer = Buffer.from(await data.arrayBuffer());
       return state.bundlr.upload(buffer, { tags });
     }
-    
   };
 
   const chunkUpload: (

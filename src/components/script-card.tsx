@@ -185,35 +185,22 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
   const [cardData, setCardData] = useState<Element>();
   const theme = useTheme();
 
-  const owner = useMemo(
-    () => scriptTx.node.owner.address,
-    [scriptTx],
-  );
-  const scriptId = useMemo(
-    () => scriptTx.node.id,
-    [scriptTx],
-  );
+  const owner = useMemo(() => scriptTx.node.owner.address, [scriptTx]);
+  const scriptId = useMemo(() => scriptTx.node.id, [scriptTx]);
   const scriptName = useMemo(
     () => findTag(scriptTx, 'solutionName') ?? 'Name not Available',
     [scriptTx],
   );
 
-  const previousVersionsTxIds = useMemo(
-    () => {
-      try {
-        return JSON.parse(findTag(scriptTx, 'previousVersions') as string) as string[];
-      } catch (err) {
-        return [];
-      }
-    },
-    [scriptTx],
-  );
+  const previousVersionsTxIds = useMemo(() => {
+    try {
+      return JSON.parse(findTag(scriptTx, 'previousVersions') as string) as string[];
+    } catch (err) {
+      return [];
+    }
+  }, [scriptTx]);
 
-  const queryObject = FairSDKWeb.utils.getOperatorQueryForScript(
-    scriptId,
-    scriptName,
-    owner,
-  );
+  const queryObject = FairSDKWeb.utils.getOperatorQueryForScript(scriptId, scriptName, owner);
   const { data, loading, error, refetch, fetchMore } = useQuery(queryObject.query, {
     variables: queryObject.variables,
     notifyOnNetworkStatusChange: true,
@@ -224,7 +211,7 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
       tags: [
         { name: TAG_NAMES.operationName, values: [MODEL_ATTACHMENT] },
         { name: TAG_NAMES.attachmentRole, values: [AVATAR_ATTACHMENT] },
-        { name: TAG_NAMES.solutionTransaction, values: [ scriptId, ...previousVersionsTxIds ] },
+        { name: TAG_NAMES.solutionTransaction, values: [scriptId, ...previousVersionsTxIds] },
       ],
       owner,
     },

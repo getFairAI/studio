@@ -41,7 +41,13 @@ import { EVMWalletContext } from '@/context/evm-wallet';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { InfoOutlined } from '@mui/icons-material';
 
-const ProviderElement = ({ provider, setOpen }: { provider: EIP6963ProviderDetail, setOpen: Dispatch<SetStateAction<boolean>> }) => {
+const ProviderElement = ({
+  provider,
+  setOpen,
+}: {
+  provider: EIP6963ProviderDetail;
+  setOpen: Dispatch<SetStateAction<boolean>>;
+}) => {
   const { currentAddress, connect } = useContext(EVMWalletContext);
   const { updateStorageValue } = useLocalStorage('evmProvider');
 
@@ -49,28 +55,30 @@ const ProviderElement = ({ provider, setOpen }: { provider: EIP6963ProviderDetai
     await connect(provider.provider as EIP1193Provider);
     updateStorageValue(provider.info.name);
     setOpen(false);
-  }, [ connect ]);
+  }, [connect]);
 
-  return <ListItem
-    key={provider.info.uuid}
-    secondaryAction={
-      <Button
-        aria-label='connect'
-        variant='contained'
-        onClick={handleEvmConnect}
-        disabled={!!currentAddress}
-        endIcon={<PowerIcon />}
-        className='plausible-event-name=EVM+Connected'
-      >
-        <Typography>{currentAddress ? 'Connected' : 'Connect'}</Typography>
-      </Button>
-    }
-  >
-    <ListItemAvatar>
-      <Avatar src={provider.info.icon} alt='provider.info.name' />
-    </ListItemAvatar>
-    <ListItemText primary={provider.info.name} />
-  </ListItem>;
+  return (
+    <ListItem
+      key={provider.info.uuid}
+      secondaryAction={
+        <Button
+          aria-label='connect'
+          variant='contained'
+          onClick={handleEvmConnect}
+          disabled={!!currentAddress}
+          endIcon={<PowerIcon />}
+          className='plausible-event-name=EVM+Connected'
+        >
+          <Typography>{currentAddress ? 'Connected' : 'Connect'}</Typography>
+        </Button>
+      }
+    >
+      <ListItemAvatar>
+        <Avatar src={provider.info.icon} alt='provider.info.name' />
+      </ListItemAvatar>
+      <ListItemText primary={provider.info.name} />
+    </ListItem>
+  );
 };
 
 const ChooseWallet = ({
@@ -113,7 +121,7 @@ const ChooseWallet = ({
               ? 'rgba(61, 61, 61, 0.9)'
               : theme.palette.background.default,
         },
-        borderRadius: '10px'
+        borderRadius: '10px',
       }}
     >
       <DialogTitle>
@@ -129,9 +137,7 @@ const ChooseWallet = ({
       </DialogTitle>
       <DialogContent>
         <Divider textAlign='left'>
-          <Typography>
-            {'Arweave Wallets'}
-          </Typography>
+          <Typography>{'Arweave Wallets'}</Typography>
         </Divider>
         <List>
           <ListItem
@@ -144,7 +150,13 @@ const ChooseWallet = ({
                 endIcon={<PowerIcon />}
                 className='plausible-event-name=ArConnect+Connect+Click'
               >
-                <Typography>{currentAddress ? 'Connected' : !isArConnectAvailable || localStorage.getItem('wallet') === 'arconnect' ? 'Not Available' : 'Connect'}</Typography>
+                <Typography>
+                  {currentAddress
+                    ? 'Connected'
+                    : !isArConnectAvailable || localStorage.getItem('wallet') === 'arconnect'
+                    ? 'Not Available'
+                    : 'Connect'}
+                </Typography>
               </Button>
             }
           >
@@ -174,9 +186,7 @@ const ChooseWallet = ({
           </ListItem>
         </List>
         <Divider textAlign='left'>
-          <Typography>
-            {'EVM Wallets'}
-          </Typography>
+          <Typography>{'EVM Wallets'}</Typography>
         </Divider>
         <List>
           {providers.map((provider) => (
@@ -190,7 +200,7 @@ const ChooseWallet = ({
           sx={{
             borderRadius: '10px',
             display: 'flex',
-            alignItems: 'center'
+            alignItems: 'center',
           }}
           icon={<InfoOutlined />}
         >

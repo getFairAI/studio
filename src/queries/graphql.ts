@@ -1118,7 +1118,7 @@ export const QUERY_TX_WITH_OWNERS = gql`
 `;
 
 export const IRYS_FIND_BY_TAGS = gql`
-  query IRYS_FIND_BY_TAGS($tags: [TagFilter!], $first: Int, $after: String)  {
+  query IRYS_FIND_BY_TAGS($tags: [TagFilter!], $first: Int, $after: String) {
     transactions(tags: $tags, first: $first, after: $after, order: DESC) {
       edges {
         node {

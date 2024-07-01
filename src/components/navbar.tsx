@@ -22,14 +22,7 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import ProfileMenu from './profile-menu';
-import {
-  ChangeEvent,
-  Dispatch,
-  SetStateAction,
-  useCallback,
-  useContext,
-  useEffect,
-} from 'react';
+import { ChangeEvent, Dispatch, SetStateAction, useCallback, useContext, useEffect } from 'react';
 import { Button, Icon, InputBase, Tooltip, useTheme } from '@mui/material';
 import { WalletContext } from '@/context/wallet';
 import { ChooseWalletContext } from '@/context/choose-wallet';
@@ -42,16 +35,11 @@ import NavigationMenu from './navigation-menu';
 const CurrencyMenu = () => {
   const pollingTimeout = 10000;
 
-  const { currentAddress, currentBalance, updateBalance } =
-    useContext(WalletContext);
+  const { currentAddress, currentBalance, updateBalance } = useContext(WalletContext);
 
   const pollingFn = () => updateBalance();
 
-  const [startPolling, stopPolling] = usePollingEffect(
-    pollingFn,
-    [currentAddress],
-    pollingTimeout,
-  );
+  const [startPolling, stopPolling] = usePollingEffect(pollingFn, [currentAddress], pollingTimeout);
 
   useEffect(() => {
     if (!currentAddress) {
@@ -139,7 +127,12 @@ const WalletState = () => {
         >
           <Tooltip title={currentAddress} placement={'left-start'}>
             <Typography
-              sx={{ color: theme.palette.text.primary, lineHeight: '20.25px', fontSize: '15px', textWrap: 'nowrap' }}
+              sx={{
+                color: theme.palette.text.primary,
+                lineHeight: '20.25px',
+                fontSize: '15px',
+                textWrap: 'nowrap',
+              }}
             >
               {currentAddress.slice(0, 6)}...{currentAddress.slice(-4)}
             </Typography>
@@ -271,8 +264,18 @@ const Navbar = ({
             <Typography component={NavLink} to='/' className='navbar-links' sx={navbarLinkStyles}>
               Operators
             </Typography>
-            <Link to='/upload-creator' style={{ border: `0.5px solid ${theme.palette.terciary.main}`, borderRadius: '8px'  }}>
-              <Typography padding={'9.5px 15px'} textTransform={'uppercase'} lineHeight={1.3} sx={{ textWrap: 'nowrap' }}>Store on Arweave</Typography>
+            <Link
+              to='/upload-creator'
+              style={{ border: `0.5px solid ${theme.palette.terciary.main}`, borderRadius: '8px' }}
+            >
+              <Typography
+                padding={'9.5px 15px'}
+                textTransform={'uppercase'}
+                lineHeight={1.3}
+                sx={{ textWrap: 'nowrap' }}
+              >
+                Store on Arweave
+              </Typography>
             </Link>
             <NavigationMenu navStyles={navbarLinkStyles} />
             <WalletState />

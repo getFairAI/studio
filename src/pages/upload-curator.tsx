@@ -87,7 +87,12 @@ import {
 } from '@/constants';
 import { useSnackbar } from 'notistack';
 import { ApolloError, useLazyQuery, useQuery } from '@apollo/client';
-import { FIND_BY_TAGS, FIND_BY_TAGS_WITH_OWNERS, GET_LATEST_MODEL_ATTACHMENTS, IRYS_FIND_BY_TAGS } from '@/queries/graphql';
+import {
+  FIND_BY_TAGS,
+  FIND_BY_TAGS_WITH_OWNERS,
+  GET_LATEST_MODEL_ATTACHMENTS,
+  IRYS_FIND_BY_TAGS,
+} from '@/queries/graphql';
 import { IContractEdge, IContractQueryResult } from '@/interfaces/arweave';
 import {
   addAssetTags,
@@ -105,7 +110,11 @@ import { DeployPlugin } from 'warp-contracts-plugin-deploy';
 import { WalletContext } from '@/context/wallet';
 import { FundContext } from '@/context/fund';
 import { BundlrContext } from '@/context/bundlr';
-import { findByTagsAndOwnersDocument, findByTagsAndOwnersQuery, findByTagsQuery } from '@fairai/evm-sdk';
+import {
+  findByTagsAndOwnersDocument,
+  findByTagsAndOwnersQuery,
+  findByTagsQuery,
+} from '@fairai/evm-sdk';
 import { getData } from '@/utils/arweave';
 
 export interface CreateForm extends FieldValues {
@@ -152,7 +161,7 @@ const SupportedModelsPick = ({
   data,
   name,
   control,
-  loadMore
+  loadMore,
 }: {
   data: IContractQueryResult;
   name: string;
@@ -161,7 +170,7 @@ const SupportedModelsPick = ({
   loading?: boolean;
   loadMore: fetchMoreFn;
 }) => {
-  const [ options, setOptions ] = useState<SupportedModelOption[]>([]);
+  const [options, setOptions] = useState<SupportedModelOption[]>([]);
   const [value, setValue] = useState<SupportedModelOption[]>([]);
   const [open, toggleOpen] = useState(false);
   const [dialogValue, setDialogValue] = useState({
@@ -180,10 +189,13 @@ const SupportedModelsPick = ({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setValue(prev => [ ...prev, {
-      name: dialogValue.name,
-      url: dialogValue.url,
-    }]);
+    setValue((prev) => [
+      ...prev,
+      {
+        name: dialogValue.name,
+        url: dialogValue.url,
+      },
+    ]);
     handleClose();
   };
 
@@ -198,19 +210,22 @@ const SupportedModelsPick = ({
         },
         updateQuery: commonUpdateQuery,
       });
-    } else  if (data?.transactions?.edges) {
+    } else if (data?.transactions?.edges) {
       (async () => {
         const owners = data.transactions.edges.map((el: IContractEdge) => el.node.owner.address);
-        const { data: deletedData } = await client.query({ query: FIND_BY_TAGS_WITH_OWNERS, variables: {
-          tags: [
-            { name: TAG_NAMES.protocolName, values: [OLD_PROTOCOL_NAME, PROTOCOL_NAME] },
-            { name: TAG_NAMES.protocolVersion, values: [OLD_PROTOCOL_VERSION, PROTOCOL_VERSION ] },
-            { name: TAG_NAMES.operationName, values: [ MODEL_DELETION ]}
-          ],
-          owners,
-          first: 100
-        }});
-        const filtered = [ ...data.transactions.edges ]; // coppy array
+        const { data: deletedData } = await client.query({
+          query: FIND_BY_TAGS_WITH_OWNERS,
+          variables: {
+            tags: [
+              { name: TAG_NAMES.protocolName, values: [OLD_PROTOCOL_NAME, PROTOCOL_NAME] },
+              { name: TAG_NAMES.protocolVersion, values: [OLD_PROTOCOL_VERSION, PROTOCOL_VERSION] },
+              { name: TAG_NAMES.operationName, values: [MODEL_DELETION] },
+            ],
+            owners,
+            first: 100,
+          },
+        });
+        const filtered = [...data.transactions.edges]; // coppy array
         for (const el of deletedData.transactions.edges) {
           const deletedModelid = findTag(el, 'modelTransaction') as string;
           const deletedModelOwner = el.node.owner.address;
@@ -218,14 +233,17 @@ const SupportedModelsPick = ({
           const idx = data.transactions.edges.findIndex((el: IContractEdge) => {
             const modelId = findTag(el, 'modelTransaction') as string;
             const modelOwner = el.node.owner.address;
-            return modelId === deletedModelid && (modelOwner === deletedModelOwner || deletedModelOwner === MARKETPLACE_ADDRESS);
+            return (
+              modelId === deletedModelid &&
+              (modelOwner === deletedModelOwner || deletedModelOwner === MARKETPLACE_ADDRESS)
+            );
           });
 
           if (idx !== -1) {
             filtered.splice(idx, 1);
           }
         }
-        
+
         const opts = filtered.map((el: IContractEdge) => {
           return {
             name: findTag(el, 'modelName') as string,
@@ -235,11 +253,11 @@ const SupportedModelsPick = ({
         setOptions(opts);
       })();
     }
-  }, [ data, setOptions ]);
+  }, [data, setOptions]);
 
   useEffect(() => {
     field.onChange(value);
-  }, [ value ]);
+  }, [value]);
 
   return (
     <>
@@ -247,8 +265,8 @@ const SupportedModelsPick = ({
         value={value}
         multiple
         onChange={(_, newValue) => {
-          const lastEl = [ ...newValue ].pop();
-          if (lastEl && (typeof lastEl === 'string' || (!lastEl.url))) {
+          const lastEl = [...newValue].pop();
+          if (lastEl && (typeof lastEl === 'string' || !lastEl.url)) {
             setDialogValue({
               name: (lastEl as SupportedModelOption).name.replace(/Add "/, '').replace(/"$/, ''),
               url: '',
@@ -266,7 +284,7 @@ const SupportedModelsPick = ({
           if (params.inputValue !== '') {
             filtered.push({
               name: `Add "${params.inputValue}"`,
-              url: ''
+              url: '',
             });
           }
 
@@ -285,28 +303,32 @@ const SupportedModelsPick = ({
         clearOnBlur
         handleHomeEndKeys
         disableCloseOnSelect
-        renderOption={(props, option, { selected }) => <MenuItem
-          selected={selected}
-          {...props}
-          sx={{
-            display: 'flex',
-            gap: '16px',
-          }}
-        >
-          <Checkbox checked={selected} />
-          <Typography>{option.name}</Typography>
-          <Typography sx={{ opacity: '0.5' }}>
-            {option.url}
-          </Typography>
-        </MenuItem>}
+        renderOption={(props, option, { selected }) => (
+          <MenuItem
+            selected={selected}
+            {...props}
+            sx={{
+              display: 'flex',
+              gap: '16px',
+            }}
+          >
+            <Checkbox checked={selected} />
+            <Typography>{option.name}</Typography>
+            <Typography sx={{ opacity: '0.5' }}>{option.url}</Typography>
+          </MenuItem>
+        )}
         sx={{ width: '100%' }}
         freeSolo
-        renderInput={(params) => <TextField {...params} label='Choose Supported Models, or Add new ones' />}
+        renderInput={(params) => (
+          <TextField {...params} label='Choose Supported Models, or Add new ones' />
+        )}
       />
       <Dialog open={open} onClose={handleClose}>
         <form onSubmit={handleSubmit}>
           <DialogTitle>Add a new Supported Model</DialogTitle>
-          <DialogContent sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center'}}>
+          <DialogContent
+            sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+          >
             <DialogContentText>
               Please add the name and the URL of the model you want to support
             </DialogContentText>
@@ -340,7 +362,9 @@ const SupportedModelsPick = ({
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose}>Cancel</Button>
-            <Button type="submit" disabled={!dialogValue.name || !dialogValue.url}>Add</Button>
+            <Button type='submit' disabled={!dialogValue.name || !dialogValue.url}>
+              Add
+            </Button>
           </DialogActions>
         </form>
       </Dialog>
@@ -487,12 +511,16 @@ const GenericSelect = ({
     () => !error && !loading && data?.transactions?.edges?.length === 0,
     [error, loading, data],
   );
-  const [ solutionsData, setSolutionsData ] = useState<IContractEdge[]>([]);
+  const [solutionsData, setSolutionsData] = useState<IContractEdge[]>([]);
 
   const checkShouldLoadMore = (filtered: IContractEdge[]) => {
     const selectRowHeight = 36;
     const maxHeight = 144;
-    if (filtered.length * selectRowHeight < maxHeight && data && data.transactions.pageInfo.hasNextPage) {
+    if (
+      filtered.length * selectRowHeight < maxHeight &&
+      data &&
+      data.transactions.pageInfo.hasNextPage
+    ) {
       // if there are not enough elements to show scroll & has next pºage, force load more
       loadMore();
     }
@@ -501,48 +529,53 @@ const GenericSelect = ({
   useEffect(() => {
     if (data && data?.transactions?.edges?.length > 0) {
       (async () => {
-        const txs = [ ...data.transactions.edges ]; // mutable copy of txs
+        const txs = [...data.transactions.edges]; // mutable copy of txs
         const filtered = txs.reduce((acc, el) => {
           acc.push(el);
           // find previousVersionsTag
-          const previousVersions= findTag(el, 'previousVersions');
+          const previousVersions = findTag(el, 'previousVersions');
           if (previousVersions) {
             const versionsArray: string[] = JSON.parse(previousVersions);
             // remove previous versions from accumulator array
             const newAcc = acc.filter((el) => !versionsArray.includes(el.node.id));
             return newAcc;
           }
-  
+
           return acc;
         }, [] as findByTagsQuery['transactions']['edges']);
-  
-        const filteredCopy = [ ...filtered ];
+
+        const filteredCopy = [...filtered];
         for (const tx of filteredCopy) {
           const deleteTags = [
-            { name: TAG_NAMES.operationName, values: [ SOLUTION_DELETION ] },
-            { name: TAG_NAMES.solutionTransaction, values: [ tx.node.id ] },
+            { name: TAG_NAMES.operationName, values: [SOLUTION_DELETION] },
+            { name: TAG_NAMES.solutionTransaction, values: [tx.node.id] },
           ];
-        
-          const owners = [ MARKETPLACE_ADDRESS, tx.node.owner.address ];
-        
+
+          const owners = [MARKETPLACE_ADDRESS, tx.node.owner.address];
+
           const data = await client.query({
             query: findByTagsAndOwnersDocument,
             variables: {
-              tags: deleteTags, first: filteredCopy.length ,owners,
-            }
+              tags: deleteTags,
+              first: filteredCopy.length,
+              owners,
+            },
           });
-        
+
           if (data.data.transactions.edges.length > 0) {
             // remove scripts with cancellations
-            filtered.splice(filtered.findIndex((el: IContractEdge) => el.node.id === tx.node.id), 1);
+            filtered.splice(
+              filtered.findIndex((el: IContractEdge) => el.node.id === tx.node.id),
+              1,
+            );
           }
         }
-  
+
         setSolutionsData(filtered);
         checkShouldLoadMore(filtered);
       })();
     }
-  }, [ data]);
+  }, [data]);
 
   const handleSelected = useCallback(
     (event: MouseEvent<HTMLElement>) => {
@@ -556,32 +589,29 @@ const GenericSelect = ({
     },
     [selectAnchorEl, disabled, setSelectAnchorEl],
   );
-  const renderValueFn = useCallback(
-    (selected: unknown) => {
-      if (typeof selected !== 'string') {
-        return '';
-      }
-      const title = findTag(JSON.parse(selected), 'solutionName');
-      const mainText = findTag(JSON.parse(selected), 'solutionTransaction');
-      const subText = JSON.parse(selected).node.owner.address;
+  const renderValueFn = useCallback((selected: unknown) => {
+    if (typeof selected !== 'string') {
+      return '';
+    }
+    const title = findTag(JSON.parse(selected), 'solutionName');
+    const mainText = findTag(JSON.parse(selected), 'solutionTransaction');
+    const subText = JSON.parse(selected).node.owner.address;
 
-      return (
-        <Box
-          sx={{
-            display: 'flex',
-            gap: '16px',
-          }}
-        >
-          <Typography>{title}</Typography>
-          <Typography sx={{ opacity: '0.5' }}>
-            {mainText}
-            {` (Creator: ${displayShortTxOrAddr(subText as string)})`}
-          </Typography>
-        </Box>
-      );
-    },
-    [],
-  );
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          gap: '16px',
+        }}
+      >
+        <Typography>{title}</Typography>
+        <Typography sx={{ opacity: '0.5' }}>
+          {mainText}
+          {` (Creator: ${displayShortTxOrAddr(subText as string)})`}
+        </Typography>
+      </Box>
+    );
+  }, []);
 
   return (
     <SelectControl
@@ -629,9 +659,7 @@ const GenericSelect = ({
       )}
       {error && (
         <Box>
-          <Typography>
-            {'Could not fetch available Solutions for the current address'}
-          </Typography>
+          <Typography>{'Could not fetch available Solutions for the current address'}</Typography>
         </Box>
       )}
 
@@ -642,9 +670,7 @@ const GenericSelect = ({
 
       {hasNoData && (
         <Box>
-          <Typography>
-            {'There are no Solutions created with the current address'}
-          </Typography>
+          <Typography>{'There are no Solutions created with the current address'}</Typography>
         </Box>
       )}
     </SelectControl>
@@ -721,8 +747,8 @@ const UploadCurator = () => {
       rewardsEvmAddress: '',
     },
   } as FieldValues);
-  const [ requests, setRequests ] = useState<RequestData[]>([]);
-  const [ showUrl, setShowUrl ] = useState(false);
+  const [requests, setRequests] = useState<RequestData[]>([]);
+  const [showUrl, setShowUrl] = useState(false);
   const [, setMessage] = useState('');
   const [hasScriptsNextPage, setHasScriptsNextPage] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
@@ -736,8 +762,7 @@ const UploadCurator = () => {
   const [fetchNotes, { data: notesData }] = useLazyQuery(GET_LATEST_MODEL_ATTACHMENTS);
 
   const disabled = useMemo(
-    () =>
-      (!control._formState.isValid && control._formState.isDirty) || !currentAddress,
+    () => (!control._formState.isValid && control._formState.isDirty) || !currentAddress,
     [control._formState.isValid, control._formState.isDirty, currentAddress],
   );
 
@@ -759,13 +784,13 @@ const UploadCurator = () => {
   } = useQuery(findByTagsAndOwnersDocument, {
     variables: {
       tags: [
-        { name: TAG_NAMES.protocolName, values: [ PROTOCOL_NAME ]}, // keep Fair Protocol in tags to keep retrocompatibility
-        { name: TAG_NAMES.protocolVersion, values: [ PROTOCOL_VERSION ]},
-        { name: TAG_NAMES.operationName, values: [ SOLUTION_CREATION ]},
+        { name: TAG_NAMES.protocolName, values: [PROTOCOL_NAME] }, // keep Fair Protocol in tags to keep retrocompatibility
+        { name: TAG_NAMES.protocolVersion, values: [PROTOCOL_VERSION] },
+        { name: TAG_NAMES.operationName, values: [SOLUTION_CREATION] },
         /*  { name: TAG_NAMES.modelTransaction, values: [ state.modelTransaction ]}, */
       ],
       first: elementsPerPage,
-      owners: [ currentAddress ]
+      owners: [currentAddress],
     },
     skip: !currentAddress,
     notifyOnNetworkStatusChange: true,
@@ -780,11 +805,11 @@ const UploadCurator = () => {
     variables: {
       tags: [
         { name: TAG_NAMES.protocolName, values: [OLD_PROTOCOL_NAME, PROTOCOL_NAME] },
-        { name: TAG_NAMES.protocolVersion, values: [OLD_PROTOCOL_VERSION, PROTOCOL_VERSION ] },
-        { name: TAG_NAMES.operationName, values: [ MODEL_CREATION ]},
+        { name: TAG_NAMES.protocolVersion, values: [OLD_PROTOCOL_VERSION, PROTOCOL_VERSION] },
+        { name: TAG_NAMES.operationName, values: [MODEL_CREATION] },
         /* { name: TAG_NAMES.modelCategory, values: [ outputValue ] }, */
       ],
-      first: 100
+      first: 100,
     },
     notifyOnNetworkStatusChange: true,
   });
@@ -793,13 +818,13 @@ const UploadCurator = () => {
     variables: {
       tags: [
         { name: TAG_NAMES.protocolName, values: [PROTOCOL_NAME] },
-        { name: TAG_NAMES.protocolVersion, values: [ PROTOCOL_VERSION ] },
+        { name: TAG_NAMES.protocolVersion, values: [PROTOCOL_VERSION] },
         { name: TAG_NAMES.operationName, values: ['Request-Solution'] },
       ],
-      first: 100
+      first: 100,
     },
     context: {
-      clientName: 'irys'
+      clientName: 'irys',
     },
   });
 
@@ -808,7 +833,7 @@ const UploadCurator = () => {
 
   useEffect(() => {
     (async () => {
-      const txs: { node: IrysTx}[] = solutionRequestsData?.transactions?.edges ?? [];
+      const txs: { node: IrysTx }[] = solutionRequestsData?.transactions?.edges ?? [];
 
       const txsData: RequestData[] = [];
       for (const tx of txs) {
@@ -893,7 +918,7 @@ const UploadCurator = () => {
         }
       })();
     }
-  }, [ solutionChanged, currentAddress, setValue ]);
+  }, [solutionChanged, currentAddress, setValue]);
 
   useEffect(() => {
     const avatarTxId = avatarData?.transactions?.edges[0]?.node.id ?? '';
@@ -930,7 +955,10 @@ const UploadCurator = () => {
     const commonTags = [];
     commonTags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
     commonTags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
-    commonTags.push({ name: TAG_NAMES.contentType, value: data.file ? data.file.type : 'text/url-list'});
+    commonTags.push({
+      name: TAG_NAMES.contentType,
+      value: data.file ? data.file.type : 'text/url-list',
+    });
     commonTags.push({ name: TAG_NAMES.solutionName, value: `${data.name}` });
     commonTags.push({ name: TAG_NAMES.output, value: data.output });
     commonTags.push({ name: TAG_NAMES.rewardsEvmAddress, value: data.rewardsEvmAddress });
@@ -1005,12 +1033,11 @@ const UploadCurator = () => {
       const warp = await WarpFactory.forMainnet().use(new DeployPlugin());
       warp.register(res.id, 'node1');
 
-
       try {
         const usageFile = new File([data.notes], `${data.name}-usage.md`, {
           type: 'text/markdown',
         });
-      
+
         // upload the file
         const usageNoteTags = [];
         usageNoteTags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
@@ -1019,11 +1046,14 @@ const UploadCurator = () => {
         usageNoteTags.push({ name: TAG_NAMES.operationName, value: MODEL_ATTACHMENT });
         usageNoteTags.push({ name: TAG_NAMES.attachmentName, value: usageFile.name });
         usageNoteTags.push({ name: TAG_NAMES.attachmentRole, value: NOTES_ATTACHMENT });
-        usageNoteTags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
+        usageNoteTags.push({
+          name: TAG_NAMES.unixTime,
+          value: (Date.now() / secondInMS).toString(),
+        });
         usageNoteTags.push({ name: TAG_NAMES.solutionTransaction, value: res.id });
-      
+
         await upload(usageFile, usageNoteTags);
-        
+
         if (data.avatar) {
           // upload the file
           const imageTags = [];
@@ -1036,7 +1066,7 @@ const UploadCurator = () => {
           imageTags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
 
           imageTags.push({ name: TAG_NAMES.solutionTransaction, value: res.id });
-          
+
           await upload(data.avatar, imageTags);
         }
       } catch (error) {
@@ -1116,14 +1146,12 @@ const UploadCurator = () => {
                 placeholder: 'Link a Solution Request ID',
               }}
             >
-              {requests.map((el: RequestData) => 
+              {requests.map((el: RequestData) => (
                 <MenuItem key={el.id} value={el.id}>
                   {el.title}
                 </MenuItem>
-              )}
-              <MenuItem value={'none'}>
-                No Solution Request
-              </MenuItem>
+              ))}
+              <MenuItem value={'none'}>No Solution Request</MenuItem>
             </SelectControl>
           </Box>
           <Box display={'flex'} gap={'30px'} width={'100%'} padding='0px 32px'>
@@ -1285,22 +1313,41 @@ const UploadCurator = () => {
           </Box>
           <Box padding='0px 32px' mb={'8px'}>
             <FileControl name='file' control={control} rules={{ required: !codeUrlValue }} />
-            {!showUrl && <Typography variant='caption' textAlign={'center'} display={'flex'} justifyContent={'center'}>{'You can Also'} <u style={{ cursor: 'pointer', paddingLeft: '2px' }} onClick={() => setShowUrl(true)}>{'provide a link to a code repository.'}</u></Typography>}
-            {showUrl && <Box display={'flex'} width={'100%'} gap={'16px'}>
-              <TextControl
-                name='codeUrl'
-                control={control}
-                mat={{
-                  label: 'Code Repository URL',
-                  variant: 'outlined',
-                  size: 'small',
-                  sx: {
-                    width: '100%',
-                  }
-                }}
-              />
-              <Button variant='text' onClick={() => setShowUrl(false)}>Cancel</Button>
-            </Box>}
+            {!showUrl && (
+              <Typography
+                variant='caption'
+                textAlign={'center'}
+                display={'flex'}
+                justifyContent={'center'}
+              >
+                {'You can Also'}{' '}
+                <u
+                  style={{ cursor: 'pointer', paddingLeft: '2px' }}
+                  onClick={() => setShowUrl(true)}
+                >
+                  {'provide a link to a code repository.'}
+                </u>
+              </Typography>
+            )}
+            {showUrl && (
+              <Box display={'flex'} width={'100%'} gap={'16px'}>
+                <TextControl
+                  name='codeUrl'
+                  control={control}
+                  mat={{
+                    label: 'Code Repository URL',
+                    variant: 'outlined',
+                    size: 'small',
+                    sx: {
+                      width: '100%',
+                    },
+                  }}
+                />
+                <Button variant='text' onClick={() => setShowUrl(false)}>
+                  Cancel
+                </Button>
+              </Box>
+            )}
           </Box>
           <Box padding='0px 32px'>
             <TextControl
@@ -1330,7 +1377,7 @@ const UploadCurator = () => {
               padding: '0 32px 32px 32px',
               justifyContent: 'flex-end',
               mt: '32px',
-              width: '100%', 
+              width: '100%',
               gap: '32px',
             }}
           >
