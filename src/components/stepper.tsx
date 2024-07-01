@@ -16,123 +16,61 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import { styled } from '@mui/material/styles';
-import Stack from '@mui/material/Stack';
 import Stepper from '@mui/material/Stepper';
 import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
-import StepConnector, { stepConnectorClasses } from '@mui/material/StepConnector';
-import { StepIconProps } from '@mui/material/StepIcon';
 import {
   Alert,
   Box,
   Button,
+  CardContent,
   CircularProgress,
   FormControl,
   IconButton,
   InputAdornment,
+  StepContent,
   TextField,
   Typography,
+  useTheme,
 } from '@mui/material';
 import {
   ChangeEvent,
-  Fragment,
-  ReactElement,
   useCallback,
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
-import PaymentIcon from '@mui/icons-material/Payment';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import SettingsIcon from '@mui/icons-material/Settings';
 import DownloadIcon from '@mui/icons-material/Download';
 import rehypeSanitize from 'rehype-sanitize';
 import { IEdge } from '@/interfaces/arweave';
 import {
   CANCEL_OPERATION,
-  DEFAULT_TAGS,
+  MARKETPLACE_EVM_ADDRESS,
   NET_ARWEAVE_URL,
-  OPERATOR_REGISTRATION_AR_FEE,
-  OPERATOR_REGISTRATION_PAYMENT_TAGS,
+  OLD_PROTOCOL_NAME,
+  OLD_PROTOCOL_VERSION,
+  OPERATOR_USDC_FEE,
+  PROTOCOL_NAME,
+  PROTOCOL_VERSION,
   TAG_NAMES,
-  U_LOGO_SRC,
   defaultDecimalPlaces,
 } from '@/constants';
 import { NumericFormat } from 'react-number-format';
-import { findTag, parseCost, printSize } from '@/utils/common';
-import { useRouteLoaderData } from 'react-router-dom';
+import { displayShortTxOrAddr, findTag, printSize } from '@/utils/common';
+import { useLoaderData, useLocation, useParams, useRouteLoaderData } from 'react-router-dom';
 import { RouteLoaderResult } from '@/interfaces/router';
 import { getData } from '@/utils/arweave';
-import useOnScreen from '@/hooks/useOnScreen';
 import MarkdownControl from './md-control';
 import { WalletContext } from '@/context/wallet';
 import DebounceButton from './debounce-button';
 import { useQuery } from '@apollo/client';
-import { FIND_BY_TAGS, QUERY_TX_WITH } from '@/queries/graphql';
-
-const ColorlibConnector = styled(StepConnector)(({ theme }) => ({
-  [`&.${stepConnectorClasses.alternativeLabel}`]: {
-    top: 22,
-  },
-  [`&.${stepConnectorClasses.active}`]: {
-    [`& .${stepConnectorClasses.line}`]: {
-      backgroundImage: `linear-gradient(170.66deg, ${theme.palette.primary.main} -38.15%, ${theme.palette.primary.main} 30.33%)`,
-    },
-  },
-  [`&.${stepConnectorClasses.completed}`]: {
-    [`& .${stepConnectorClasses.line}`]: {
-      backgroundImage: `linear-gradient(170.66deg, ${theme.palette.primary.main} -38.15%, ${theme.palette.primary.main} 30.33%)`,
-    },
-  },
-  [`& .${stepConnectorClasses.line}`]: {
-    height: 3,
-    border: 0,
-    backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#eaeaf0',
-    borderRadius: '8px',
-  },
-}));
-
-const ColorlibStepIconRoot = styled('div')<{
-  ownerState: { completed?: boolean; active?: boolean };
-}>(({ theme, ownerState }) => ({
-  backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[700] : '#ccc',
-  zIndex: 1,
-  color: theme.palette.text.primary,
-  width: 40,
-  height: 40,
-  display: 'flex',
-  borderRadius: '8px',
-  justifyContent: 'center',
-  alignItems: 'center',
-  ...(ownerState.active && {
-    backgroundImage: `linear-gradient(170.66deg, ${theme.palette.primary.main} -38.15%, ${theme.palette.primary.main} 30.33%)`,
-    boxShadow: '0 4px 10px 0 rgba(0,0,0,.25)',
-    color: theme.palette.primary.contrastText,
-  }),
-  ...(ownerState.completed && {
-    backgroundImage: `linear-gradient(170.66deg, ${theme.palette.primary.main} -38.15%, ${theme.palette.primary.main} 30.33%)`,
-    color: theme.palette.primary.contrastText,
-  }),
-}));
-
-const ColorlibStepIcon = (props: StepIconProps) => {
-  const { active, completed, className } = props;
-
-  const icons: { [index: string]: ReactElement } = {
-    1: <InfoOutlinedIcon />,
-    2: <SettingsIcon />,
-    3: <PaymentIcon />,
-  };
-
-  return (
-    <ColorlibStepIconRoot ownerState={{ completed, active }} className={className}>
-      {icons[String(props.icon)]}
-    </ColorlibStepIconRoot>
-  );
-};
+import { toSvg } from 'jdenticon';
+import { useSnackbar } from 'notistack';
+import ContentCopy from '@mui/icons-material/ContentCopy';
+import { findByTagsAndOwnersDocument, getUsdcSentLogs, decodeTxMemo, sendUSDC } from '@fairai/evm-sdk';
+import { OpenInNew } from '@mui/icons-material';
+import { EVMWalletContext } from '@/context/evm-wallet';
 
 const RegisterStep = ({
   tx,
@@ -148,40 +86,86 @@ const RegisterStep = ({
   const [operatorName, setOperatorName] = useState('');
   const [rate, setRate] = useState(0);
   const { currentAddress } = useContext(WalletContext);
-  const [usdFee, setUsdFee] = useState('0');
+  const { currentAddress: evmWallet } = useContext(EVMWalletContext);
+  const theme = useTheme();
+  const [ paymentHash, setPaymentHash ] = useState('');
 
-  const scriptTxid = useMemo(() => findTag(tx, 'scriptTransaction'), [tx]);
+  const scriptTxid = useMemo(() => tx.node.id, [tx]);
 
-  const { data, loading } = useQuery(FIND_BY_TAGS, {
+  const { data, loading, refetch } = useQuery(findByTagsAndOwnersDocument, {
     variables: {
       tags: [
-        ...DEFAULT_TAGS,
-        ...OPERATOR_REGISTRATION_PAYMENT_TAGS,
-        { name: TAG_NAMES.sequencerOwner, values: [currentAddress] },
-        { name: TAG_NAMES.scriptTransaction, values: [scriptTxid] },
+        { name: TAG_NAMES.protocolName, values: [ PROTOCOL_NAME ]},
+        { name: TAG_NAMES.protocolVersion, values: [ PROTOCOL_VERSION, ]},
+        { name: TAG_NAMES.solutionTransaction, values: [ scriptTxid! ] },
+        { name: TAG_NAMES.operationName, values: [ 'Operator Registration' ]},
       ],
+      owners: [ currentAddress ],
       first: 1,
     },
-    skip: !scriptTxid,
+    skip: !scriptTxid || !currentAddress,
   });
 
   const registrationId = useMemo(
-    () => data?.transactions.edges.length > 0 && data.transactions.edges[0].node.id,
+    () => data?.transactions?.edges[0]?.node.id ?? '',
     [data],
   );
-
-  const { data: cancelData, loading: cancelLoading } = useQuery(QUERY_TX_WITH, {
-    variables: {
-      address: currentAddress,
-      tags: [
-        ...DEFAULT_TAGS,
-        { name: TAG_NAMES.operationName, values: [CANCEL_OPERATION] },
-        { name: TAG_NAMES.registrationTransaction, values: [registrationId] },
-      ],
+  const registrationTx = useMemo(
+    () => data?.transactions?.edges[0] ?? null,
+    [data],
+  );
+  const registrationName = useMemo(
+    () => { 
+      if (data?.transactions.edges[0]) {
+        return findTag(data?.transactions?.edges[0], 'operatorName');
+      } else {
+        return '';
+      }
     },
-    skip: !registrationId,
+    [data],
+  );
+  const registrationFee = useMemo(
+    () => { 
+      if (data?.transactions.edges[0]) {
+        return findTag(data?.transactions?.edges[0], 'operatorFee');
+      } else {
+        return '';
+      }
+    },
+    [data],
+  );
+  const { data: cancelData, loading: cancelLoading } = useQuery(findByTagsAndOwnersDocument, {
+    variables: {
+      owners: [ currentAddress ],
+      tags: [
+        { name: TAG_NAMES.protocolName, values: [ OLD_PROTOCOL_NAME, PROTOCOL_NAME ]},
+        { name: TAG_NAMES.protocolVersion, values: [OLD_PROTOCOL_VERSION, PROTOCOL_VERSION ]},
+        { name: TAG_NAMES.operationName, values: [ CANCEL_OPERATION ] },
+        { name: TAG_NAMES.registrationTransaction, values: [ registrationId! ] },
+      ],
+      first: 1,
+    },
+    skip: !registrationId || !currentAddress,
   });
   const isLoading = useMemo(() => loading || cancelLoading, [loading, cancelLoading]);
+
+  useEffect(() => {
+    if (registrationTx) {
+      (async () => {
+        const timestamp = await findTag(registrationTx, 'unixTime');
+        const logs = await getUsdcSentLogs(evmWallet as `0x${string}`, MARKETPLACE_EVM_ADDRESS, OPERATOR_USDC_FEE, parseFloat(timestamp ?? ''));
+
+        for (const log of logs) {
+          const arweaveTx = await decodeTxMemo(log.transactionHash);
+  
+          if (arweaveTx === registrationId) {
+            setPaymentHash(log.transactionHash);
+            break;
+          }
+        }
+      })();
+    }
+  }, [ registrationTx ]);
 
   const handleRateChange = (event: ChangeEvent<HTMLInputElement>) => {
     const newNumber = parseFloat(event.target.value);
@@ -195,41 +179,87 @@ const RegisterStep = ({
     setOperatorName(event.target.value);
   };
 
-  const handleFinish = useCallback(async () => {
-    await handleSubmit(rate.toString(), operatorName, handleNext);
-  }, [rate, operatorName, handleNext, handleSubmit]);
+  const handleNextAndUpdate = useCallback(() => {
+    refetch();
+    handleNext();
+  }, [ refetch, handleNext ]);
 
-  useEffect(() => {
-    (async () => {
-      const nDigits = 4;
-      const usdCost = await parseCost(parseFloat(OPERATOR_REGISTRATION_AR_FEE));
-      setUsdFee(usdCost.toFixed(nDigits));
-    })();
-  }, [OPERATOR_REGISTRATION_AR_FEE, parseCost]);
+  const handleFinish = useCallback(async () => {
+    await handleSubmit(rate.toString(), operatorName, handleNextAndUpdate);
+  }, [rate, operatorName, handleNextAndUpdate, handleSubmit]);
+
+  const viewTx = useCallback(() => {
+    window.open(`https://viewblock.io/arweave/tx/${registrationId}`, '_blank');
+  },[registrationId]);
+
+  const viewEVMTx = useCallback(() => {
+    window.open(`https://arbiscan.io/tx/${paymentHash}`, '_blank');
+  },[paymentHash]);
+
+  const handleRetryNow = useCallback(async () => {
+    if (registrationId) {
+      const payment = await sendUSDC(MARKETPLACE_EVM_ADDRESS, OPERATOR_USDC_FEE, registrationId);
+      setPaymentHash(payment);
+    }
+  }, [ registrationId ]);
 
   if (isLoading) {
     return (
-      <Fragment>
-        <Box justifyContent={'space-between'} display={'flex'}>
-          <CircularProgress />
-        </Box>
-      </Fragment>
+      <Box justifyContent={'center'} display={'flex'} width={'100%'}>
+        <CircularProgress />
+      </Box>
     );
   } else if (registrationId && cancelData?.transactions.edges.length === 0) {
     return (
-      <Fragment>
-        <Box justifyContent={'space-between'} display={'flex'}>
-          <Typography sx={{ mt: 2, mb: 1 }} alignContent={'center'} textAlign={'center'}>
-            You have already registered an operator. If you want to change the name or fee, you need
-            to cancel the registration first.
-          </Typography>
+      <Box flexDirection={'column'} display={'flex'} width={'100%'} gap={'16px'} alignItems={'center'}>
+        <Typography sx={{ mt: 2, mb: 1 }} alignContent={'center'} textAlign={'center'}>
+          You have already registered an operator. If you want to change the name or fee, you need
+          to cancel the registration first.
+        </Typography>
+        <Box display={'flex'} border={'0.5px solid'} borderRadius={'10px'} padding={'16px'} gap={'16px'}>
+          <Box sx={{ display: 'flex', fontWeight: 500, gap: '8px' }}>
+            <Typography>ID:</Typography>
+            <Typography>
+              <u onClick={viewTx} style={{display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>{displayShortTxOrAddr(registrationId)}<OpenInNew fontSize='inherit' /></u>
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', fontWeight: 500, gap: '8px' }}>
+            <Typography>Name:</Typography>
+            <Typography>
+              {registrationName}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', fontWeight: 500, gap: '8px' }}>
+            <Typography>Fee:</Typography>
+            <Typography display={'flex'} alignItems={'center'} gap={'4px'}>
+              {registrationFee}<img width={'18px'} height={'18px'} src='./usdc-logo.svg'></img>
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', fontWeight: 500, gap: '8px' }}>
+            <Typography>Status:</Typography>
+            <Typography
+              color={theme.palette.success.main}
+            >
+              {'Confirmed'}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', fontWeight: 500, gap: '8px' }}>
+            <Typography>USDC Payment:</Typography>
+            {paymentHash && <Typography>
+              <u onClick={viewEVMTx} style={{display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>{displayShortTxOrAddr(paymentHash)}<OpenInNew fontSize='inherit' /></u>
+            </Typography>}
+            {!paymentHash && <Typography color={theme.palette.error.main}>
+              Not Found. <u onClick={handleRetryNow} style={{ cursor: 'pointer' }}>Retry Payment</u>
+            </Typography>}
+          </Box>
         </Box>
-      </Fragment>
+        <Box></Box>
+      </Box>
     );
   } else {
     return (
-      <Fragment>
-        <Box justifyContent={'space-between'} display={'flex'}>
+      <Box display={'flex'} flexDirection={'column'} gap={'16px'}>
+        <Box justifyContent={'space-between'} display={'flex'} gap={'16px'}>
           <TextField
             value={operatorName}
             label={'Name'}
@@ -261,17 +291,15 @@ const RegisterStep = ({
             sx={{ width: '25%' }}
           />
         </Box>
-        <Alert severity='warning' variant='outlined'>
-          <Typography alignItems={'center'} display={'flex'} gap={'4px'}>
-            Registering an Operator requires a fee of {OPERATOR_REGISTRATION_AR_FEE}
-            <img width='20px' height='20px' src={U_LOGO_SRC} /> (${usdFee}) Tokens.
+        <Alert severity='warning' variant='outlined' sx={{ display: 'flex', alignItems: 'center' }}>
+          <Typography gap={'4px'} textAlign={'left'} display={'flex'} alignItems={'center'} flexWrap={'wrap'}>
+          Registering an Operator requires a fee of {OPERATOR_USDC_FEE} USDC <img width='18px' height='18px' src={'./usdc-logo.svg'} />, and both an Arweave Wallet and an EVM Wallet to procceed.
           </Typography>
         </Alert>
         <Box display={'flex'} justifyContent={'space-between'}>
           <Button
             onClick={handleBack}
             sx={{
-              border: '1px solid #F4F4F4',
               borderRadius: '7px',
               height: '39px',
               width: '204px',
@@ -311,7 +339,7 @@ const RegisterStep = ({
             </Typography>
           </DebounceButton>
         </Box>
-      </Fragment>
+      </Box>
     );
   }
 };
@@ -322,17 +350,29 @@ export const CustomStepper = (props: {
   handleClose: () => void;
   isRegistered: boolean;
 }) => {
-  const { notesTxId, modelTxId, modelName } =
+  const { txid: scriptTxId } = useParams();
+  const { notesTxId } =
     (useRouteLoaderData('register') as RouteLoaderResult) || {};
   const [activeStep, setActiveStep] = useState(0);
   const [skipped, setSkipped] = useState(new Set<number>());
   const [completed, setCompleted] = useState(new Set<number>());
   const [fileSize, setFileSize] = useState(0);
-  const [modelFileSize, setModelFileSize] = useState(0);
   const [notes, setNotes] = useState('');
-  const target = useRef<HTMLDivElement>(null);
+  const { avatarTxId } = (useLoaderData() as RouteLoaderResult) || {};
+  const { state }: { state: IEdge } = useLocation();
+  const { enqueueSnackbar } = useSnackbar();
+  /* const target = useRef<HTMLDivElement>(null);
   const isOnScreen = useOnScreen(target);
-  const [hasScrolledDown, setHasScrollDown] = useState(false);
+  const [hasScrolledDown, setHasScrollDown] = useState(false); */
+
+  const imgUrl = useMemo(() => {
+    if (avatarTxId) {
+      return `https://arweave.net/${avatarTxId}`;
+    }
+    const img = toSvg(findTag(state, 'solutionTransaction'), 100);
+    const svg = new Blob([img], { type: 'image/svg+xml' });
+    return URL.createObjectURL(svg);
+  }, [state, avatarTxId]);
 
   const isStepSkipped = (step: number) => skipped.has(step);
 
@@ -359,6 +399,7 @@ export const CustomStepper = (props: {
     const a = document.createElement('a');
     a.href = `${NET_ARWEAVE_URL}/${id}`;
     a.download = name || id;
+    a.target = '_blank';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -368,7 +409,7 @@ export const CustomStepper = (props: {
     (async () => {
       try {
         const response = await fetch(
-          `${NET_ARWEAVE_URL}/${findTag(props.data, 'scriptTransaction')}`,
+          `${NET_ARWEAVE_URL}/${props.data.node.id}`,
           { method: 'HEAD' },
         );
         setFileSize(parseInt(response.headers.get('Content-Length') ?? '', 10));
@@ -379,17 +420,6 @@ export const CustomStepper = (props: {
   }, [props.data]);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const response = await fetch(`${NET_ARWEAVE_URL}/${modelTxId}`, { method: 'HEAD' });
-        setModelFileSize(parseInt(response.headers.get('Content-Length') ?? '', 10));
-      } catch (e) {
-        // do nothing
-      }
-    })();
-  }, [modelTxId]);
-
-  useEffect(() => {
     if (notesTxId) {
       (async () => {
         setNotes((await getData(notesTxId)) as string);
@@ -397,301 +427,275 @@ export const CustomStepper = (props: {
     }
   }, [notesTxId]);
 
-  useEffect(() => {
-    if (!hasScrolledDown && isOnScreen) {
-      setHasScrollDown(true);
-    }
-  }, [isOnScreen]);
-
-  const handleModelDownload = useCallback(() => {
-    if (modelTxId) {
-      download(modelTxId, modelName);
-    }
-  }, [download, modelTxId, modelName]);
-
   const handleSriptDownload = useCallback(() => {
-    const id = findTag(props.data, 'scriptTransaction');
-    const name = findTag(props.data, 'scriptName');
+    const id = props.data.node.id;
+    const name = findTag(props.data, 'solutionName');
     if (id) {
       download(id, name);
     }
   }, [download, props.data]);
 
-  return (
-    <Stack sx={{ width: '100%', marginTop: '16px' }} spacing={2}>
-      <Stepper alternativeLabel activeStep={activeStep} connector={<ColorlibConnector />}>
-        <Step key='wrapEth'>
-          <StepLabel
-            StepIconComponent={ColorlibStepIcon}
-            StepIconProps={{ active: activeStep === 0, completed: completed.has(0) }}
-          >
-            Information
-          </StepLabel>
-          {/* <StepButton></StepButton> */}
-        </Step>
-        <Step key='swapWETHtoUSDC'>
-          <StepLabel
-            StepIconComponent={ColorlibStepIcon}
-            StepIconProps={{ active: activeStep === 1, completed: completed.has(1) }}
-          >
-            Setup
-          </StepLabel>
-        </Step>
-        <Step key='createTask'>
-          <StepLabel
-            StepIconComponent={ColorlibStepIcon}
-            StepIconProps={{ active: activeStep === 2, completed: completed.has(2) }}
-          >
-            Register
-          </StepLabel>
-        </Step>
-      </Stepper>
+  const handleCopy = useCallback(() => {
+    if (scriptTxId) {
+      (async () => {
+        await navigator.clipboard.writeText(scriptTxId);
+        enqueueSnackbar('Copied to clipboard', { variant: 'info' });
+      })();
+    }
+  }, [scriptTxId]);
 
-      {activeStep === 3 ? (
-        <Fragment>
-          <Typography sx={{ mt: 2, mb: 1 }} alignContent={'center'} textAlign={'center'}>
-            Registration has been Submitted Successfully.
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'row', pt: 2 }}>
-            <Box sx={{ flex: '1 1 auto' }} />
-            <Button onClick={props.handleClose} variant='outlined'>
-              Close
-            </Button>
-          </Box>
-        </Fragment>
-      ) : activeStep === 2 ? (
-        <RegisterStep
-          tx={props.data}
-          handleBack={handleBack}
-          handleNext={handleNext}
-          handleSubmit={props.handleSubmit}
-        />
-      ) : activeStep === 1 ? (
-        <Fragment>
-          <MarkdownControl
-            viewProps={{
-              preview: 'preview',
-              previewOptions: {
-                rehypePlugins: [[rehypeSanitize]],
-              },
-              hideToolbar: true,
-              fullscreen: false,
-              value: notes,
-            }}
-          />
-          <Box>
-            <FormControl variant='outlined' fullWidth>
-              <TextField
-                multiline
-                disabled
-                minRows={1}
-                value={findTag(props.data, 'scriptName')}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position='start'>
-                      <IconButton aria-label='download' onClick={handleSriptDownload}>
-                        <DownloadIcon />
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position='start'>{printSize(fileSize)}</InputAdornment>
-                  ),
-                  readOnly: true,
-                  sx: {
-                    borderWidth: '1px',
-                    borderColor: '#FFF',
-                  },
+
+  return (<>
+    <Stepper activeStep={activeStep} orientation='vertical' /* connector={<ColorlibConnector />} */>
+      <Step key='reviewInfo'>
+        <StepLabel
+          /* StepIconComponent={ColorlibStepIcon}
+          StepIconProps={{ active: activeStep === 0, completed: completed.has(0) }} */
+        >
+          Review Information
+        </StepLabel>
+        <StepContent sx={{ width: '100%' }}>
+          <Box display={'flex'} flexDirection='column' justifyContent={'flex-end'}>
+            <CardContent
+              sx={{
+                display: 'flex',
+                gap: '48px',
+                padding: '0px 32px',
+                width: '100%',
+              }}
+            >
+              <Box
+                sx={{
+                  borderRadius: '23px',
+                  width: '317px',
+                  height: '352px',
+                  background: `url(${imgUrl ? imgUrl : ''})`,
+                  // backgroundPosition: 'center',s
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: 'cover' /* <------ */,
+                  backgroundPosition: 'center',
                 }}
               />
-            </FormControl>
+              <Box display={'flex'} flexDirection={'column'} gap={'30px'} width={'30%'}>
+                <Box>
+                  <Typography
+                    sx={{
+                      fontStyle: 'normal',
+                      fontWeight: 700,
+                      fontSize: '23px',
+                      lineHeight: '31px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      textAlign: 'center',
+                    }}
+                  >
+                    Name
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontStyle: 'normal',
+                      fontWeight: 400,
+                      fontSize: '23px',
+                      lineHeight: '31px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {findTag(state, 'solutionName')}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography
+                    sx={{
+                      fontStyle: 'normal',
+                      fontWeight: 700,
+                      fontSize: '23px',
+                      lineHeight: '31px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      textAlign: 'center',
+                    }}
+                  >
+                    Output Type
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontStyle: 'normal',
+                      fontWeight: 400,
+                      fontSize: '23px',
+                      lineHeight: '31px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {findTag(state, 'output')}
+                  </Typography>
+                </Box>
+              </Box>
+              <Box display={'flex'} flexDirection={'column'} width={'45%'} justifyContent={'space-between'}>
+                <Box>
+                  <Typography
+                    sx={{
+                      fontStyle: 'normal',
+                      fontWeight: 700,
+                      fontSize: '23px',
+                      lineHeight: '31px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      textAlign: 'center',
+                    }}
+                  >
+                    Description
+                  </Typography>
+                  <Typography>{findTag(state, 'description') || 'No Description Available'}</Typography>
+                  <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-end'}}>
+                    <Button variant='outlined' endIcon={<ContentCopy />} onClick={handleCopy} sx={{ marginTop: '18px', height: '39px' }}>
+                      <Typography>Copy Tx Id ({displayShortTxOrAddr(scriptTxId as string)})</Typography>
+                    </Button>
+                  </Box>
+                </Box>
+                
+                <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-end'}}>
+                  <Button
+                    onClick={handleNext}
+                    sx={{
+                      borderRadius: '7px',
+                      height: '39px',
+                      width: '204px',
+                      '&.Mui-disabled': {
+                        opacity: '0.1',
+                      },
+                    }}
+                    variant='contained'
+                  >
+                    <Typography
+                      sx={{
+                        fontStyle: 'normal',
+                        fontWeight: 500,
+                        fontSize: '15px',
+                        lineHeight: '20px',
+                      }}
+                    >
+                      Next
+                    </Typography>
+                  </Button>
+                </Box>
+              </Box>
+            </CardContent>
+            
           </Box>
-          <Box>
-            <FormControl variant='outlined' fullWidth>
-              <TextField
-                multiline
-                disabled
-                minRows={1}
-                value={modelName}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position='start'>
-                      <IconButton aria-label='download' onClick={handleModelDownload}>
-                        <DownloadIcon />
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position='start'>{printSize(modelFileSize)}</InputAdornment>
-                  ),
-                  readOnly: true,
-                  sx: {
-                    borderWidth: '1px',
-                    borderColor: '#FFF',
-                  },
-                }}
-              />
-            </FormControl>
-          </Box>
-          <Box display={'flex'} justifyContent={'space-between'}>
-            <Button
-              onClick={handleBack}
-              sx={{
-                border: '1px solid #F4F4F4',
-                borderRadius: '7px',
-                height: '39px',
-                width: '204px',
-              }}
-              variant='outlined'
-            >
-              <Typography
-                sx={{
-                  fontStyle: 'normal',
-                  fontWeight: 500,
-                  fontSize: '15px',
-                  lineHeight: '20px',
-                }}
-              >
-                Back
-              </Typography>
-            </Button>
-            <Button
-              onClick={handleNext}
-              sx={{
-                borderRadius: '7px',
-                height: '39px',
-                width: '204px',
-              }}
-              variant='contained'
-            >
-              <Typography
-                sx={{
-                  fontStyle: 'normal',
-                  fontWeight: 500,
-                  fontSize: '15px',
-                  lineHeight: '20px',
-                }}
-              >
-                Next
-              </Typography>
-            </Button>
-          </Box>
-        </Fragment>
-      ) : (
-        <Fragment>
-          <Box
-            sx={{
-              textAlign: 'justify',
-              gap: '8px',
-              display: 'flex',
-              flexDirection: 'column',
-              maxHeight: '500px',
-              overflowY: 'auto',
-              paddingRight: '16px',
-            }}
-          >
-            <Typography variant='h4' textAlign={'justify'}>
-              <b>Rules, Terms, and Conditions of the App</b>
-            </Typography>
-            <Typography variant='body1' textAlign={'justify'}>
-              To become an Operator you have to install a template inserted in Arweave by a Creator,
-              following the rules defined by that Creator. These rules should result in a script
-              that will run in some kind of infinite loop, waiting for some inference request to be
-              made by a User.{' '}
-              <b>
-                It is the Operator&apos;s responsibility to verify that a Creator&apos;s code and
-                rules make sense and are legit. The instructions may be a scam and the code may
-                contain malware. We highly advise you to use a PC other than your own to perform the
-                inferences.
-              </b>
-            </Typography>
-            <Typography variant='body1' textAlign={'justify'}>
-              For more detailed and updated information, we recommend reading Fair Protocol&apos;s
-              whitepaper (https://fairwhitepaper.arweave.dev/) with attention before becoming an
-              Operator.
-            </Typography>
-            <Typography variant='body1' textAlign={'justify'}>
-              To become an Operator, you must install a template inserted in Arweave by a CUrator,
-              following the rules defined by that Curator. These rules should result in a script
-              waiting for some inference request from Users in an infinite loop.
-              <b>
-                The Operator is responsible for verifying that a Curator&apos;s code and rules make
-                sense and are legitimate. The instructions may be a scam, and the code may contain
-                malware. We highly advise using a PC other than your own to perform the inferences.
-              </b>
-            </Typography>
-            <Typography variant='body1' textAlign={'justify'}>
-              <b>
-                If an Operator starts an activity but doesn&apos;t return any inference required by
-                a User within 7 blocks, it will be removed from the Marketplace as a viable option
-                to perform inference. The wallet from the Operator can only perform inferences again
-                if it realises a new transaction to open activity.
-              </b>
-            </Typography>
-            <Typography variant='body1' textAlign={'justify'}>
-              <b>
-                Operators must return as many inferences as possible without failures to obtain the
-                best likely statistics. Statistics are vital for Operators, as this is what Users
-                will rely on when choosing someone to perform inference.
-              </b>
-            </Typography>
-            <Typography variant='body1' textAlign={'justify'}>
-              Operators can decide to terminate the activity whenever they want. They should send a
-              new transaction specifying this business termination to end it, and they can also
-              restart it again later on. This transaction will be free of costs, and the advantage
-              of doing it will be that the Marketplace won&apos;t penalise the Operator since the
-              Users won&apos;t be left without a response. As such, the Operator will have better
-              statistics.
-            </Typography>
-            <Typography variant='body1' textAlign={'justify'}>
-              The Fair Protocol marketplace will ensure that all participants follow all the
-              specified rules, charging users another 5% fee for that service when they request
-              inferences. Those 5% will be paid to Operators, which will pay them back to the
-              Marketplace.
-              <b>
-                If the Operator does not send the fees to the Marketplace within 7 Arweave blocks,
-                the Marketplace won&apos;t list to Users the Operator anymore.
-              </b>
-            </Typography>
-            <Typography variant='body1' textAlign={'justify'}>
-              By becoming an Operator, you accept all these rules, terms, and conditions.
-            </Typography>
-            <div ref={target}></div>
-            <Typography variant='body1' textAlign={'justify'}>
-              <b>
-                By clicking next, you accept all these rules, terms, and conditions specified above.
-              </b>
-            </Typography>
-          </Box>
-          <Box display={'flex'} justifyContent={'flex-end'}>
-            {/* <Button variant='contained' onClick={handleBack}>Back</Button> */}
-            <Button
-              onClick={handleNext}
-              sx={{
-                borderRadius: '7px',
-                height: '39px',
-                width: '204px',
-                '&.Mui-disabled': {
-                  opacity: '0.1',
+        </StepContent>
+      </Step>
+      <Step key='Configuration'>
+        <StepLabel
+         /*  StepIconComponent={ColorlibStepIcon}
+          StepIconProps={{ active: activeStep === 1, completed: completed.has(1) }} */
+        >
+          Setup
+        </StepLabel>
+        <StepContent sx={{ width: '100%' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <MarkdownControl
+              viewProps={{
+                preview: 'preview',
+                previewOptions: {
+                  rehypePlugins: [[rehypeSanitize]],
                 },
+                hideToolbar: true,
+                fullscreen: false,
+                value: notes,
               }}
-              variant='contained'
-              disabled={!hasScrolledDown}
-            >
-              <Typography
+            />
+            <Box>
+              <FormControl variant='outlined' fullWidth>
+                <TextField
+                  multiline
+                  disabled
+                  minRows={1}
+                  value={findTag(props.data, 'solutionName')}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position='start'>
+                        <IconButton aria-label='download' onClick={handleSriptDownload}>
+                          <DownloadIcon />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position='start'>{printSize(fileSize)}</InputAdornment>
+                    ),
+                    readOnly: true,
+                    sx: {
+                      borderWidth: '1px',
+                      borderColor: '#FFF',
+                    },
+                  }}
+                />
+              </FormControl>
+            </Box>
+            <Box display={'flex'} justifyContent={'space-between'}>
+              <Button
+                onClick={handleBack}
                 sx={{
-                  fontStyle: 'normal',
-                  fontWeight: 500,
-                  fontSize: '15px',
-                  lineHeight: '20px',
+                  borderRadius: '7px',
+                  height: '39px',
+                  width: '204px',
                 }}
+                variant='outlined'
               >
-                Accept & Continue
-              </Typography>
-            </Button>
+                <Typography
+                  sx={{
+                    fontStyle: 'normal',
+                    fontWeight: 500,
+                    fontSize: '15px',
+                    lineHeight: '20px',
+                  }}
+                >
+                  Back
+                </Typography>
+              </Button>
+              <Button
+                onClick={handleNext}
+                sx={{
+                  borderRadius: '7px',
+                  height: '39px',
+                  width: '204px',
+                }}
+                variant='contained'
+              >
+                <Typography
+                  sx={{
+                    fontStyle: 'normal',
+                    fontWeight: 500,
+                    fontSize: '15px',
+                    lineHeight: '20px',
+                  }}
+                >
+                  Next
+                </Typography>
+              </Button>
+            </Box>
           </Box>
-        </Fragment>
-      )}
-    </Stack>
-  );
+        </StepContent>
+      </Step>
+      <Step key='Registration'>
+        <StepLabel
+          /* StepIconComponent={ColorlibStepIcon}
+          StepIconProps={{ active: activeStep === 2, completed: completed.has(2) }} */
+        >
+          Register
+        </StepLabel>
+        <StepContent sx={{ width: '100%' }}>
+          <RegisterStep
+            tx={props.data}
+            handleBack={handleBack}
+            handleNext={handleNext}
+            handleSubmit={props.handleSubmit}
+          />
+        </StepContent>
+      </Step>
+    </Stepper>
+  </>);
 };

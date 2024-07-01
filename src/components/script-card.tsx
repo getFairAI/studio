@@ -18,15 +18,14 @@
 
 import {
   AVATAR_ATTACHMENT,
-  DEFAULT_TAGS,
   MODEL_ATTACHMENT,
   NET_ARWEAVE_URL,
   TAG_NAMES,
   secondInMS,
 } from '@/constants';
-import { IContractEdge, IEdge } from '@/interfaces/arweave';
+import { IContractEdge } from '@/interfaces/arweave';
 import { GET_LATEST_MODEL_ATTACHMENTS } from '@/queries/graphql';
-import { ApolloQueryResult, useLazyQuery, useQuery } from '@apollo/client';
+import { ApolloQueryResult, useQuery } from '@apollo/client';
 import {
   Box,
   Button,
@@ -161,8 +160,8 @@ const parseScriptData = (
 
   setCardData({
     avgFee,
-    name: findTag(scriptTx, 'scriptName') ?? 'Name not Available',
-    txid: findTag(scriptTx, 'scriptTransaction') ?? 'Transaction Not Available',
+    name: findTag(scriptTx, 'solutionName') ?? 'Name not Available',
+    txid: findTag(scriptTx, 'solutionTransaction') ?? 'Transaction Not Available',
     uploader: owner ?? 'Uploader Not Available',
     totalOperators: uniqueOperators.length,
   });
@@ -187,53 +186,50 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
   const theme = useTheme();
 
   const owner = useMemo(
-    () => findTag(scriptTx, 'sequencerOwner') ?? scriptTx.node.owner.address,
+    () => scriptTx.node.owner.address,
     [scriptTx],
   );
-  const scriptId = findTag(scriptTx as IEdge, 'scriptTransaction') as string;
-  const scriptName = findTag(scriptTx as IEdge, 'scriptName');
-  const scriptCurator = findTag(scriptTx as IEdge, 'sequencerOwner');
+  const scriptId = useMemo(
+    () => scriptTx.node.id,
+    [scriptTx],
+  );
+  const scriptName = useMemo(
+    () => findTag(scriptTx, 'solutionName') ?? 'Name not Available',
+    [scriptTx],
+  );
+
+  const previousVersionsTxIds = useMemo(
+    () => {
+      try {
+        return JSON.parse(findTag(scriptTx, 'previousVersions') as string) as string[];
+      } catch (err) {
+        return [];
+      }
+    },
+    [scriptTx],
+  );
 
   const queryObject = FairSDKWeb.utils.getOperatorQueryForScript(
     scriptId,
     scriptName,
-    scriptCurator,
+    owner,
   );
   const { data, loading, error, refetch, fetchMore } = useQuery(queryObject.query, {
     variables: queryObject.variables,
     notifyOnNetworkStatusChange: true,
   });
 
-  const [getAvatar, { data: avatarData, loading: avatarLoading }] = useLazyQuery(
-    GET_LATEST_MODEL_ATTACHMENTS,
-  );
-
-  useEffect(() => {
-    (async () => {
-      const currentScriptTx = findTag(scriptTx, 'scriptTransaction');
-      let firstScriptVersionTx;
-      try {
-        firstScriptVersionTx = (
-          JSON.parse(findTag(scriptTx, 'previousVersions') as string) as string[]
-        )[0];
-      } catch (err) {
-        firstScriptVersionTx = findTag(scriptTx, 'scriptTransaction');
-      }
-      const attachmentAvatarTags = [
-        ...DEFAULT_TAGS, // filter from previous app versions as well
+  const { data: avatarData, loading: avatarLoading } = useQuery(GET_LATEST_MODEL_ATTACHMENTS, {
+    variables: {
+      tags: [
         { name: TAG_NAMES.operationName, values: [MODEL_ATTACHMENT] },
         { name: TAG_NAMES.attachmentRole, values: [AVATAR_ATTACHMENT] },
-        { name: TAG_NAMES.scriptTransaction, values: [firstScriptVersionTx, currentScriptTx] },
-      ];
-
-      await getAvatar({
-        variables: {
-          tags: attachmentAvatarTags,
-          owner,
-        },
-      });
-    })();
-  }, []);
+        { name: TAG_NAMES.solutionTransaction, values: [ scriptId, ...previousVersionsTxIds ] },
+      ],
+      owner,
+    },
+    skip: !scriptId || !owner || !previousVersionsTxIds,
+  });
 
   const imgUrl = useMemo(() => {
     const avatarTxId = avatarData?.transactions?.edges[0]?.node?.id;
@@ -267,12 +263,11 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
     }
   }, [data]); // data changes
 
-  const txid = useMemo(() => findTag(scriptTx, 'scriptTransaction') as string, [scriptTx]);
   const handleCardClick = useCallback(() => {
-    navigate(`/register/${encodeURIComponent(txid ?? 'error')}`, {
+    navigate(`/register/${encodeURIComponent(scriptId ?? 'error')}`, {
       state: scriptTx,
     });
-  }, [txid, scriptTx, navigate]);
+  }, [scriptId, scriptTx, navigate]);
 
   const getTimePassed = () => {
     const timestamp = findTag(scriptTx, 'unixTime');
@@ -341,7 +336,7 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
           gap: '30px',
         }}
         onClick={handleCardClick}
-        className={`plausible-event-name=ScriptCard+Click plausible-event-scriptId=${txid}`}
+        className={`plausible-event-name=ScriptCard+Click plausible-event-scriptId=${scriptId}`}
       >
         <CardHeader
           title={index + 1}
@@ -358,7 +353,7 @@ const ScriptCard = ({ scriptTx, index }: { scriptTx: IContractEdge; index: numbe
               ...commonTextProps,
             }}
           >
-            {findTag(scriptTx, 'scriptName') ?? 'Untitled'}
+            {findTag(scriptTx, 'solutionName') ?? 'Untitled'}
           </Typography>
         </CardContent>
         <Box flexGrow={1}></Box>

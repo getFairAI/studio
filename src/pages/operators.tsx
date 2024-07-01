@@ -17,7 +17,7 @@
  */
 
 import { IContractEdge } from '@/interfaces/arweave';
-import { commonUpdateQuery, genLoadingArray, isFakeDeleted } from '@/utils/common';
+import { findTag, genLoadingArray } from '@/utils/common';
 import { NetworkStatus, useQuery } from '@apollo/client';
 import {
   Container,
@@ -38,7 +38,9 @@ import ScriptCard from '@/components/script-card';
 import useOnScreen from '@/hooks/useOnScreen';
 import { Outlet } from 'react-router-dom';
 import _ from 'lodash';
-import FairSDKWeb from '@fair-protocol/sdk/web';
+import { MARKETPLACE_ADDRESS, PROTOCOL_NAME, PROTOCOL_VERSION, SOLUTION_CREATION, SOLUTION_DELETION, TAG_NAMES } from '@/constants';
+import { findByTagsAndOwnersDocument, findByTagsDocument, findByTagsQuery } from '@fairai/evm-sdk';
+import { client } from '@/utils/apollo';
 
 const ListLoadingCard = () => {
   return (
@@ -75,27 +77,49 @@ const Operators = () => {
   const [hightlightTop, setHighLightTop] = useState(false);
   const theme = useTheme();
   const mockArray = genLoadingArray(elementsPerPage);
-  const queryObject = FairSDKWeb.utils.getScriptsQuery();
-  const { data, previousData, loading, error, networkStatus, refetch, fetchMore } = useQuery(
-    queryObject.query,
-    {
-      variables: queryObject.variables,
-      notifyOnNetworkStatusChange: true,
-    },
-  );
-
+  const {
+    data,
+    previousData,
+    loading,
+    error,
+    refetch,
+    fetchMore,
+    networkStatus,
+  } = useQuery(findByTagsDocument, {
+    variables: {
+      tags: [
+        { name: TAG_NAMES.protocolName, values: [ PROTOCOL_NAME ]}, // keep Fair Protocol in tags to keep retrocompatibility
+        { name: TAG_NAMES.protocolVersion, values: [ PROTOCOL_VERSION ]},
+        { name: TAG_NAMES.operationName, values: [ SOLUTION_CREATION ]},
+        /*  { name: TAG_NAMES.modelTransaction, values: [ state.modelTransaction ]}, */
+      ],
+      first: 10,
+    }
+    /* skip: !model, */
+  });
   const loadingOrFiltering = useMemo(() => loading || filtering, [loading, filtering]);
 
   useEffect(() => {
     if (isOnScreen && hasNextPage) {
-      const allTxs = data.transactions.edges;
+      const allTxs = data?.transactions?.edges || [];
       const fetchNextCursor = allTxs && allTxs.length > 0 ? allTxs[allTxs.length - 1].cursor : null;
       (async () =>
         fetchMore({
           variables: {
             after: fetchNextCursor,
           },
-          updateQuery: commonUpdateQuery,
+          updateQuery: (prev: findByTagsQuery, { fetchMoreResult }) => {
+            if (!fetchMoreResult) {
+              return prev;
+            }
+
+            return Object.assign({}, prev, {
+              transactions: {
+                edges: [...prev.transactions.edges, ...fetchMoreResult.transactions.edges],
+                pageInfo: fetchMoreResult.transactions.pageInfo,
+              },
+            });
+          },
         }))();
     }
   }, [isOnScreen, hasNextPage]);
@@ -112,26 +136,40 @@ const Operators = () => {
     // check has paid correct registration fee
     if (data && networkStatus === NetworkStatus.ready && !_.isEqual(data, previousData)) {
       (async () => {
-        const uniqueScripts = FairSDKWeb.utils.filterByUniqueScriptTxId(data.transactions.edges);
-        const filteredScritps = FairSDKWeb.utils.filterPreviousVersions(uniqueScripts);
-        const filtered: IContractEdge[] = [];
-        for (const el of filteredScritps) {
-          const scriptId = FairSDKWeb.utils.findTag(el, 'scriptTransaction') as string;
-          const scriptOwner =
-            (FairSDKWeb.utils.findTag(el, 'sequencerOwner') as string) ?? el.node.owner.address;
-          const sequencerId =
-            (FairSDKWeb.utils.findTag(el, 'sequencerTxId') as string) ?? el.node.id;
+        const txs = [ ...data.transactions.edges ]; // mutable copy of txs
+        let allPreviousVersionsTxs: string[] = [];
+        const filtered = txs.reduce((acc, el) => {
+          acc.push(el);
+          // find previousVersionsTag
+          const previousVersions= findTag(el, 'previousVersions');
+          if (previousVersions) {
+            allPreviousVersionsTxs = allPreviousVersionsTxs.concat(...JSON.parse(previousVersions));
+            // remove previous versions from accumulator array
+          }
+          const newAcc = acc.filter((el) => !allPreviousVersionsTxs.includes(el.node.id));
 
-          const isValidPayment = await FairSDKWeb.utils.isUTxValid(sequencerId);
+          return newAcc;
+        }, [] as findByTagsQuery['transactions']['edges']);
 
-          if (!isValidPayment) {
-            // ignore
-          } else if (!scriptOwner || !scriptId) {
-            // ignore
-          } else if (await isFakeDeleted(scriptId, scriptOwner, 'script')) {
-            // if fake deleted ignore
-          } else {
-            filtered.push(el as IContractEdge);
+        const filteredCopy = [ ...filtered ];
+        for (const tx of filteredCopy) {
+          const deleteTags = [
+            { name: TAG_NAMES.operationName, values: [ SOLUTION_DELETION ] },
+            { name: TAG_NAMES.solutionTransaction, values: [ tx.node.id ] },
+          ];
+        
+          const owners = [ MARKETPLACE_ADDRESS, tx.node.owner.address ];
+        
+          const data = await client.query({
+            query: findByTagsAndOwnersDocument,
+            variables: {
+              tags: deleteTags, first: filteredCopy.length ,owners,
+            }
+          });
+        
+          if (data.data.transactions.edges.length > 0) {
+            // remove scripts with cancellations
+            filtered.splice(filtered.findIndex((el: IContractEdge) => el.node.id === tx.node.id), 1);
           }
         }
 

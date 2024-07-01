@@ -128,6 +128,29 @@ export const FIND_BY_TAGS = gql`
   }
 `;
 
+export const FIND_BY_TAGS_WITH_OWNERS = gql`
+  query FIND_BY_TAGS($tags: [TagFilter!], $first: Int!, $after: String, $owners: [String!]) {
+    transactions(tags: $tags, first: $first, after: $after, owners: $owners, sort: HEIGHT_DESC) {
+      pageInfo {
+        hasNextPage
+      }
+      edges {
+        cursor
+        node {
+          id
+          tags {
+            name
+            value
+          }
+          owner {
+            address
+          }
+        }
+      }
+    }
+  }
+`;
+
 export const GET_LATEST_FEE_UPDATE = gql`
   query GET_LATEST_FEE_UPDATE($tags: [TagFilter!], $owner: String!) {
     transactions(first: 1, tags: $tags, sort: HEIGHT_DESC, owners: [$owner]) {
@@ -1089,6 +1112,27 @@ export const QUERY_TX_WITH_OWNERS = gql`
             key
           }
         }
+      }
+    }
+  }
+`;
+
+export const IRYS_FIND_BY_TAGS = gql`
+  query IRYS_FIND_BY_TAGS($tags: [TagFilter!], $first: Int, $after: String)  {
+    transactions(tags: $tags, first: $first, after: $after, order: DESC) {
+      edges {
+        node {
+          id
+          tags {
+            name
+            value
+          }
+          address
+        }
+      }
+      pageInfo {
+        endCursor
+        hasNextPage
       }
     }
   }

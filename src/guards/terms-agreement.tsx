@@ -17,8 +17,8 @@
  */
 
 import {
-  PROTOCOL_NAME,
-  PROTOCOL_VERSION,
+  OLD_PROTOCOL_NAME,
+  OLD_PROTOCOL_VERSION,
   TAG_NAMES,
   TERMS_STUDIO_AGREEMENT,
   TERMS_VERSION,
@@ -72,8 +72,8 @@ const TermsAgreement = ({ children }: { children: ReactElement }) => {
 
   const handleAgreeClick = useCallback(async () => {
     const tags = [
-      { name: TAG_NAMES.protocolName, value: PROTOCOL_NAME },
-      { name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION },
+      { name: TAG_NAMES.protocolName, value: OLD_PROTOCOL_NAME },
+      { name: TAG_NAMES.protocolVersion, value: OLD_PROTOCOL_VERSION },
       { name: TAG_NAMES.operationName, value: TERMS_STUDIO_AGREEMENT },
       { name: TAG_NAMES.termsVersion, value: TERMS_VERSION },
     ];

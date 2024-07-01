@@ -28,9 +28,9 @@ import {
   MODEL_DELETION,
   NET_ARWEAVE_URL,
   NOTES_ATTACHMENT,
-  PROTOCOL_NAME,
-  PROTOCOL_VERSION,
-  SCRIPT_DELETION,
+  OLD_PROTOCOL_NAME,
+  OLD_PROTOCOL_VERSION,
+  SOLUTION_DELETION,
   TAG_NAMES,
   UDL_ID,
   defaultDecimalPlaces,
@@ -288,7 +288,7 @@ export const uploadAvatarImage = async (
     showSuccessSnackbar: (id: string, message: string) => void;
     getPrice: (size: number) => Promise<BigNumber>;
   },
-  imageFor: 'script' | 'model',
+  imageFor: 'solution' | 'model',
   image?: File,
 ) => {
   if (!image || !(image instanceof File)) {
@@ -297,15 +297,15 @@ export const uploadAvatarImage = async (
 
   // upload the file
   const tags = [];
-  tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
-  tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
+  tags.push({ name: TAG_NAMES.protocolName, value: OLD_PROTOCOL_NAME });
+  tags.push({ name: TAG_NAMES.protocolVersion, value: OLD_PROTOCOL_VERSION });
   tags.push({ name: TAG_NAMES.contentType, value: image.type });
   tags.push({ name: TAG_NAMES.operationName, value: MODEL_ATTACHMENT });
   tags.push({ name: TAG_NAMES.attachmentName, value: image.name });
   tags.push({ name: TAG_NAMES.attachmentRole, value: AVATAR_ATTACHMENT });
   tags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
-  if (imageFor === 'script') {
-    tags.push({ name: TAG_NAMES.scriptTransaction, value: refTx });
+  if (imageFor === 'solution') {
+    tags.push({ name: TAG_NAMES.solutionTransaction, value: refTx });
   } else if (imageFor === 'model') {
     tags.push({ name: TAG_NAMES.modelTransaction, value: refTx });
   } else {
@@ -343,7 +343,7 @@ export const uploadUsageNotes = async (
     showSuccessSnackbar: (id: string, message: string) => void;
     getPrice: (size: number) => Promise<BigNumber>;
   },
-  notesFor: 'script' | 'model',
+  notesFor: 'solution' | 'model',
 ) => {
   const file = new File([usageNotes], `${refName}-usage.md`, {
     type: 'text/markdown',
@@ -351,16 +351,16 @@ export const uploadUsageNotes = async (
 
   // upload the file
   const tags = [];
-  tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
-  tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
+  tags.push({ name: TAG_NAMES.protocolName, value: OLD_PROTOCOL_NAME });
+  tags.push({ name: TAG_NAMES.protocolVersion, value: OLD_PROTOCOL_VERSION });
   tags.push({ name: TAG_NAMES.contentType, value: file.type });
   tags.push({ name: TAG_NAMES.operationName, value: MODEL_ATTACHMENT });
   tags.push({ name: TAG_NAMES.attachmentName, value: file.name });
   tags.push({ name: TAG_NAMES.attachmentRole, value: NOTES_ATTACHMENT });
   tags.push({ name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() });
   extraProps.setSnackbarOpen(true);
-  if (notesFor === 'script') {
-    tags.push({ name: TAG_NAMES.scriptTransaction, value: refTx });
+  if (notesFor === 'solution') {
+    tags.push({ name: TAG_NAMES.solutionTransaction, value: refTx });
   } else if (notesFor === 'model') {
     tags.push({ name: TAG_NAMES.modelTransaction, value: refTx });
   } else {
@@ -383,8 +383,8 @@ export const isFakeDeleted = async (txid: string, owner: string, type: 'script' 
     deleteTags.push({ name: TAG_NAMES.operationName, values: [MODEL_DELETION] });
     deleteTags.push({ name: TAG_NAMES.modelTransaction, values: [txid] });
   } else {
-    deleteTags.push({ name: TAG_NAMES.operationName, values: [SCRIPT_DELETION] });
-    deleteTags.push({ name: TAG_NAMES.scriptTransaction, values: [txid] });
+    deleteTags.push({ name: TAG_NAMES.operationName, values: [SOLUTION_DELETION] });
+    deleteTags.push({ name: TAG_NAMES.solutionTransaction, values: [txid] });
   }
   const owners = owner ? [MARKETPLACE_ADDRESS, owner] : [MARKETPLACE_ADDRESS];
 

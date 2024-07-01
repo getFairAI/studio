@@ -60,8 +60,8 @@ import {
   secondInMS,
   successStatusCode,
   U_DIVIDER,
-  PROTOCOL_NAME,
-  PROTOCOL_VERSION,
+  OLD_PROTOCOL_NAME,
+  OLD_PROTOCOL_VERSION,
   U_LOGO_SRC,
   RENDERER_NAME,
 } from '@/constants';
@@ -286,7 +286,7 @@ const UploadCreator = () => {
     } else {
       setUpdateValue('notes', '');
     }
-  }, [notesData]);
+  }, [notesData, setUpdateValue]);
 
   const onSubmit = async (data: FieldValues) => {
     await updateBalance();
@@ -329,8 +329,8 @@ const UploadCreator = () => {
             const parsedUFee = parseFloat(MARKETPLACE_FEE) * U_DIVIDER;
 
             const paymentTags = [
-              { name: TAG_NAMES.protocolName, value: PROTOCOL_NAME },
-              { name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION },
+              { name: TAG_NAMES.protocolName, value: OLD_PROTOCOL_NAME },
+              { name: TAG_NAMES.protocolVersion, value: OLD_PROTOCOL_VERSION },
               { name: TAG_NAMES.operationName, value: MODEL_CREATION_PAYMENT },
               { name: TAG_NAMES.modelName, value: data.name },
               { name: TAG_NAMES.modelCategory, value: data.category },
@@ -487,8 +487,8 @@ const UploadCreator = () => {
 
     // upload the file
     const tags = [];
-    tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
-    tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
+    tags.push({ name: TAG_NAMES.protocolName, value: OLD_PROTOCOL_NAME });
+    tags.push({ name: TAG_NAMES.protocolVersion, value: OLD_PROTOCOL_VERSION });
     tags.push({ name: TAG_NAMES.contentType, value: image.type });
     tags.push({ name: TAG_NAMES.modelTransaction, value: modelTx });
     tags.push({ name: TAG_NAMES.operationName, value: MODEL_ATTACHMENT });
@@ -507,8 +507,8 @@ const UploadCreator = () => {
 
     // upload the file
     const tags = [];
-    tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
-    tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
+    tags.push({ name: TAG_NAMES.protocolName, value: OLD_PROTOCOL_NAME });
+    tags.push({ name: TAG_NAMES.protocolVersion, value: OLD_PROTOCOL_VERSION });
     tags.push({ name: TAG_NAMES.contentType, value: file.type });
     tags.push({ name: TAG_NAMES.modelTransaction, value: modelTx });
     tags.push({ name: TAG_NAMES.operationName, value: MODEL_ATTACHMENT });
@@ -544,8 +544,8 @@ const UploadCreator = () => {
       return;
     }
 
-    tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
-    tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
+    tags.push({ name: TAG_NAMES.protocolName, value: OLD_PROTOCOL_NAME });
+    tags.push({ name: TAG_NAMES.protocolVersion, value: OLD_PROTOCOL_VERSION });
     tags.push({ name: TAG_NAMES.contentType, value: file.type });
     tags.push({ name: TAG_NAMES.modelName, value: `${data.name}` });
     tags.push({ name: TAG_NAMES.modelCategory, value: data.category });
@@ -568,8 +568,8 @@ const UploadCreator = () => {
       warp.register(res.data.id, 'arweave');
 
       const paymentTags = [
-        { name: TAG_NAMES.protocolName, value: PROTOCOL_NAME },
-        { name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION },
+        { name: TAG_NAMES.protocolName, value: OLD_PROTOCOL_NAME },
+        { name: TAG_NAMES.protocolVersion, value: OLD_PROTOCOL_VERSION },
         { name: TAG_NAMES.contentType, value: file.type },
         { name: TAG_NAMES.operationName, value: MODEL_CREATION_PAYMENT },
         { name: TAG_NAMES.modelName, value: data.name },

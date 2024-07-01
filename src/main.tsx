@@ -29,7 +29,6 @@ import UploadCreator from '@/pages/upload-creator';
 import UploadCurator from '@/pages/upload-curator';
 import Registrations from '@/pages/registrations';
 import Terms from './pages/terms';
-import Models from './pages/models';
 import PrivacyPolicy from './pages/privacy-policy';
 import TermsAgreement from './guards/terms-agreement';
 
@@ -51,17 +50,9 @@ const router = createHashRouter([
             path: 'register/:txid/',
             id: 'register',
             loader: getScriptAttachments,
-            element: <Register />,
+            element: <Register />
           },
         ],
-      },
-      {
-        path: 'models',
-        element: (
-          <TermsAgreement>
-            <Models />
-          </TermsAgreement>
-        ),
       },
       {
         path: 'upload-creator',

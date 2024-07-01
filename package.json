@@ -16,6 +16,7 @@
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@fair-protocol/sdk": "^2.0.22",
+    "@fairai/evm-sdk": "^0.0.9",
     "@irys/sdk": "^0.0.4",
     "@mui/icons-material": "5.11.0",
     "@mui/lab": "^5.0.0-alpha.134",
@@ -53,6 +54,7 @@
     "@typescript-eslint/parser": "6.7.2",
     "@vitejs/plugin-react-swc": "^3.0.0",
     "arconnect": "0.4.2",
+    "crypto-browserify": "^3.12.0",
     "eslint": "^8.38.0",
     "eslint-config-prettier": "8.8.0",
     "eslint-plugin-prettier": "4.2.1",
@@ -60,11 +62,14 @@
     "eslint-plugin-react-refresh": "^0.3.4",
     "husky": "^8.0.3",
     "lint-staged": "^13.2.2",
+    "os-browserify": "^0.3.0",
+    "path-browserify": "^1.0.1",
     "prettier": "^2.8.8",
+    "stream-browserify": "^3.0.0",
     "typescript": "^5.2.2",
     "vite": "^4.3.9",
     "vite-plugin-eslint": "1.8.1",
-    "vite-plugin-node-polyfills": "0.9.0",
+    "vite-plugin-node-polyfills": "^0.9.0",
     "vite-tsconfig-paths": "4.2.0"
   }
 }

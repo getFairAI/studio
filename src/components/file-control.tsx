@@ -17,7 +17,6 @@
  */
 
 import {
-  Button,
   FormControl,
   FormHelperText,
   IconButton,
@@ -111,8 +110,11 @@ const FileControl = (props: FileControlProps) => {
     if (!field.value) {
       setFile(undefined);
       return;
+    } else if (field.value instanceof File) {
+     (async () => simulateFilePrice((file && file.size) || 0))();
+    } else {
+      // ignore
     }
-    (async () => simulateFilePrice((file && file.size) || 0))();
   }, [field.value]);
 
   const showError = () => {
@@ -158,10 +160,10 @@ const FileControl = (props: FileControlProps) => {
       <FormControl error={fieldState.invalid} variant='outlined' fullWidth margin='normal'>
         <TextField
           multiline
-          minRows={5}
-          value={'Drag and Drop to Upload \n Or'}
+          minRows={4}
+          value={'Drag and Drop to Upload Or Click to Upload'}
           inputProps={{
-            style: { textAlign: 'center' },
+            style: { textAlign: 'center', cursor: 'pointer' },
           }}
           InputProps={{
             readOnly: true,
@@ -189,30 +191,11 @@ const FileControl = (props: FileControlProps) => {
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
+          onClick={() => (document.querySelector(`input[name=${field.name}`) as HTMLButtonElement)?.click()}
         />
         {showError()}
       </FormControl>
-      <Box
-        display={'flex'}
-        width={'100%'}
-        sx={{
-          position: 'relative',
-          left: 0,
-          right: 0,
-          bottom: '70px',
-          filter: hasFileDrag ? 'blur(2px)' : 'none',
-        }}
-        justifyContent={'center'}
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-      >
-        <Button variant='text' component='label' color={fieldState.invalid ? 'error' : 'primary'}>
-          Browse Files to Upload
-          <input type='file' hidden name={field.name} value={field.value} onChange={onFileChange} />
-        </Button>
-      </Box>
+      <input type='file' hidden name={field.name} value={field.value} onChange={onFileChange} />
     </Box>
   );
 };

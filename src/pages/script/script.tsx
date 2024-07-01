@@ -18,9 +18,10 @@
 
 import {
   AVATAR_ATTACHMENT,
-  DEFAULT_TAGS,
   MODEL_ATTACHMENT,
   NOTES_ATTACHMENT,
+  PROTOCOL_NAME,
+  PROTOCOL_VERSION,
   TAG_NAMES,
 } from '@/constants';
 import { RouteLoaderResult } from '@/interfaces/router';
@@ -40,8 +41,7 @@ export const getScriptAttachments = async ({
   });
   const tx = txOwnerResult.data.transactions.edges[0];
   const txOwner = tx.node.owner.address;
-  const modelTxId = findTag(tx, 'modelTransaction');
-  const modelName = findTag(tx, 'modelName');
+
   let firstScriptVersionTx;
   try {
     firstScriptVersionTx = (JSON.parse(findTag(tx, 'previousVersions') as string) as string[])[0];
@@ -50,10 +50,11 @@ export const getScriptAttachments = async ({
   }
   // get attachments transactions
   const attachmentAvatarTags = [
-    ...DEFAULT_TAGS,
+    { name: TAG_NAMES.protocolName, values: [ PROTOCOL_NAME ]}, // keep Fair Protocol in tags to keep retrocompatibility
+    { name: TAG_NAMES.protocolVersion, values: [ PROTOCOL_VERSION ]},
     { name: TAG_NAMES.operationName, values: [MODEL_ATTACHMENT] },
     { name: TAG_NAMES.attachmentRole, values: [AVATAR_ATTACHMENT] },
-    { name: TAG_NAMES.scriptTransaction, values: [firstScriptVersionTx, params.txid] },
+    { name: TAG_NAMES.solutionTransaction, values: [firstScriptVersionTx, params.txid] },
   ];
   const avatarAttachmentsResult = await client.query({
     query: GET_LATEST_MODEL_ATTACHMENTS,
@@ -70,10 +71,11 @@ export const getScriptAttachments = async ({
       : '';
 
   const attachmentNotestTags = [
-    ...DEFAULT_TAGS,
+    { name: TAG_NAMES.protocolName, values: [ PROTOCOL_NAME ]}, // keep Fair Protocol in tags to keep retrocompatibility
+    { name: TAG_NAMES.protocolVersion, values: [ PROTOCOL_VERSION ]},
     { name: TAG_NAMES.operationName, values: [MODEL_ATTACHMENT] },
     { name: TAG_NAMES.attachmentRole, values: [NOTES_ATTACHMENT] },
-    { name: TAG_NAMES.scriptTransaction, values: [params.txid] },
+    { name: TAG_NAMES.solutionTransaction, values: [params.txid] },
   ];
   const notesAttachmentsResult = await client.query({
     query: GET_LATEST_MODEL_ATTACHMENTS,
@@ -92,8 +94,6 @@ export const getScriptAttachments = async ({
   return {
     avatarTxId,
     notesTxId,
-    modelTxId,
-    modelName,
   };
 };
 

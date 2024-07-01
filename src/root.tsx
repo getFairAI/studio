@@ -29,22 +29,25 @@ import { StyledMaterialDesignContent } from './styles/components';
 import { ChooseWalletProvider } from './context/choose-wallet';
 import { SwapProvider } from './context/swap';
 import { FundProvider } from './context/fund';
+import { EVMWalletProvider } from './context/evm-wallet';
 
 const App = () => {
   return (
-    <WalletProvider>
-      <BundlrProvider>
-        <FundProvider>
-          <ChooseWalletProvider>
-            <SwapProvider>
-              <Layout>
-                <Outlet />
-              </Layout>
-            </SwapProvider>
-          </ChooseWalletProvider>
-        </FundProvider>
-      </BundlrProvider>
-    </WalletProvider>
+    <EVMWalletProvider>
+      <WalletProvider>
+        <BundlrProvider>
+          <FundProvider>
+            <ChooseWalletProvider>
+              <SwapProvider>
+                <Layout>
+                  <Outlet />
+                </Layout>
+              </SwapProvider>
+            </ChooseWalletProvider>
+          </FundProvider>
+        </BundlrProvider>
+      </WalletProvider>
+    </EVMWalletProvider>
   );
 };
 
