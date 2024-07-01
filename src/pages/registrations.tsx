@@ -17,29 +17,20 @@
  */
 
 import { WalletContext } from '@/context/wallet';
-import { FIND_BY_TAGS, QUERY_TX_WITH } from '@/queries/graphql';
-import { ApolloError, useQuery } from '@apollo/client';
-import {
-  ChangeEvent,
-  ReactElement,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { QUERY_TX_WITH } from '@/queries/graphql';
+import { ApolloError, useLazyQuery, useQuery } from '@apollo/client';
+import { ReactElement, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
   TAG_NAMES,
   CANCEL_OPERATION,
   secondInMS,
-  OPERATOR_REGISTRATION_PAYMENT_TAGS,
   U_LOGO_SRC,
   OLD_PROTOCOL_NAME,
   OLD_PROTOCOL_VERSION,
   DEFAULT_TAGS,
+  MARKETPLACE_EVM_ADDRESS,
+  OPERATOR_USDC_FEE,
 } from '@/constants';
-import { IEdge, ITransactions } from '@/interfaces/arweave';
 import {
   Backdrop,
   Box,
@@ -50,34 +41,27 @@ import {
   CardHeader,
   CircularProgress,
   Container,
-  Icon,
   IconButton,
-  InputBase,
   Stack,
   Tooltip,
   Typography,
   useTheme,
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import _ from 'lodash';
-import useOnScreen from '@/hooks/useOnScreen';
-import {
-  commonUpdateQuery,
-  displayShortTxOrAddr,
-  findTag,
-  parseUnixTimestamp,
-} from '@/utils/common';
+import { displayShortTxOrAddr, findTag, parseUnixTimestamp } from '@/utils/common';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CopyIcon from '@mui/icons-material/ContentCopy';
 import arweave from '@/utils/arweave';
 import { useSnackbar } from 'notistack';
 import DebounceButton from '@/components/debounce-button';
-import FairSDKWeb from '@fair-protocol/sdk/web';
+import { getUsdcSentLogs, findByIdDocument, decodeTxMemo, findByIdQuery } from '@fairai/evm-sdk';
+import { EVMWalletContext } from '@/context/evm-wallet';
 
 interface Registration {
-  scriptName: string;
-  scriptTransaction: string;
-  scriptCurator: string;
+  solutionTransaction: string;
+  solutionName: string;
+  id: string;
+  solutionCreator: string;
   operatorFee: number;
   operatorName: string;
   timestamp: string;
@@ -95,9 +79,9 @@ const RegistrationContent = ({
   const { enqueueSnackbar } = useSnackbar();
 
   const handleCopy = useCallback(() => {
-    if (registration.scriptTransaction) {
+    if (registration.solutionTransaction) {
       (async () => {
-        await navigator.clipboard.writeText(registration.scriptTransaction);
+        await navigator.clipboard.writeText(registration.solutionTransaction);
         enqueueSnackbar('Copied to clipboard', { variant: 'info' });
       })();
     }
@@ -105,7 +89,7 @@ const RegistrationContent = ({
 
   const handleViewExplorer = useCallback(
     () =>
-      window.open(`https://viewblock.io/arweave/tx/${registration.scriptTransaction}`, '_blank'),
+      window.open(`https://viewblock.io/arweave/tx/${registration.solutionTransaction}`, '_blank'),
     [registration],
   );
 
@@ -115,10 +99,10 @@ const RegistrationContent = ({
     >
       <Box>
         <Box display={'flex'} gap={'8px'}>
-          <Typography fontWeight={'600'}>Script Transaction:</Typography>
-          <Tooltip title={registration.scriptTransaction}>
+          <Typography fontWeight={'600'}>Solution Transaction:</Typography>
+          <Tooltip title={registration.solutionTransaction}>
             <Typography>
-              {displayShortTxOrAddr(registration.scriptTransaction)}
+              {displayShortTxOrAddr(registration.solutionTransaction)}
               <IconButton size='small' onClick={handleCopy}>
                 <CopyIcon fontSize='inherit' />
               </IconButton>
@@ -129,10 +113,10 @@ const RegistrationContent = ({
           </Tooltip>
         </Box>
         <Box display={'flex'} gap={'8px'}>
-          <Typography fontWeight={'600'}>Script Curator:</Typography>
-          <Tooltip title={registration.scriptCurator}>
+          <Typography fontWeight={'600'}>Solution Creator:</Typography>
+          <Tooltip title={registration.solutionCreator}>
             <Typography>
-              {displayShortTxOrAddr(registration.scriptCurator)}
+              {displayShortTxOrAddr(registration.solutionCreator)}
               <IconButton size='small'>
                 <CopyIcon fontSize='inherit' />
               </IconButton>
@@ -178,38 +162,35 @@ const RegistrationContent = ({
   );
 };
 
-const RegistrationCard = ({ tx }: { tx: IEdge }) => {
+const RegistrationCard = ({ tx }: { tx: findByIdQuery['transactions']['edges'][0] }) => {
   const [isCancelled, setIsCancelled] = useState(false);
-  const [isConfirmed, setIsConfirmed] = useState(false);
   const theme = useTheme();
   const { currentAddress, dispatchTx } = useContext(WalletContext);
   const { enqueueSnackbar } = useSnackbar();
 
   const registration = useMemo(() => {
-    const scriptName = findTag(tx, 'scriptName') ?? 'Script Name Not Found';
-    const scriptCurator = findTag(tx, 'scriptCurator') ?? 'Script Curator Not Found';
-    const scriptTransaction = findTag(tx, 'scriptTransaction') ?? 'Script Transaction Not Found';
+    const solutionName = findTag(tx, 'solutionName') ?? 'Solution Name Not Found';
+    const solutionCreator = findTag(tx, 'solutionCreator') ?? 'Solution Curator Not Found';
+    const solutionTransaction =
+      findTag(tx, 'solutionTransaction') ?? 'Solution Transaction Not Found';
     const operatorFee = findTag(tx, 'operatorFee') ?? 'Operator Fee Not Found';
     const operatorName = findTag(tx, 'operatorName') ?? 'Operator Name Not Found';
     const timestamp = findTag(tx, 'unixTime') ?? 'Timestamp Not Found';
 
-    const parsedFee = parseFloat(operatorFee) / FairSDKWeb.utils.U_DIVIDER;
+    const parsedFee = parseFloat(operatorFee);
 
     return {
-      scriptName,
-      scriptTransaction,
-      scriptCurator,
+      id: tx.node.id,
+      operatorFee: parsedFee,
+      solutionTransaction,
+      solutionName,
+      solutionCreator,
       operatorName,
       timestamp,
-      operatorFee: parsedFee,
     };
   }, [tx]);
 
   const id: string = useMemo(() => tx.node.id, [tx]);
-  const sequencerId = useMemo(
-    () => FairSDKWeb.utils.findTag(tx, 'sequencerTxId') ?? tx.node.id,
-    [tx],
-  );
 
   const { data: cancelData } = useQuery(QUERY_TX_WITH, {
     variables: {
@@ -226,37 +207,24 @@ const RegistrationCard = ({ tx }: { tx: IEdge }) => {
   const color = useMemo(() => {
     if (isCancelled) {
       return theme.palette.neutral.main;
-    } else if (isConfirmed) {
-      return theme.palette.success.main;
     } else {
-      return theme.palette.warning.main;
+      return theme.palette.success.main;
     }
-  }, [isConfirmed, isCancelled]);
+  }, [isCancelled]);
 
   const text = useMemo(() => {
     if (isCancelled) {
       return 'Cancelled';
-    } else if (isConfirmed) {
-      return 'Active';
     } else {
-      return 'Pending';
+      return 'Active';
     }
-  }, [isConfirmed, isCancelled]);
+  }, [isCancelled]);
 
   useEffect(() => {
     if (cancelData && cancelData.transactions.edges.length > 0) {
       setIsCancelled(true);
     }
   }, [cancelData]);
-
-  useEffect(() => {
-    if (sequencerId) {
-      (async () => {
-        const x = await FairSDKWeb.utils.isUTxValid(sequencerId);
-        setIsConfirmed(x);
-      })();
-    }
-  }, [sequencerId]);
 
   const handleCancel = useCallback(() => {
     (async () => {
@@ -269,9 +237,9 @@ const RegistrationCard = ({ tx }: { tx: IEdge }) => {
         cancelTx.addTag(TAG_NAMES.protocolVersion, OLD_PROTOCOL_VERSION);
         cancelTx.addTag(TAG_NAMES.operationName, CANCEL_OPERATION);
         cancelTx.addTag(TAG_NAMES.registrationTransaction, id);
-        cancelTx.addTag(TAG_NAMES.scriptName, registration.scriptName);
-        cancelTx.addTag(TAG_NAMES.scriptCurator, registration.scriptCurator);
-        cancelTx.addTag(TAG_NAMES.scriptTransaction, registration.scriptTransaction);
+        cancelTx.addTag(TAG_NAMES.solutionName, registration.solutionName);
+        cancelTx.addTag(TAG_NAMES.solutionCreator, registration.solutionCreator);
+        cancelTx.addTag(TAG_NAMES.solutionTransaction, registration.solutionTransaction);
         cancelTx.addTag(TAG_NAMES.unixTime, (Date.now() / secondInMS).toString());
 
         const cancelResult = await dispatchTx(cancelTx);
@@ -301,7 +269,7 @@ const RegistrationCard = ({ tx }: { tx: IEdge }) => {
   return (
     <Card sx={{ display: 'flex', flexDirection: 'column' }}>
       <CardHeader
-        title={registration.scriptName}
+        title={registration.solutionName}
         sx={{ padding: '8px 16px' }}
         action={
           <Tooltip title='View in Explorer'>
@@ -355,13 +323,15 @@ const RegistrationsEmpty = ({
   data,
   children,
 }: {
-  data: { transactions: ITransactions };
+  data?: findByIdQuery;
   children: ReactElement;
 }) => {
   if (data && data.transactions.edges.length === 0) {
     return (
       <Box>
-        <Typography textAlign={'center'}>You Have No Pending Transactions</Typography>
+        <Typography textAlign={'center'}>
+          The Connected Address does not Have Registrations to any Solution.
+        </Typography>
       </Box>
     );
   } else {
@@ -370,72 +340,42 @@ const RegistrationsEmpty = ({
 };
 
 const Registrations = () => {
-  const elementsPerPage = 10;
-  const [filterValue, setFilterValue] = useState('');
-  const [filteredValues, setFilteredValues] = useState<IEdge[]>([]);
-  const [hasNextPage, setHasNextPage] = useState(false);
-  const target = useRef<HTMLDivElement>(null);
-  const isOnScreen = useOnScreen(target);
   const justifyContent = 'space-between';
 
   const theme = useTheme();
-  const { currentAddress } = useContext(WalletContext);
+  const { currentAddress } = useContext(EVMWalletContext);
 
-  const tags = [
-    ...DEFAULT_TAGS,
-    ...OPERATOR_REGISTRATION_PAYMENT_TAGS,
-    { name: TAG_NAMES.sequencerOwner, values: [currentAddress] },
-  ];
-  const { data, previousData, loading, error, fetchMore, refetch } = useQuery(FIND_BY_TAGS, {
-    variables: { tags, first: elementsPerPage },
-    skip: !currentAddress,
-  });
+  const [getTxs, { data, refetch, loading, error }] = useLazyQuery(findByIdDocument);
 
   useEffect(() => {
-    if (data && !_.isEqual(data, previousData)) {
-      setHasNextPage(data.transactions.pageInfo.hasNextPage);
-    }
-  }, [data]);
-
-  useEffect(() => {
-    if (isOnScreen && hasNextPage) {
-      const txs = data.transactions.edges;
+    if (currentAddress) {
+      const txs: string[] = [];
       (async () => {
-        await fetchMore({
+        const startTimestamp = 1709251200; // timestamp for 1 march 2024
+        const logs = await getUsdcSentLogs(
+          currentAddress as `0x${string}`,
+          MARKETPLACE_EVM_ADDRESS,
+          OPERATOR_USDC_FEE,
+          startTimestamp,
+        );
+        for (const sentPayment of logs) {
+          const transfer = await decodeTxMemo(sentPayment.transactionHash);
+          txs.push(transfer);
+        }
+        getTxs({
           variables: {
-            after: txs.length > 0 ? txs[txs.length - 1].cursor : undefined,
+            ids: txs,
           },
-          updateQuery: commonUpdateQuery,
         });
       })();
     }
-  }, [isOnScreen, hasNextPage]);
-
-  useEffect(() => {
-    if (filterValue && data) {
-      const filteredData = data.transactions.edges.filter(
-        (el: IEdge) =>
-          el.node.id.toLowerCase().indexOf(filterValue) !== -1 ||
-          findTag(el, 'operationName')?.toLowerCase().indexOf(filterValue) !== -1,
-      );
-      setFilteredValues(filteredData);
-    } else if (data) {
-      setFilteredValues(data.transactions.edges);
-    } else {
-      setFilteredValues([]);
-    }
-  }, [filterValue, data]);
+  }, [currentAddress]);
 
   const refreshClick = useCallback(() => {
     (async () => {
       await refetch();
     })();
   }, [refetch]);
-
-  const handleFilterChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => setFilterValue(event.target.value),
-    [setFilterValue],
-  );
 
   return (
     <Container sx={{ paddingTop: '16px' }} maxWidth='lg'>
@@ -446,41 +386,9 @@ const Registrations = () => {
               <Button onClick={refreshClick} endIcon={<RefreshIcon />} variant='outlined'>
                 <Typography>Refresh</Typography>
               </Button>
-              <Box
-                width={'40%'}
-                sx={{
-                  borderRadius: '30px',
-                  display: 'flex',
-                  justifyContent,
-                  padding: '3px 20px 3px 0px',
-                  alignItems: 'center',
-                  background: theme.palette.background.default,
-                  border: '0.5px solid #355064',
-                }}
-              >
-                <InputBase
-                  sx={{
-                    fontStyle: 'normal',
-                    fontWeight: 400,
-                    fontSize: '18px',
-                    lineHeight: '16px',
-                    width: '100%',
-                    padding: '0px 16px',
-                  }}
-                  onChange={handleFilterChange}
-                  placeholder='Search By Id, Recipient or Operation Name'
-                />
-                <Icon
-                  sx={{
-                    height: '30px',
-                  }}
-                >
-                  <img src='./search-icon.svg'></img>
-                </Icon>
-              </Box>
             </Box>
             <Stack spacing={2}>
-              {filteredValues.map((tx: IEdge) => (
+              {data?.transactions.edges.map((tx: findByIdQuery['transactions']['edges'][0]) => (
                 <RegistrationCard key={tx.node.id} tx={tx} />
               ))}
             </Stack>
@@ -504,7 +412,6 @@ const Registrations = () => {
           <CircularProgress color='primary' />
         </Backdrop>
       )}
-      <Box ref={target} sx={{ paddingBottom: '16px' }}></Box>
     </Container>
   );
 };

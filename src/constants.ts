@@ -250,3 +250,5 @@ const maxKb = 100;
 export const MAX_MESSAGE_SIZE = kb * maxKb;
 
 export const RENDERER_NAME = 'fair-renderer';
+
+export const NATIVE_USDC_ARB = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
